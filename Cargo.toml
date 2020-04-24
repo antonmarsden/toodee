@@ -1,0 +1,30 @@
+[package]
+name = "toodee"
+version = "0.1.0"
+authors = ["Anton Marsden <anton.marsden@ninetyten.co.nz>"]
+edition = "2018"
+description = "A lightweight 2D wrapper around a slice."
+documentation = "https://docs.rs/toodee/"
+repository = "https://github.com/antonmarsden/toodee"
+readme = "README.md"
+keywords = ["2d", "array", "matrix"]
+license = "MIT OR Apache-2.0"
+categories = ["data-structures", "no-std"]
+
+[features]
+default = ["slide"]
+
+slide = []
+
+[dependencies]
+
+[dev-dependencies]
+criterion = "0.3.2"
+
+[[bench]]
+name = "toodee"
+harness = false
+
+[[bench]]
+name = "slide"
+harness = false
