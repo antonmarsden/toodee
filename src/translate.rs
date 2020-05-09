@@ -5,12 +5,12 @@ pub use crate::ops::*;
 pub use crate::toodee::*;
 pub use crate::view::*;
 
-/// This trait provides implementations for slide (also known as translate or scroll) operations.
-pub trait SlideOps<T> : TooDeeOpsMut<T> {
+/// This trait provides implementations for translate (also known as scroll or slide) operations.
+pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     
-    /// Slide (or scroll/translate) the area in the specified direction, wrapping
+    /// Translate (or scroll/slide) the area in the specified direction, wrapping
     /// the content at the edges of the array.
-    fn slide_with_wrap(&mut self, mut col_adj: isize, mut row_adj: isize) {
+    fn translate_with_wrap(&mut self, mut col_adj: isize, mut row_adj: isize) {
         
         let num_rows = self.num_rows();
         let num_cols = self.num_cols();
@@ -121,9 +121,9 @@ pub trait SlideOps<T> : TooDeeOpsMut<T> {
         
     }
     
-    /// Slide (or scroll/translate) the area in the specified direction, filling
+    /// Translate (or scroll/slide) the area in the specified direction, filling
     /// the old space with a specified value.
-    fn slide_with_fill(&mut self, col_adj: isize, row_adj: isize, fill: &T) where T: Clone {
+    fn translate_with_fill(&mut self, col_adj: isize, row_adj: isize, fill: &T) where T: Clone {
         
         let num_rows = self.num_rows();
         let num_cols = self.num_cols();
@@ -161,7 +161,7 @@ pub trait SlideOps<T> : TooDeeOpsMut<T> {
                 Ordering::Equal => {},
             }
             
-            self.slide_with_wrap(col_adj, row_adj);
+            self.translate_with_wrap(col_adj, row_adj);
             
         } else {
             self.fill(fill);
@@ -172,6 +172,6 @@ pub trait SlideOps<T> : TooDeeOpsMut<T> {
 }
 
 
-impl<T> SlideOps<T> for TooDeeViewMut<'_, T> {}
+impl<T> TranslateOps<T> for TooDeeViewMut<'_, T> {}
 
-impl<T> SlideOps<T> for TooDee<T> {}
+impl<T> TranslateOps<T> for TooDee<T> {}

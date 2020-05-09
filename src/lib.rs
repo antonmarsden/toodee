@@ -15,13 +15,13 @@ mod ops;
 mod toodee;
 mod flattenexact;
 
-#[cfg(feature = "slide")]
-mod slide;
+#[cfg(feature = "translate")]
+mod translate;
 
 mod tests;
 mod tests_iter;
-#[cfg(feature = "slide")]
-mod tests_slide;
+#[cfg(feature = "translate")]
+mod tests_translate;
 
 pub use crate::iter::*;
 pub use crate::view::*;
@@ -29,5 +29,5 @@ pub use crate::ops::*;
 pub use crate::toodee::*;
 pub use crate::flattenexact::*;
 
-#[cfg(feature = "slide")]
-pub use crate::slide::*;
+#[cfg(feature = "translate")]
+pub use crate::translate::*;

@@ -12,9 +12,9 @@ license = "MIT OR Apache-2.0"
 categories = ["data-structures", "no-std"]
 
 [features]
-default = ["slide"]
+default = ["translate"]
 
-slide = []
+translate = []
 
 [dependencies]
 
@@ -26,5 +26,5 @@ name = "toodee"
 harness = false
 
 [[bench]]
-name = "slide"
+name = "translate"
 harness = false

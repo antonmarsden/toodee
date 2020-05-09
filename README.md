@@ -2,20 +2,20 @@
 
 # toodee
 
-A lightweight two-dimensional wrapper around a slice.
+TooDee is a lightweight and high performance two-dimensional wrapper around a slice.
 
-TooDee provides a rich and high performance API at the expense of safety, i.e., most methods do not return an `Option`, and
-will panic if you attempt to access data that is out of bounds. This approach is similar to that of `std::vec::Vec`,
-e.g., `vec[bad_idx]`. Safer methods similar to `Vec::get()` could be added, but would degrade performance if used
-excessively. I recommend doing your own bounds checks when writing algorithms.
-
-## Features
+## Core features
 
 - Raw access to the underlying slice via `data()` and `data_mut()`.
-- Index by row (i.e., row major) to get/set row slices.
-- Get/set specific cells using indexing, e.g., `toodee[row][col]` = val.
-- Access to 2D subsets using `view()` and `view_mut()`.
-- Slide (scroll/translate) operations with wrap and fill variants.
+- Creation of performant two-dimensional subsets using `view()` and `view_mut()`.
+- Get/set specific cells using indexing, e.g., `toodee[row][col] = val`.
+- Index by row (i.e., row major) to get/set row slices, e.g., `toodee[row]`.
+- Iteration, any which way - `rows()`, `rows_mut()`, `col()`, `col_mut()`, `cells()`, `cells_mut()`.
+- `no_std` compliant.
+
+## Extras
+
+- Translate (scroll/slide) operations with wrap and fill variants.
 
 ## TODO
 
