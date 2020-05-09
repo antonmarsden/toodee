@@ -66,12 +66,12 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
             let mut swap_count = 0;
             let mut base_row = 0;
             
-            let mut mid = col_mid;
-            
             // TODO: tidy up and possibly create a simpler loop if col_mid == 0
 
             while swap_count < num_rows {
-                
+
+                let mut mid = col_mid;
+
                 let mut next_row = base_row + row_adj_abs;
                 
                 loop {
