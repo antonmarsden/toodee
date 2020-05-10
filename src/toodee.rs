@@ -65,7 +65,9 @@ impl<T> TooDeeOps<T> for TooDee<T> {
             row_start,
             num_cols: col_end - col_start,
             num_rows: row_end - row_start,
-            toodee: self,
+            main_cols : self.num_cols,
+            main_rows : self.num_rows,
+            data: &self.data,
         }
     }
     
@@ -99,7 +101,9 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
             col_start,
             num_rows: row_end - row_start,
             num_cols: col_end - col_start,
-            toodee: self,
+            main_cols : self.num_cols,
+            main_rows : self.num_rows,
+            data: &mut self.data,
         }
     }
     

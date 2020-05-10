@@ -28,6 +28,28 @@ mod toodee_tests {
     }
 
     #[test]
+    fn new_view_direct() {
+        let v = vec![1u32; 32];
+        let view = TooDeeView::new(4, 8, &v);
+        assert_eq!((4, 8), view.size());
+        assert_eq!(view.num_cols(), 4);
+        assert_eq!(view.num_rows(), 8);
+        assert_eq!(view.bounds(), (0, 0, 4, 8));
+        assert_eq!(view.cells().sum::<u32>(), 32);
+    }
+
+    #[test]
+    fn new_view_mut_direct() {
+        let mut v = vec![1u32; 32];
+        let view = TooDeeViewMut::new(8, 4, &mut v);
+        assert_eq!((8, 4), view.size());
+        assert_eq!(view.num_cols(), 8);
+        assert_eq!(view.num_rows(), 4);
+        assert_eq!(view.bounds(), (0, 0, 8, 4));
+        assert_eq!(view.cells().sum::<u32>(), 32);
+    }
+
+    #[test]
     fn into_vec() {
         let toodee = TooDee::new(10, 10, 22u32);
         let v: Vec<u32> = toodee.into();

@@ -28,7 +28,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
     }
 
     /// Returns the bounds of the object's area within the original TooDee area (views
-    /// are not nested).
+    /// are not nested for now).
     fn bounds(&self) -> (usize, usize, usize, usize);
     
     /// Returns a view (or subset) of the current area based on the coordinates provided.

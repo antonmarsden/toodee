@@ -12,6 +12,7 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a sl
 - Index by row (i.e., row major) to get/set row slices, e.g., `toodee[row]`.
 - Iteration, any which way - `rows()`, `rows_mut()`, `col()`, `col_mut()`, `cells()`, `cells_mut()`.
 - `no_std` compliant.
+- Can create a new TooDeeView or TooDeeViewMut directly from a &[T] or &mut [T] (respectively).
 
 ## Extras
 
@@ -36,18 +37,19 @@ Similar libraries do exist, but they lacked either performance, flexibility, or 
 Here's a small feature comparison chart:
 
 <table>
-  <tr><th></th><th>Structs supported</th><th>Growable?</th><th>Mutable views?</th><th>Raw data access?</th><th>Iterate over row slices?</th><th>Safe/checked access?</tr>
+  <tr><th></th><th>Structs supported</th><th>Growable?</th><th>Mutable views?</th><th>Raw data access?</th><th>Iterate over row slices?</th><th>Safe/checked access?</th><th>Notes</th></tr>
   <tr><td>toodee::TooDee</td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
-  <tr><td>image::ImageBuffer</td><td><code>image::Pixel</code></td><td>No</td><td>No</td><td>Yes</td><td>No</td><td>No</td></tr>
+  <tr><td>image::ImageBuffer</td><td><code>image::Pixel</code></td><td>No</td><td>No</td><td>Yes</td><td>No</td><td>No</td><td>Good for image processing - see the <code>imageproc</code> crate.</tr>
   <tr><td>image::SubImage</td><td><code>image::Pixel</code></td><td>No</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
   <tr><td>grid::Grid</td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
   <tr><td>array2d::Array2D</td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td>Yes</td></tr>
+  <tr><td>imgref::Img</td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>The closest equivalent to <code>TooDee</code> that I could find.</td></tr>
 </table>
 
 ## Goals
  
 - High performance and good flexibility by providing a core data model that:
-    - Uses a one-dimensional array to store the two-dimensional array elements. Useful for frame buffers and
+    - Uses a one-dimensional slice to store the two-dimensional array elements. Useful for frame buffers and
       other scenarios where you want raw access to the underlying data (use `data()` or `data_mut()`).
     - Provides views (subsets of the array) which have good performance.
     - Can access each row as a slice using either `self[row]` or a `rows()` iterator. Useful for bulk or vector-style manipulation.
@@ -61,11 +63,10 @@ Here's a small feature comparison chart:
 
 ## Limitations
 
-- The underlying slice is fixed in size.
+- The underlying data is fixed in size.
 - The array dimensions are immutable. This may change if `transpose()` is ever implemented
-- Views are not nested, i.e., a view created from a view points to the
-   underlying TooDee object. This means that a view's `bounds()` are relative
-   to the underlying TooDee array.
+- Views are not nested for the time being, The only impact is that the `bounds()` of a view
+  are not always relative to its parent.
 
 ## License
 
