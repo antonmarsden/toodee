@@ -38,8 +38,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
     /// Returns an iterator over a single column
     fn col(&self, col: usize) -> Col<'_, T>;
 
-    /// Returns an iterator that traverses all cells within the area. You should iterate using rows()
-    /// where possible because performance will be better.
+    /// Returns an iterator that traverses all cells within the area.
     fn cells(&self) -> Cells<'_,T> {
         FlattenExact::new(self.rows(), self.num_cols())
     }
@@ -59,9 +58,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     /// Returns a mutable iterator over a single column
     fn col_mut(&mut self, col: usize) -> ColMut<'_, T>;
     
-
-    /// Returns an iterator that traverses all cells within the area. You should iterate using
-    /// rows_mut() where possible because performance will be better.
+    /// Returns an iterator that traverses all cells within the area.
     fn cells_mut(&mut self) -> CellsMut<'_, T> {
         let num_cols = self.num_cols();
         FlattenExact::new(self.rows_mut(), num_cols)

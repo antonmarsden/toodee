@@ -106,8 +106,11 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     }
     
     fn copy_from_slice(&mut self, src: &[T]) where T: Copy {
-        assert_eq!(self.data.len(), src.len());
         self.data.copy_from_slice(src);
+    }
+    
+    fn clone_from_slice(&mut self, src: &[T]) where T: Clone {
+        self.data.clone_from_slice(src);
     }
     
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
