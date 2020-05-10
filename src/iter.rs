@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use core::mem;
 
 /// An Iterator over each row of a TooDee[View], where each row is represented as a slice, and

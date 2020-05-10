@@ -15,13 +15,16 @@ mod ops;
 mod toodee;
 mod flattenexact;
 
-#[cfg(feature = "translate")]
-mod translate;
+#[cfg(feature = "translate")] mod translate;
+#[cfg(feature = "translate")] mod tests_translate;
+#[cfg(feature = "translate")] pub use crate::translate::*;
+
+#[cfg(feature = "sort")] mod sort;
+#[cfg(feature = "sort")] mod tests_sort;
+#[cfg(feature = "sort")] pub use crate::sort::*;
 
 mod tests;
 mod tests_iter;
-#[cfg(feature = "translate")]
-mod tests_translate;
 
 pub use crate::iter::*;
 pub use crate::view::*;
@@ -29,5 +32,3 @@ pub use crate::ops::*;
 pub use crate::toodee::*;
 pub use crate::flattenexact::*;
 
-#[cfg(feature = "translate")]
-pub use crate::translate::*;

@@ -12,14 +12,17 @@ license = "MIT OR Apache-2.0"
 categories = ["data-structures", "no-std"]
 
 [features]
-default = ["translate"]
+default = ["translate", "sort"]
 
 translate = []
+
+sort = []
 
 [dependencies]
 
 [dev-dependencies]
 criterion = "0.3.2"
+rand = "0.7.3"
 
 [[bench]]
 name = "toodee"

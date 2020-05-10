@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
@@ -14,6 +12,7 @@ pub struct TooDeeView<'a, T : 'a> {
     pub(super) num_cols: usize,
     pub(super) num_rows: usize,
     pub(super) main_cols: usize,
+    /// Note that this field is not used, for the moment.
     pub(super) main_rows: usize,
     pub(super) data: &'a [T],
 }
@@ -107,6 +106,7 @@ pub struct TooDeeViewMut<'a, T : 'a> {
     pub(super) num_cols: usize,
     pub(super) num_rows: usize,
     pub(super) main_cols: usize,
+    /// Note that this field is not used, for the moment.
     pub(super) main_rows: usize,
     pub(super) data: &'a mut [T],
 }

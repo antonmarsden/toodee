@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use core::ops::{Index, IndexMut};
 use core::cmp::Ordering;
 use core::borrow::Borrow;

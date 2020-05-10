@@ -6,18 +6,18 @@ mod toodee_tests_iter {
     use crate::*;
 
     // TODO
-    #[test]
-    fn rows_iter() {
-        let toodee = TooDee::new(8, 12, 22u32);
-        assert_eq!(toodee[1].len(), 8);
-    }
+//    #[test]
+//    fn rows_iter() {
+//        let toodee = TooDee::new(8, 12, 22u32);
+//        assert_eq!(toodee[1].len(), 8);
+//    }
 
     // TODO
-    #[test]
-    fn rows_mut_iter() {
-        let toodee = TooDee::new(8, 12, 22u32);
-        assert_eq!(toodee[1].len(), 8);
-    }
+//    #[test]
+//    fn rows_mut_iter() {
+//        let toodee = TooDee::new(8, 12, 22u32);
+//        assert_eq!(toodee[1].len(), 8);
+//    }
 
     #[test]
     fn view_rows_iter() {
