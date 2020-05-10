@@ -1,54 +1,36 @@
-use core::cmp::Ordering;
-
 pub use crate::iter::*;
 pub use crate::ops::*;
 pub use crate::toodee::*;
 pub use crate::view::*;
 
-/// This trait provides implementations for translate (also known as scroll or slide) operations.
+/// This trait provides implementations for translate (also known as scroll) operations.
 pub trait TranslateOps<T> : TooDeeOpsMut<T> {
-    
-    /// Translate (or scroll/slide) the area in the specified direction, wrapping
-    /// the content at the edges of the array.
-    fn translate_with_wrap(&mut self, mut col_adj: isize, mut row_adj: isize) {
+
+    /// Translate (or scroll) the area by moving col_mid to the first column and
+    /// row_mid to the first row.
+    /// 
+    /// All data is preserved by wrapping at the array edges, so `fill()` should be used
+    /// to destroy old data as required.
+    /// 
+    /// Some clever logic ensures that the algorithm performs efficiently when `col_mid` and
+    /// `row_mid` are both non-zero.
+    fn translate_with_wrap(&mut self, mut col_mid: usize, mut row_mid: usize) {
         
-        let num_rows = self.num_rows();
         let num_cols = self.num_cols();
+        let num_rows = self.num_rows();
 
-        if num_rows == 0 || num_cols == 0 {
-            return;
-        }
+        assert!(col_mid <= num_cols);
+        assert!(row_mid <= num_rows);
         
-        {
-            let irows = num_rows as isize;
-            // no modulo arithmetic required for very large arrays
-            if irows > 0 {
-                row_adj %= irows;
-            }
-            let icols = num_cols as isize;
-            // no modulo arithmetic required for very large arrays
-            if icols > 0 {
-                col_adj %= icols;
-            }
+        if col_mid == num_cols {
+            col_mid = 0;
         }
-        
-        let row_adj_abs = {
-            if row_adj >= 0 {
-                row_adj as usize
-            } else {
-                num_rows - ((-row_adj) as usize)
-            }
-        };
 
-        let col_mid = {
-            match col_adj.cmp(&0) {
-                Ordering::Less => (-col_adj) as usize,
-                Ordering::Greater => num_cols - col_adj as usize,
-                Ordering::Equal => 0,
-            }
-        };
-        
-        if row_adj == 0 {
+        if row_mid == num_rows {
+            row_mid = 0;
+        }
+
+        if row_mid == 0 {
             if col_mid != 0 {
                 // apply column rotation only
                 for r in self.rows_mut() {
@@ -58,11 +40,14 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
             return;
         }
 
-        if row_adj != 0 {
+        if row_mid != 0 {
             
+            let row_adj_abs = num_rows - row_mid;
+
             // This row swapping algorithm is pretty cool. I came up with it independently,
-            // but it turns out that the concept is fairly well known. See slice.rotate_left()
-            // and slice.rotate_right() for various strategies.
+            // but it turns out that the concept is fairly well known. See
+            // `core::slice::ptr_rotate()` for various strategies.
+            
             let mut swap_count = 0;
             let mut base_row = 0;
             
@@ -92,10 +77,10 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
                         // the following logic performs a rotate while swapping :)
                         let (base_ref, next_ref) = self.row_pair_mut(base_row, next_row);
                         if mid > 0 {
-                            base_ref[0..mid].swap_with_slice(&mut next_ref[num_cols-mid..num_cols]);
+                            base_ref[..mid].swap_with_slice(&mut next_ref[num_cols-mid..num_cols]);
                         }
                         if mid < num_cols {
-                            base_ref[mid..num_cols].swap_with_slice(&mut next_ref[0..num_cols-mid]);
+                            base_ref[mid..num_cols].swap_with_slice(&mut next_ref[..num_cols-mid]);
                         }
                         
                         mid += col_mid;
@@ -114,6 +99,7 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
                 if swap_count >= num_rows {
                     break;
                 }
+                
                 base_row += 1; // advance the base
                 
             }
@@ -121,54 +107,6 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
         
     }
     
-    /// Translate (or scroll/slide) the area in the specified direction, filling
-    /// the old space with a specified value.
-    fn translate_with_fill(&mut self, col_adj: isize, row_adj: isize, fill: &T) where T: Clone {
-        
-        let num_rows = self.num_rows();
-        let num_cols = self.num_cols();
-
-        let irows = num_rows as isize;
-        let icols = num_cols as isize;
-        
-        // check for complete fill scenarios
-        if (irows < 0 || isize::abs(row_adj) < irows) &&
-           (icols < 0 || isize::abs(col_adj) < icols) {
-
-            // at this stage, we know that some original data will remain after sliding
-            
-            let mut sub_view = {
-                match row_adj.cmp(&0) {
-                    Ordering::Less => {
-                        self.view_mut(0, 0, num_cols, (-row_adj) as usize).fill(fill);
-                        self.view_mut(0, (-row_adj) as usize, num_cols, num_rows)
-                    },
-                    Ordering::Greater => {
-                        self.view_mut(0, num_rows - row_adj as usize, num_cols, num_rows).fill(fill);
-                        self.view_mut(0, 0, num_cols, num_rows - row_adj as usize)
-                    },
-                    Ordering::Equal => self.view_mut(0, 0, num_cols, num_rows),
-                }
-            };
-            
-            match col_adj.cmp(&0) {
-                Ordering::Less => {
-                    sub_view.view_mut(0, 0, (-col_adj) as usize, sub_view.num_rows()).fill(fill);
-                },
-                Ordering::Greater => {
-                    sub_view.view_mut(num_cols - col_adj as usize, 0, num_cols, sub_view.num_rows()).fill(fill);
-                },
-                Ordering::Equal => {},
-            }
-            
-            self.translate_with_wrap(col_adj, row_adj);
-            
-        } else {
-            self.fill(fill);
-        }
-    }
-
-
 }
 
 
