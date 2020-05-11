@@ -9,6 +9,10 @@ A lightweight two-dimensional wrapper around a slice.
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+// Need this to use the vec! macro
+#[macro_use]
+extern crate alloc;
+
 mod iter;
 mod view;
 mod ops;

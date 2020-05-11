@@ -13,6 +13,7 @@ mod toodee_tests_sort {
                 toodee[i][j] = rng.gen_range(0, 100);
             }
         }
+        println!("{:?}",&toodee[3]);
         toodee.sort_by_row(3, |a, b| a.cmp(b));
         let r = &toodee[3];
         println!("{:?}",r);
@@ -30,6 +31,7 @@ mod toodee_tests_sort {
                 toodee[i][j] = rng.gen_range(0, 100);
             }
         }
+        println!("{:?}", toodee.col(3).copied().collect::<Vec<u32>>());
         toodee.sort_by_col(3, |a, b| a.cmp(b));
         let c : Vec<u32> = toodee.col(3).copied().collect();
         println!("{:?}",c);
