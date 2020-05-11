@@ -15,6 +15,7 @@ pub use crate::view::*;
 pub use crate::ops::*;
 
 /// Represents a two-dimensional array
+#[derive(Clone)]
 pub struct TooDee<T> {
     pub(super) num_rows: usize,
     pub(super) num_cols: usize,
