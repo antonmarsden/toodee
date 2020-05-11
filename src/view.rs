@@ -4,7 +4,7 @@ use core::ops::{Index, IndexMut};
 
 use crate::*;
 
-/// Provides a read-only view (or subset) of a TooDee array.
+/// Provides a read-only view (or subset) of a `TooDee` array.
 #[derive(Copy,Clone)]
 pub struct TooDeeView<'a, T : 'a> {
     pub(super) col_start: usize,
@@ -19,7 +19,7 @@ pub struct TooDeeView<'a, T : 'a> {
 
 impl<'a, T> TooDeeView<'a, T> {
 
-    /// Create a new TooDeeViewMut using the provided slice reference.
+    /// Create a new `TooDeeViewMut` using the provided slice reference.
     /// 
     /// Will panic if the slice's length is not sufficient to represent
     /// the desired array dimensions.
@@ -99,7 +99,7 @@ impl<'a, T> Index<usize> for TooDeeView<'a, T> {
     }
 }
 
-/// Provides a mutable view (or subset), of a TooDee array.
+/// Provides a mutable view (or subset), of a `TooDee` array.
 pub struct TooDeeViewMut<'a, T : 'a> {
     pub(super) col_start: usize,
     pub(super) row_start: usize,
@@ -114,7 +114,7 @@ pub struct TooDeeViewMut<'a, T : 'a> {
 
 impl<'a, T> TooDeeViewMut<'a, T> {
 
-    /// Create a new TooDeeViewMut using the provided mutable slice reference.
+    /// Create a new `TooDeeViewMut` using the provided mutable slice reference.
     /// 
     /// Will panic if the slice's length is not sufficient to represent
     /// the desired array dimensions.

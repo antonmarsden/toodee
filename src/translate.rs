@@ -3,17 +3,15 @@ pub use crate::ops::*;
 pub use crate::toodee::*;
 pub use crate::view::*;
 
-/// This trait provides implementations for translate (also known as scroll) operations.
+/// Provides implementations for translate (also known as scroll) operations, and other basic data
+/// movement operations such as flipping.
 pub trait TranslateOps<T> : TooDeeOpsMut<T> {
 
     /// Translate (or scroll) the area by moving col_mid to the first column and
     /// row_mid to the first row.
     /// 
-    /// All data is preserved by wrapping at the array edges, so `fill()` should be used
-    /// to destroy old data as required.
-    /// 
-    /// Some clever logic ensures that the algorithm performs efficiently when `col_mid` and
-    /// `row_mid` are both non-zero.
+    /// All data is preserved by wrapping at the array edges, so `fill()` could be used
+    /// to clear old data if required.
     fn translate_with_wrap(&mut self, mut col_mid: usize, mut row_mid: usize) {
         
         let num_cols = self.num_cols();
@@ -74,7 +72,8 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
                         break;
                     } else {
                         
-                        // the following logic performs a rotate while swapping :)
+                        // The following logic performs a rotate while swapping, and
+                        // is more efficient than doing a swap then rotate.
                         let (base_ref, next_ref) = self.row_pair_mut(base_row, next_row);
                         if mid > 0 {
                             base_ref[..mid].swap_with_slice(&mut next_ref[num_cols-mid..num_cols]);

@@ -144,7 +144,7 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     
 impl<T> TooDee<T> {
 
-    /// Create a new TooDee array of the specified dimensions, and fill it with
+    /// Create a new `TooDee` array of the specified dimensions, and fill it with
     /// an initial value.
     pub fn new(num_cols: usize, num_rows: usize, init_value: T) -> TooDee<T>
     where T: Clone {
@@ -159,13 +159,13 @@ impl<T> TooDee<T> {
         }
     }
 
-    /// Create a new TooDee array using the provided vector. The vector's length
+    /// Create a new `TooDee` array using the provided vector. The vector's length
     /// must match the dimensions of the array.
     pub fn from_vec(num_cols: usize, num_rows: usize, v: Vec<T>) -> TooDee<T> {
         TooDee::from_box(num_cols, num_rows, v.into_boxed_slice())
     }
     
-    /// Create a new TooDee array using the provided boxed slice. The slice's length
+    /// Create a new `TooDee` array using the provided boxed slice. The slice's length
     /// must match the dimensions of the array.
     pub fn from_box(num_cols: usize, num_rows: usize, b: Box<[T]>) -> TooDee<T> {
         assert_eq!(num_cols * num_rows, b.len());
@@ -204,7 +204,7 @@ impl<'a, T> IntoIterator for &'a mut TooDee<T> {
     }
 }
 
-/// Support conversion into a Vec.
+/// Support conversion into a `Vec`.
 impl<T> Into<Vec<T>> for TooDee<T> {
     fn into(self) -> Vec<T> {
         self.data.into()

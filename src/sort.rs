@@ -9,7 +9,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 
-/// Common re-indexing logic used internally by the SortOps trait.
+/// Common re-indexing logic used internally by the `SortOps` trait.
 /// May need to re-visit performance of this algorithm at some stage.
 fn reindex_in_place<F>(ordering : &mut [usize], mut swap_func : F)
 where F: FnMut(usize, usize)
@@ -35,9 +35,10 @@ where F: FnMut(usize, usize)
     }
 }
 
-/// This trait provides sorting capabilities. Sorting of the rows and columns is performed in-place,
-/// and care is taken to reduce row/col swaps. This is achieved by sorting with the original
-/// indices, then repositioning the rows/columns once the new sort order has been determined.
+/// Provides sorting capabilities to two-dimensional arrays. Sorting of the rows and columns
+/// is performed in-place, and care is taken to reduce row/col swaps. This is achieved by
+/// sorting with the original indices, then repositioning the rows/columns once the new sort
+/// order has been determined.
 pub trait SortOps<T> : TooDeeOpsMut<T> {
     
     /// Sort the entire two-dimensional array by comparing elements on a specific row.

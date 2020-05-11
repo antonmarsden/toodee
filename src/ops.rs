@@ -11,7 +11,7 @@ pub type Cells<'a, T> = FlattenExact<Rows<'a, T>>;
 /// A mutable iterator over each "cell" in a 2D array
 pub type CellsMut<'a, T> = FlattenExact<RowsMut<'a, T>>;
 
-/// This trait defines operations common to both TooDee and TooDeeView. Default implementations are provided
+/// Defines operations common to both `TooDee` and `TooDeeView`. Default implementations are provided
 /// where possible/practical.
 pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
     
@@ -25,7 +25,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
         (self.num_cols(), self.num_rows())
     }
 
-    /// Returns the bounds of the object's area within the original TooDee area (views
+    /// Returns the bounds of the object's area within the original `TooDee` area (views
     /// are not nested for now).
     fn bounds(&self) -> (usize, usize, usize, usize);
     
@@ -45,7 +45,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
 
 }
 
-/// This trait defines operations common to both TooDee and TooDeeViewMut. Default implementations
+/// Defines operations common to both `TooDee` and `TooDeeViewMut`. Default implementations
 /// are provided where possible/practical.
 pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
 
@@ -84,7 +84,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
         }
     }
     
-    /// Copies data from another TooDeeOps object into this one. The source and
+    /// Copies data from another `TooDeeOps` object into this one. The source and
     /// destination dimensions must match.
     fn copy_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Copy {
         assert_eq!(self.num_cols(), src.num_cols());
@@ -92,6 +92,17 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
         // Data is copied row by row.
         for (d, s) in self.rows_mut().zip(src.rows()) {
             d.copy_from_slice(s);
+        }
+    }
+
+    /// Copies data from another `TooDeeOps` object into this one. The source and
+    /// destination dimensions must match.
+    fn clone_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Clone {
+        assert_eq!(self.num_cols(), src.num_cols());
+        assert_eq!(self.num_rows(), src.num_rows());
+        // Data is copied row by row.
+        for (d, s) in self.rows_mut().zip(src.rows()) {
+            d.clone_from_slice(s);
         }
     }
 
@@ -138,7 +149,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     }
     
     /// Return the specified rows as mutable slices.
-    /// Will panic if r1 and r2 are equal, or if either row index is out of bounds.
+    /// Will panic if `r1` and `r2` are equal, or if either row index is out of bounds.
     fn row_pair_mut(&mut self, r1: usize, r2: usize) -> (&mut [T], &mut [T]) {
         assert!(r1 < self.num_rows());
         assert!(r2 < self.num_rows());

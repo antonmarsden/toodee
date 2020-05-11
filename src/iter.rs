@@ -1,14 +1,12 @@
 use core::mem;
 
-/// An Iterator over each row of a TooDee[View], where each row is represented as a slice, and
-/// there is a fixed gap or "stride" (skip_cols) between each slice.
-///
-/// The reference v contains row data at each end. When iterating in either direction the row will
-/// be pulled off the end then skip_cols elements will be skipped in preparation for reading the
-/// next row.
+/// An Iterator over each row of a `TooDee[View]`, where each row is represented as a slice.
 pub struct Rows<'a, T : 'a> {
     pub(super) cols: usize,
     pub(super) skip_cols: usize,
+    /// This reference contains row data at each end. When iterating in either direction the row will
+    /// be pulled off the end then `skip_cols` elements will be skipped in preparation for reading the
+    /// next row.
     pub(super) v: &'a [T],
 }
 
@@ -93,15 +91,13 @@ impl<'a, T> DoubleEndedIterator for Rows<'a, T> {
 
 impl<T> ExactSizeIterator for Rows<'_, T> {}
 
-/// A mutable Iterator over each row of a TooDee[ViewMut], where each row is represented as a slice, and
-/// there is a fixed gap or "stride" (skip_cols) between each slice.
-///
-/// The reference v contains row data at each end. When iterating in either direction the row will
-/// be pulled off the end then skip_cols elements will be skipped in preparation for reading the
-/// next row.
+/// A mutable Iterator over each row of a `TooDee[ViewMut]`, where each row is represented as a slice.
 pub struct RowsMut<'a, T : 'a> {
     pub(super) cols: usize,
     pub(super) skip_cols: usize,
+    /// This reference contains row data at each end. When iterating in either direction the row will
+    /// be pulled off the end then `skip_cols` elements will be skipped in preparation for reading the
+    /// next row.
     pub(super) v: &'a mut [T],
 }
 
