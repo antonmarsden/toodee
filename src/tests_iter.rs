@@ -5,19 +5,19 @@ mod toodee_tests_iter {
 
     use crate::*;
 
-    // TODO
-//    #[test]
-//    fn rows_iter() {
-//        let toodee = TooDee::new(8, 12, 22u32);
-//        assert_eq!(toodee[1].len(), 8);
-//    }
+    #[test]
+    fn rows_iter() {
+        let toodee = TooDee::new(10, 10, 22u32);
+        assert_eq!(toodee.rows().len(), 10);
+        assert_eq!(toodee.rows().fold(0, |count, r| count + r.len()), 10 * 10);
+    }
 
-    // TODO
-//    #[test]
-//    fn rows_mut_iter() {
-//        let toodee = TooDee::new(8, 12, 22u32);
-//        assert_eq!(toodee[1].len(), 8);
-//    }
+    #[test]
+    fn rows_mut_iter() {
+        let mut toodee = TooDee::new(10, 10, 22u32);
+        assert_eq!(toodee.rows_mut().len(), 10);
+        assert_eq!(toodee.rows_mut().fold(0, |count, r| count + r.len()), 10 * 10);
+    }
 
     #[test]
     fn view_rows_iter() {

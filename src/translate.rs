@@ -7,8 +7,8 @@ pub use crate::view::*;
 /// movement operations such as flipping.
 pub trait TranslateOps<T> : TooDeeOpsMut<T> {
 
-    /// Translate (or scroll) the area by moving col_mid to the first column and
-    /// row_mid to the first row.
+    /// Translate (or scroll) the area by moving `col_mid` to the first column and
+    /// `row_mid` to the first row.
     /// 
     /// All data is preserved by wrapping at the array edges, so `fill()` could be used
     /// to clear old data if required.
@@ -106,7 +106,7 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
         
     }
     
-    /// Flips (or mirrors) the columns in the array.
+    /// Flips (or mirrors) the rows.
     fn flip_rows(&mut self) {
         let mut iter = self.rows_mut();
         while let (Some(r1), Some(r2)) = (iter.next(), iter.next_back()) {
@@ -114,7 +114,7 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
         }
     }
 
-    /// Flips (or mirrors) the columns in the array.
+    /// Flips (or mirrors) the columns.
     fn flip_cols(&mut self) {
         for r in self.rows_mut() {
             r.reverse();
