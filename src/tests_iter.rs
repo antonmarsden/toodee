@@ -57,10 +57,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn col_iter() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut col = toodee.col(2);
         assert_eq!(col.len(), 10);
         assert_eq!(col.next().unwrap(), &2);
@@ -74,10 +71,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn col_mut_iter() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut col = toodee.col_mut(2);
         assert_eq!(col.len(), 10);
         assert_eq!(col.next().unwrap(), &2);
@@ -91,10 +85,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn view_col_iter() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let view = toodee.view(2, 2, 8, 8);
         let mut col = view.col(2);
         assert_eq!(col.len(), 6);
@@ -109,10 +100,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn view_col_mut_iter() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut view = toodee.view_mut(2, 2, 8, 8);
         let mut col = view.col_mut(2);
         assert_eq!(col.len(), 6);
@@ -127,10 +115,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn cells() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut cells = toodee.cells();
         assert_eq!(cells.next(), Some(&0u32));
         assert_eq!(cells.next(), Some(&1u32));
@@ -142,10 +127,7 @@ mod toodee_tests_iter {
     
     #[test]
     fn cells_mut() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut cells = toodee.cells_mut();
         assert_eq!(cells.next(), Some(&mut 0u32));
         assert_eq!(cells.next(), Some(&mut 1u32));

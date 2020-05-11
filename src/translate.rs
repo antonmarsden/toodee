@@ -107,6 +107,21 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
         
     }
     
+    /// Flips (or mirrors) the columns in the array.
+    fn flip_rows(&mut self) {
+        let mut iter = self.rows_mut();
+        while let (Some(r1), Some(r2)) = (iter.next(), iter.next_back()) {
+            r1.swap_with_slice(r2);
+        }
+    }
+
+    /// Flips (or mirrors) the columns in the array.
+    fn flip_cols(&mut self) {
+        for r in self.rows_mut() {
+            r.reverse();
+        }
+    }
+    
 }
 
 

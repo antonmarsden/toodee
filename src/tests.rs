@@ -66,10 +66,7 @@ mod toodee_tests {
     
     #[test]
     fn view_from_into_toodee() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let view = toodee.view(2, 2, 4, 4);
         let mut subdee: TooDee<u32> = view.into();
         assert_eq!(subdee.data().iter().sum::<u32>(), 22+23+32+33);
@@ -79,10 +76,7 @@ mod toodee_tests {
 
     #[test]
     fn view_mut_into_toodee() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let view = toodee.view_mut(2, 2, 4, 4);
         let subdee: TooDee<u32> = view.into();
         assert_eq!(subdee.data().iter().sum::<u32>(), 22+23+32+33);
@@ -90,10 +84,7 @@ mod toodee_tests {
 
     #[test]
     fn view_mut_from_toodee() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let view = toodee.view_mut(2, 2, 4, 4);
         let subdee = TooDee::from(view);
         assert_eq!(subdee.data().iter().sum::<u32>(), 22+23+32+33);
@@ -101,10 +92,7 @@ mod toodee_tests {
 
     #[test]
     fn view_mut_to_toodee() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let view : TooDeeView<u32> = toodee.view_mut(2, 2, 4, 4).into();
         let subdee: TooDee<u32> = view.into();
         assert_eq!(subdee.data().iter().sum::<u32>(), 22+23+32+33);
@@ -176,10 +164,7 @@ mod toodee_tests {
 
     #[test]
     fn swap_cols() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         toodee.swap_cols(1,2);
         assert_eq!(toodee[0][1], 2);
         assert_eq!(toodee[0][2], 1);
@@ -211,10 +196,7 @@ mod toodee_tests {
 
     #[test]
     fn view() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
 
         let expected = (100 * 100 - 100) / 2;
         assert_eq!(toodee.data.iter().sum::<u32>(), expected);
@@ -242,10 +224,7 @@ mod toodee_tests {
 
     #[test]
     fn view_mut() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        for i in 0..100 {
-            toodee.data_mut()[i] = i as u32;
-        }
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let expected = (100 * 100 - 100) / 2;
         assert_eq!(toodee.data.iter().sum::<u32>(), expected);
 
