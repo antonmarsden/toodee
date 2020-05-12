@@ -12,11 +12,12 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a sl
 - Index by row (i.e., row major) to get/set row slices, e.g., `toodee[row]`.
 - Iteration, any which way - `rows()`, `rows_mut()`, `col()`, `col_mut()`, `cells()`, `cells_mut()`.
 - `no_std` compliant.
-- Can create a new TooDeeView or TooDeeViewMut directly from a &[T] or &mut [T] (respectively).
+- Can create a new `TooDeeView` or `TooDeeViewMut` directly from a `&[T]` or `&mut [T]` (respectively).
 
 ## Extras
 
-- Translate (scroll/slide) operations with wrap and fill variants.
+- `translate_with_wrap()` (scroll), `flip_rows()`, and `flip_cols()` operations.
+- `sort_by_row()` and `sort_by_col()` operations.
 
 ## TODO
 
@@ -26,7 +27,6 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a sl
 - Range operators that return a `TooDeeView[Mut]`?
 - Implement `nth()` and `nth_back()` for FlattenExact.
 - Implement `try_fold()` and `try_rfold()` for FlattenExact once the `Try` trait is stable.
-- Mirror/reflection functionality.
 - More documentation, with examples.
 - `tiles(..)` and `tiles_mut()`?
 
@@ -38,12 +38,13 @@ Here's a small feature comparison chart:
 
 <table>
   <tr><th></th><th>Structs supported</th><th>Growable?</th><th>Mutable views?</th><th>Raw data access?</th><th>Iterate over row slices?</th><th>Safe/checked access?</th><th>Notes</th></tr>
-  <tr><td>toodee::TooDee</td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+  <tr><td><code>toodee::TooDee</code></td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td></td></tr>
   <tr><td>image::ImageBuffer</td><td><code>image::Pixel</code></td><td>No</td><td>No</td><td>Yes</td><td>No</td><td>No</td><td>Good for image processing - see the <code>imageproc</code> crate.</tr>
-  <tr><td>image::SubImage</td><td><code>image::Pixel</code></td><td>No</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
-  <tr><td>grid::Grid</td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
-  <tr><td>array2d::Array2D</td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td>Yes</td></tr>
-  <tr><td>imgref::Img</td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>The closest equivalent to <code>TooDee</code> that I could find.</td></tr>
+  <tr><td><code>image::SubImage</code></td><td><code>image::Pixel</code></td><td>No</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td></td></tr>
+  <tr><td><code>grid::Grid</code></td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>No</td><td>Yes</td><td></td></tr>
+  <tr><td><code>array2d::Array2D</code></td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td>Yes</td><td></td></tr>
+  <tr><td><code>imgref::Img</code></td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>The closest equivalent to <code>TooDee</code> that I could find.</td></tr>
+  <tr><td><code>nalgebra::Matrix</code></td><td><code>Scalar</code></tr>
 </table>
 
 ## Goals
