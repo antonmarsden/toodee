@@ -79,12 +79,12 @@ impl<T> TooDeeOps<T> for TooDee<T> {
     }
     
     fn col(&self, col: usize) -> Col<'_, T> {
+        assert!(col < self.num_cols);
         Col {
             skip : self.num_cols - 1,
             v : &self.data[col..self.data.len() - self.num_cols + col + 1],
         }
     }
-    
 
 }
 
@@ -123,6 +123,7 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     }
     
     fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
+        assert!(col < self.num_cols);
         let dlen = self.data.len();
         ColMut {
             skip : self.num_cols - 1,
@@ -139,9 +140,9 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
             v.clone_from(value);
         }
     }
-
-}
     
+}
+
 impl<T> TooDee<T> {
 
     /// Create a new `TooDee` array of the specified dimensions, and fill it with

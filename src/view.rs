@@ -36,6 +36,21 @@ impl<'a, T> TooDeeView<'a, T> {
             data : &data[..size],
         }
     }
+    
+    #[inline]
+    fn data_start(&self) -> usize {
+        self.row_start * self.main_cols + self.col_start
+    }
+    
+    #[inline]
+    fn data_len(&self) -> usize {
+        if self.num_rows == 0 {
+            0
+        } else {
+            (self.num_rows - 1) * self.main_cols + self.num_cols
+        }
+    }
+
 }
 
 impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
@@ -70,18 +85,25 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
     }
 
     fn rows(&self) -> Rows<'_, T> {
-        let start = self.row_start * self.main_cols + self.col_start;
-        let end = start + (self.num_rows - 1) * self.main_cols + self.num_cols;
+        let start = self.data_start();
+        let len = self.data_len();
         Rows {
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
-            v : &self.data[start..end],
+            v : &self.data[start..start + len],
         }
     }
     
     fn col(&self, col: usize) -> Col<'_, T> {
-        let start = self.row_start * self.main_cols + self.col_start + col;
-        let end = start + (self.num_rows - 1) * self.main_cols + 1; 
+        assert!(col < self.num_cols);
+        let start = self.data_start() + col;
+        let end = {
+            if self.num_rows == 0 {
+                start
+            } else {
+                start + (self.num_rows - 1) * self.main_cols + 1
+            }
+        };
         Col {
             skip : self.main_cols - 1,
             v : &self.data[start..end],
@@ -131,6 +153,21 @@ impl<'a, T> TooDeeViewMut<'a, T> {
             data : &mut data[..size],
         }
     }
+    
+    #[inline]
+    fn data_start(&self) -> usize {
+        self.row_start * self.main_cols + self.col_start
+    }
+    
+    #[inline]
+    fn data_len(&self) -> usize {
+        if self.num_rows == 0 {
+            0
+        } else {
+            (self.num_rows - 1) * self.main_cols + self.num_cols
+        }
+    }
+
 }
 
 
@@ -165,18 +202,25 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
     }
 
     fn rows(&self) -> Rows<'_, T> {
-        let start = self.row_start * self.main_cols + self.col_start;
-        let end = start + (self.num_rows - 1) * self.main_cols + self.num_cols;
+        let start = self.data_start();
+        let len = self.data_len();
         Rows {
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
-            v : &self.data[start..end],
+            v : &self.data[start..start + len],
         }
     }
 
     fn col(&self, col: usize) -> Col<'_, T> {
-        let start = self.row_start * self.main_cols + self.col_start + col;
-        let end = start + (self.num_rows - 1) * self.main_cols + 1; 
+        assert!(col < self.num_cols);
+        let start = self.data_start() + col;
+        let end = {
+            if self.num_rows == 0 {
+                start
+            } else {
+                start + (self.num_rows - 1) * self.main_cols + 1
+            }
+        };
         Col {
             skip : self.main_cols - 1,
             v : &self.data[start..end],
@@ -204,18 +248,25 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
     }
     
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
-        let start = self.row_start * self.main_cols + self.col_start;
-        let end = start + (self.num_rows - 1) * self.main_cols + self.num_cols;
+        let start = self.data_start();
+        let len = self.data_len();
         RowsMut {
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
-            v : &mut self.data[start..end],
+            v : &mut self.data[start..start + len],
         }
     }
 
     fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
-        let start = self.row_start * self.main_cols + self.col_start + col;
-        let end = start + (self.num_rows - 1) * self.main_cols + 1; 
+        assert!(col < self.num_cols);
+        let start = self.data_start() + col;
+        let end = {
+            if self.num_rows == 0 {
+                start
+            } else {
+                start + (self.num_rows - 1) * self.main_cols + 1
+            }
+        };
         ColMut {
             skip : self.main_cols - 1,
             v : &mut self.data[start..end],

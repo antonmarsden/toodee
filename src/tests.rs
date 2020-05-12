@@ -251,5 +251,83 @@ mod toodee_tests {
         toodee.view_mut(6, 6, 9, 9).copy_from_toodee(&tile_view);
         assert_eq!(toodee.data.iter().sum::<u32>(), 18);
     }
+    
+    #[test]
+    fn zero_size_toodee() {
+        let mut toodee = TooDee::new(0, 0, 0u32);
+        assert_eq!(toodee.rows_mut().next(), None);
+        assert_eq!(toodee.rows().next(), None);
+        assert_eq!(toodee.cells().next(), None);
+        assert_eq!(toodee.cells_mut().next(), None);
+    }
 
+    #[test]
+    fn zero_size_view() {
+        let mut toodee = TooDee::new(10, 10, 0u32);
+        let mut view = toodee.view_mut(5, 5, 5, 5);
+        assert_eq!(view.rows_mut().next(), None);
+        assert_eq!(view.rows().next(), None);
+        assert_eq!(view.cells().next(), None);
+        assert_eq!(view.cells_mut().next(), None);
+        view = toodee.view_mut(5, 5, 6, 5);
+        assert_eq!(view.rows_mut().next(), None);
+        assert_eq!(view.rows().next(), None);
+        assert_eq!(view.cells().next(), None);
+        assert_eq!(view.cells_mut().next(), None);
+        assert_eq!(None, view.col(0).next());
+        view = toodee.view_mut(5, 5, 5, 6);
+        assert_eq!(view.rows_mut().next(), None);
+        assert_eq!(view.rows().next(), None);
+        assert_eq!(view.cells().next(), None);
+        assert_eq!(view.cells_mut().next(), None);
+        assert_eq!(view[0].iter().next(), None);
+    }
+    
+    #[test]
+    fn zero_size_view_of_zero() {
+        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut view = toodee.view_mut(0, 0, 0, 0);
+        assert_eq!(view.rows_mut().next(), None);
+        assert_eq!(view.rows().next(), None);
+        assert_eq!(view.cells().next(), None);
+        assert_eq!(view.cells_mut().next(), None);
+    }
+    
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn zero_size_view_col() {
+        let toodee = TooDee::new(0, 0, 0u32);
+        let view = toodee.view(0, 0, 0, 0);
+        view.col(0);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn zero_size_view_mut_col_mut() {
+        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut view = toodee.view_mut(0, 0, 0, 0);
+        view.col_mut(0);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn zero_size_view_mut_col() {
+        let mut toodee = TooDee::new(0, 0, 0u32);
+        let view = toodee.view_mut(0, 0, 0, 0);
+        view.col(0);
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn zero_size_col() {
+        let toodee = TooDee::new(0, 0, 0u32);
+        toodee.col(0);
+    }
+    
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn zero_size_col_mut() {
+        let mut toodee = TooDee::new(0, 0, 0u32);
+        toodee.col_mut(0);
+    }
 }
