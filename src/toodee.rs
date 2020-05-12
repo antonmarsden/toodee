@@ -17,9 +17,9 @@ pub use crate::ops::*;
 /// Represents a two-dimensional array
 #[derive(Clone)]
 pub struct TooDee<T> {
-    pub(super) num_rows: usize,
-    pub(super) num_cols: usize,
-    pub(super) data: Box<[T]>,
+    num_rows: usize,
+    num_cols: usize,
+    data: Box<[T]>,
 }
 
 impl<T> Index<usize> for TooDee<T> {
@@ -55,19 +55,7 @@ impl<T> TooDeeOps<T> for TooDee<T> {
     }
     
     fn view(&self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeView<'_, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
-        assert!(col_end <= self.num_cols);
-        assert!(row_end <= self.num_rows);
-        TooDeeView {
-            col_start,
-            row_start,
-            num_cols: col_end - col_start,
-            num_rows: row_end - row_start,
-            main_cols : self.num_cols,
-            main_rows : self.num_rows,
-            data: &self.data,
-        }
+        TooDeeView::from_toodee(col_start, row_start, col_end, row_end, self)
     }
     
     fn rows(&self) -> Rows<'_, T> {
@@ -91,19 +79,7 @@ impl<T> TooDeeOps<T> for TooDee<T> {
 impl<T> TooDeeOpsMut<T> for TooDee<T> {
     
     fn view_mut(&mut self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeViewMut<'_, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
-        assert!(col_end <= self.num_cols);
-        assert!(row_end <= self.num_rows);
-        TooDeeViewMut {
-            row_start,
-            col_start,
-            num_rows: row_end - row_start,
-            num_cols: col_end - col_start,
-            main_cols : self.num_cols,
-            main_rows : self.num_rows,
-            data: &mut self.data,
-        }
+        TooDeeViewMut::from_toodee(col_start, row_start, col_end, row_end, self)
     }
     
     fn copy_from_slice(&mut self, src: &[T]) where T: Copy {
@@ -236,28 +212,32 @@ impl<T> Debug for TooDee<T> where T : Debug {
 
 impl<T> From<TooDeeView<'_, T>> for TooDee<T> where T : Clone {
     fn from(view: TooDeeView<'_, T>) -> Self {
-        let mut v = Vec::with_capacity(view.num_rows * view.num_cols);
+        let num_cols = view.num_cols();
+        let num_rows = view.num_rows();
+        let mut v = Vec::with_capacity(num_cols * num_rows);
         for r in view.rows() {
             v.extend_from_slice(r);
         }
         TooDee {
-            num_cols : view.num_cols,
-            num_rows : view.num_rows,
-            data     : v.into_boxed_slice(),
+            num_cols,
+            num_rows,
+            data : v.into_boxed_slice(),
         }
     }
 }
 
 impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
     fn from(view: TooDeeViewMut<'_, T>) -> Self {
-        let mut v = Vec::with_capacity(view.num_rows * view.num_cols);
+        let num_cols = view.num_cols();
+        let num_rows = view.num_rows();
+        let mut v = Vec::with_capacity(num_cols * num_rows);
         for r in view.rows() {
             v.extend_from_slice(r);
         }
         TooDee {
-            num_cols : view.num_cols,
-            num_rows : view.num_rows,
-            data     : v.into_boxed_slice(),
+            num_cols,
+            num_rows,
+            data : v.into_boxed_slice(),
         }
     }
 }

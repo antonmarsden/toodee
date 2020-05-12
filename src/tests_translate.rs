@@ -15,7 +15,7 @@ mod toodee_tests_translate {
         let mut toodee = new_10_by_10();
         toodee.translate_with_wrap(3, 10-2);
         let expected = (100 * 100 - 100) / 2;
-        assert_eq!(toodee.data.iter().sum::<u32>(), expected);
+        assert_eq!(toodee.data().iter().sum::<u32>(), expected);
         assert_eq!(toodee[0][0], 83);
         assert_eq!(toodee[0][9], 82);
         assert_eq!(toodee[9][0], 73);
@@ -29,7 +29,7 @@ mod toodee_tests_translate {
         toodee.view_mut(0, 0, 10, 10).translate_with_wrap(3, 10-2);
         let expected = (100 * 100 - 100) / 2;
 //        println!("{:?}", toodee);
-        assert_eq!(toodee.data.iter().sum::<u32>(), expected);
+        assert_eq!(toodee.data().iter().sum::<u32>(), expected);
         assert_eq!(toodee[0][0], 83);
         assert_eq!(toodee[0][9], 82);
         assert_eq!(toodee[9][0], 73);
@@ -81,7 +81,7 @@ mod toodee_tests_translate {
         let mut toodee = new_10_by_10();
         toodee.flip_rows();
         let expected = (100 * 100 - 100) / 2;
-        assert_eq!(toodee.data.iter().sum::<u32>(), expected);
+        assert_eq!(toodee.data().iter().sum::<u32>(), expected);
         assert_eq!(toodee[0][0], 90);
         assert_eq!(toodee[0][9], 99);
         assert_eq!(toodee[9][0], 0);
@@ -94,7 +94,7 @@ mod toodee_tests_translate {
         let mut toodee = new_10_by_10();
         toodee.flip_cols();
         let expected = (100 * 100 - 100) / 2;
-        assert_eq!(toodee.data.iter().sum::<u32>(), expected);
+        assert_eq!(toodee.data().iter().sum::<u32>(), expected);
         assert_eq!(toodee[0][0], 9);
         assert_eq!(toodee[0][9], 0);
         assert_eq!(toodee[9][0], 99);

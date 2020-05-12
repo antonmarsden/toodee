@@ -11,7 +11,7 @@ mod toodee_tests {
     #[test]
     fn new() {
         let toodee = TooDee::new(200, 150, 0u32);
-        assert_eq!(toodee.data.len(), 200 * 150);
+        assert_eq!(toodee.data().len(), 200 * 150);
         assert_eq!((200, 150), toodee.size());
         assert_eq!(toodee.num_rows(), 150);
         assert_eq!(toodee.num_cols(), 200);
@@ -136,7 +136,7 @@ mod toodee_tests {
         toodee[0].copy_from_slice(&vec![1u32; 4][..4]);
         toodee[1].copy_from_slice(&vec![2u32; 4][..4]);
         toodee[2].copy_from_slice(&vec![3u32; 4][..4]);
-        assert_eq!(toodee.data.iter().sum::<u32>(), 24);
+        assert_eq!(toodee.data().iter().sum::<u32>(), 24);
         assert_eq!(toodee[1].iter().sum::<u32>(), 8);
     }
 
@@ -159,7 +159,7 @@ mod toodee_tests {
         let mut toodee = TooDee::new(3, 3, 0u32);
         toodee[1][1] = 1;
         toodee[2][2] = 2;
-        assert_eq!(toodee.data.iter().sum::<u32>(), 3);
+        assert_eq!(toodee.data().iter().sum::<u32>(), 3);
     }
 
     #[test]
@@ -199,7 +199,7 @@ mod toodee_tests {
         let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
 
         let expected = (100 * 100 - 100) / 2;
-        assert_eq!(toodee.data.iter().sum::<u32>(), expected);
+        assert_eq!(toodee.data().iter().sum::<u32>(), expected);
 
         let view = toodee.view(4, 6, 6, 10);
         assert_eq!(2, view.num_cols());
@@ -226,7 +226,7 @@ mod toodee_tests {
     fn view_mut() {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let expected = (100 * 100 - 100) / 2;
-        assert_eq!(toodee.data.iter().sum::<u32>(), expected);
+        assert_eq!(toodee.data().iter().sum::<u32>(), expected);
 
         let mut view = toodee.view_mut(4, 6, 6, 10);
         assert_eq!(4, view.num_rows());
@@ -237,7 +237,7 @@ mod toodee_tests {
             }
         }
         assert_eq!(
-            toodee.data.iter().sum::<u32>(),
+            toodee.data().iter().sum::<u32>(),
             4950 - (64+65+74+75+84+85+94+95) + (1 + 2 + 3 + 4 + 5 + 6 + 7)
         );
     }
@@ -249,7 +249,7 @@ mod toodee_tests {
         let tile_view = tile.view(0, 0, 3, 3);
         toodee.view_mut(0, 0, 3, 3).copy_from_toodee(&tile_view);
         toodee.view_mut(6, 6, 9, 9).copy_from_toodee(&tile_view);
-        assert_eq!(toodee.data.iter().sum::<u32>(), 18);
+        assert_eq!(toodee.data().iter().sum::<u32>(), 18);
     }
     
     #[test]

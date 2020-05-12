@@ -7,14 +7,14 @@ use crate::*;
 /// Provides a read-only view (or subset) of a `TooDee` array.
 #[derive(Copy,Clone)]
 pub struct TooDeeView<'a, T : 'a> {
-    pub(super) col_start: usize,
-    pub(super) row_start: usize,
-    pub(super) num_cols: usize,
-    pub(super) num_rows: usize,
-    pub(super) main_cols: usize,
+    col_start: usize,
+    row_start: usize,
+    num_cols: usize,
+    num_rows: usize,
+    main_cols: usize,
     /// Note that this field is not used, for the moment.
-    pub(super) main_rows: usize,
-    pub(super) data: &'a [T],
+    main_rows: usize,
+    data: &'a [T],
 }
 
 impl<'a, T> TooDeeView<'a, T> {
@@ -34,6 +34,26 @@ impl<'a, T> TooDeeView<'a, T> {
             main_cols : num_cols,
             main_rows : num_rows,
             data : &data[..size],
+        }
+    }
+    
+    /// Used internally by `TooDee` to create a `TooDeeView`.
+    pub(super) fn from_toodee(col_start: usize, row_start: usize,
+                              col_end: usize, row_end: usize, toodee: &'a TooDee<T>) -> TooDeeView<'a, T> {
+        assert!(col_end >= col_start);
+        assert!(row_end >= row_start);
+        let main_cols = toodee.num_cols();
+        let main_rows = toodee.num_rows();
+        assert!(col_end <= main_cols);
+        assert!(row_end <= main_rows);
+        TooDeeView {
+            col_start,
+            row_start,
+            num_cols: col_end - col_start,
+            num_rows: row_end - row_start,
+            main_cols,
+            main_rows,
+            data: &toodee.data(),
         }
     }
     
@@ -123,14 +143,14 @@ impl<'a, T> Index<usize> for TooDeeView<'a, T> {
 
 /// Provides a mutable view (or subset), of a `TooDee` array.
 pub struct TooDeeViewMut<'a, T : 'a> {
-    pub(super) col_start: usize,
-    pub(super) row_start: usize,
-    pub(super) num_cols: usize,
-    pub(super) num_rows: usize,
-    pub(super) main_cols: usize,
+    col_start: usize,
+    row_start: usize,
+    num_cols: usize,
+    num_rows: usize,
+    main_cols: usize,
     /// Note that this field is not used, for the moment.
-    pub(super) main_rows: usize,
-    pub(super) data: &'a mut [T],
+    main_rows: usize,
+    data: &'a mut [T],
 }
 
 
@@ -153,7 +173,27 @@ impl<'a, T> TooDeeViewMut<'a, T> {
             data : &mut data[..size],
         }
     }
-    
+
+    /// Used internally by `TooDee` to create a `TooDeeViewMut`.
+    pub(super) fn from_toodee(col_start: usize, row_start: usize,
+                              col_end: usize, row_end: usize, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
+        assert!(col_end >= col_start);
+        assert!(row_end >= row_start);
+        let main_cols = toodee.num_cols();
+        let main_rows = toodee.num_rows();
+        assert!(col_end <= main_cols);
+        assert!(row_end <= main_cols);
+        TooDeeViewMut {
+            col_start,
+            row_start,
+            num_cols: col_end - col_start,
+            num_rows: row_end - row_start,
+            main_cols,
+            main_rows,
+            data: toodee.data_mut(),
+        }
+    }
+
     #[inline]
     fn data_start(&self) -> usize {
         self.row_start * self.main_cols + self.col_start
