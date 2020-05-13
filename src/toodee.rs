@@ -202,11 +202,10 @@ impl<T> AsMut<[T]> for TooDee<T> {
 
 impl<T> Debug for TooDee<T> where T : Debug {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut dl = f.debug_list();
-        for r in self.rows() {
-            dl.entry(&r);
-        }
-        dl.finish()
+        let mut d = f.debug_struct("TooDee");
+        d.field("num_cols", &self.num_cols);
+        d.field("num_rows", &self.num_rows);
+        d.finish()
     }
 }
 

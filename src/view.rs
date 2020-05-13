@@ -372,21 +372,23 @@ impl<'a, T> IntoIterator for &'a mut TooDeeViewMut<'a, T> {
 
 impl<T> Debug for TooDeeView<'_, T> where T : Debug {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut dl = f.debug_list();
-        for r in self.rows() {
-            dl.entry(&r);
-        }
-        dl.finish()
+        let mut d = f.debug_struct("TooDeeView");
+        d.field("start", &self.start);
+        d.field("num_cols", &self.num_cols);
+        d.field("num_rows", &self.num_rows);
+        d.field("main_cols", &self.main_cols);
+        d.finish()
     }
 }
 
 impl<T> Debug for TooDeeViewMut<'_, T> where T : Debug {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut dl = f.debug_list();
-        for r in self.rows() {
-            dl.entry(&r);
-        }
-        dl.finish()
+        let mut d = f.debug_struct("TooDeeViewMut");
+        d.field("start", &self.start);
+        d.field("num_cols", &self.num_cols);
+        d.field("num_rows", &self.num_rows);
+        d.field("main_cols", &self.main_cols);
+        d.finish()
     }
 }
 
