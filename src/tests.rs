@@ -99,6 +99,27 @@ mod toodee_tests {
     }
 
     #[test]
+    fn view_mut_into_iter() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let view = toodee.view_mut((2, 2), (4, 4));
+        assert_eq!(view.into_iter().map(|v| *v).sum::<u32>(), 22+23+32+33);
+    }
+
+    #[test]
+    fn view_mut_into_iter_2() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let view = toodee.view_mut((2, 2), (4, 4));
+        assert_eq!(view.into_iter().copied().sum::<u32>(), 22+23+32+33);
+    }
+
+    #[test]
+    fn view_into_iter() {
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let view = toodee.view((2, 2), (4, 4));
+        assert_eq!(view.into_iter().copied().sum::<u32>(), 22+23+32+33);
+    }
+
+    #[test]
     fn from_vec() {
         let v = vec![42u32; 16];
         let toodee = TooDee::from_vec(8, 2, v);

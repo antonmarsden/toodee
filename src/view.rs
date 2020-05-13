@@ -346,6 +346,30 @@ impl<'a, T> Into<TooDeeView<'a, T>> for TooDeeViewMut<'a, T> {
     }
 }
 
+impl<'a, T> IntoIterator for &'a TooDeeView<'a, T> {
+    type Item = &'a T;
+    type IntoIter = Cells<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.cells()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a TooDeeViewMut<'a, T> {
+    type Item = &'a T;
+    type IntoIter = Cells<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.cells()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut TooDeeViewMut<'a, T> {
+    type Item = &'a mut T;
+    type IntoIter = CellsMut<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.cells_mut()
+    }
+}
+
 impl<T> Debug for TooDeeView<'_, T> where T : Debug {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut dl = f.debug_list();

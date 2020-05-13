@@ -42,7 +42,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
     fn col(&self, col: usize) -> Col<'_, T>;
 
     /// Returns an iterator that traverses all cells within the area.
-    fn cells(&self) -> Cells<'_,T> {
+    fn cells(&self) -> Cells<'_, T> {
         FlattenExact::new(self.rows(), self.num_cols())
     }
 
