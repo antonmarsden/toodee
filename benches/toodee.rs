@@ -12,7 +12,7 @@ fn fill_benchmark(c: &mut Criterion) {
             b.iter(|| toodee.fill(42));
         });
 
-        let mut view = toodee.view_mut(0, 0, dims.0, dims.1);
+        let mut view = toodee.view_mut((0, 0), (dims.0, dims.1));
 
         group.bench_with_input(BenchmarkId::new("view_fill", size), &size, |b, _| {
             b.iter(|| view.fill(42))
@@ -29,7 +29,7 @@ fn iter_benchmark(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("data", size), &size, |b, _| {
             b.iter(|| black_box(toodee.data().iter().sum::<u32>()));
         });
-        let view = toodee.view_mut(0, 0, dims.0, dims.1);
+        let view = toodee.view_mut((0, 0), (dims.0, dims.1));
         group.bench_with_input(BenchmarkId::new("cells", size), &size, |b, _| {
             b.iter(|| black_box(view.cells().sum::<u32>()));
         });
@@ -48,7 +48,7 @@ fn iter_mut_benchmark(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("data_mut", size), &size, |b, _| {
             b.iter(|| black_box(toodee.data_mut().iter().sum::<u32>()));
         });
-        let mut view = toodee.view_mut(0, 0, dims.0, dims.1);
+        let mut view = toodee.view_mut((0, 0), (dims.0, dims.1));
         group.bench_with_input(BenchmarkId::new("cells_mut", size), &size, |b, _| {
             b.iter(|| black_box(view.cells_mut().map(|x| *x).sum::<u32>()));
         });

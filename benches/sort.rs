@@ -29,7 +29,7 @@ fn sort_benchmark(c: &mut Criterion) {
         }
         {
             group.bench_with_input(BenchmarkId::new("view_sort_by_row", size), &size, |b, _| {
-                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut(0, 0, *size, *size).sort_by_row(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
+                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut((0, 0), (*size, *size)).sort_by_row(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
             });
         }
 
@@ -42,7 +42,7 @@ fn sort_benchmark(c: &mut Criterion) {
         
         {
             group.bench_with_input(BenchmarkId::new("view_sort_by_col", size), &size, |b, _| {
-                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut(0, 0, *size, *size).sort_by_col(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
+                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut((0, 0), (*size, *size)).sort_by_col(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
             });
         }
     }

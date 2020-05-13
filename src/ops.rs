@@ -6,6 +6,9 @@ pub use crate::iter::*;
 pub use crate::view::*;
 pub use crate::flattenexact::*;
 
+/// A (col, row) coordinate in 2D space.
+pub type Coordinate = (usize, usize);
+
 /// An iterator over each "cell" in a 2D array
 pub type Cells<'a, T> = FlattenExact<Rows<'a, T>>;
 /// A mutable iterator over each "cell" in a 2D array
@@ -27,10 +30,10 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
 
     /// Returns the bounds of the object's area within the original `TooDee` area (views
     /// are not nested for now).
-    fn bounds(&self) -> (usize, usize, usize, usize);
+    fn bounds(&self) -> (Coordinate, Coordinate);
     
     /// Returns a view (or subset) of the current area based on the coordinates provided.
-    fn view(&self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeView<'_, T>;
+    fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T>;
     
     /// Returns an iterator of slices, where each slice represents the entire row of the object's area.
     fn rows(&self) -> Rows<'_, T>;
@@ -50,7 +53,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
 pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
 
     /// Returns a mutable view (or subset) of the current area based on the coordinates provided.
-    fn view_mut(&mut self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeViewMut<'_, T>;
+    fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T>;
     
     /// Returns a mutable iterator of slices, where each slice represents the entire row of the object's area.
     fn rows_mut(&mut self) -> RowsMut<'_, T>;

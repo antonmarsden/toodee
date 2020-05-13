@@ -12,7 +12,9 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     /// 
     /// All data is preserved by wrapping at the array edges, so `fill()` could be used
     /// to clear old data if required.
-    fn translate_with_wrap(&mut self, mut col_mid: usize, mut row_mid: usize) {
+    fn translate_with_wrap(&mut self, mid: Coordinate) {
+
+        let (mut col_mid, mut row_mid) = mid;
         
         let num_cols = self.num_cols();
         let num_rows = self.num_rows();

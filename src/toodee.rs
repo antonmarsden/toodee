@@ -50,12 +50,12 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         self.num_rows
     }
 
-    fn bounds(&self) -> (usize, usize, usize, usize) {
-        (0, 0, self.num_cols, self.num_rows)
+    fn bounds(&self) -> (Coordinate, Coordinate) {
+        ((0, 0), (self.num_cols, self.num_rows))
     }
     
-    fn view(&self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeView<'_, T> {
-        TooDeeView::from_toodee(col_start, row_start, col_end, row_end, self)
+    fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
+        TooDeeView::from_toodee(start, end, self)
     }
     
     fn rows(&self) -> Rows<'_, T> {
@@ -78,8 +78,8 @@ impl<T> TooDeeOps<T> for TooDee<T> {
 
 impl<T> TooDeeOpsMut<T> for TooDee<T> {
     
-    fn view_mut(&mut self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeViewMut<'_, T> {
-        TooDeeViewMut::from_toodee(col_start, row_start, col_end, row_end, self)
+    fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
+        TooDeeViewMut::from_toodee(start, end, self)
     }
     
     fn copy_from_slice(&mut self, src: &[T]) where T: Copy {
@@ -201,7 +201,7 @@ impl<T> AsMut<[T]> for TooDee<T> {
 }
 
 impl<T> Debug for TooDee<T> where T : Debug {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut dl = f.debug_list();
         for r in self.rows() {
             dl.entry(&r);

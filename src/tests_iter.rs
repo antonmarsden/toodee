@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod toodee_tests_iter {
     
-    extern crate alloc;
-
     use crate::*;
 
     #[test]
@@ -22,7 +20,7 @@ mod toodee_tests_iter {
     #[test]
     fn view_rows_iter() {
         let toodee = TooDee::new(10, 10, 22u32);
-        let v = toodee.view(2, 2, 10, 10);
+        let v = toodee.view((2, 2), (10, 10));
         assert_eq!(v.rows().len(), 8);
         assert_eq!(v.rows().fold(0, |count, r| count + r.len()), 8 * 8);
     }
@@ -30,7 +28,7 @@ mod toodee_tests_iter {
     #[test]
     fn view_rows_iter_rev() {
         let toodee = TooDee::new(10, 10, 22u32);
-        let v = toodee.view(2, 2, 10, 10);
+        let v = toodee.view((2, 2), (10, 10));
         assert_eq!(v.rows().rev().len(), 8);
         assert_eq!(v.rows().rev().fold(0, |count, r| count + r.len()), 8 * 8);
     }
@@ -38,7 +36,7 @@ mod toodee_tests_iter {
     #[test]
     fn view_rows_iter_mut() {
         let mut toodee = TooDee::new(10, 10, 22u32);
-        let mut v = toodee.view_mut(2, 2, 10, 10);
+        let mut v = toodee.view_mut((2, 2), (10, 10));
         assert_eq!(v.rows().len(), 8);
         assert_eq!(v.rows_mut().len(), 8);
         assert_eq!(v.rows().fold(0, |count, r| count + r.len()), 8 * 8);
@@ -48,7 +46,7 @@ mod toodee_tests_iter {
     #[test]
     fn view_rows_iter_mut_rev() {
         let mut toodee = TooDee::new(10, 10, 22u32);
-        let mut v = toodee.view_mut(2, 2, 10, 10);
+        let mut v = toodee.view_mut((2, 2), (10, 10));
         assert_eq!(v.rows().rev().len(), 8);
         assert_eq!(v.rows_mut().rev().len(), 8);
         assert_eq!(v.rows().rev().fold(0, |count, r| count + r.len()), 8 * 8);
@@ -86,7 +84,7 @@ mod toodee_tests_iter {
     #[test]
     fn view_col_iter() {
         let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
-        let view = toodee.view(2, 2, 8, 8);
+        let view = toodee.view((2, 2), (8, 8));
         let mut col = view.col(2);
         assert_eq!(col.len(), 6);
         assert_eq!(col.next().unwrap(), &24);
@@ -101,7 +99,7 @@ mod toodee_tests_iter {
     #[test]
     fn view_col_mut_iter() {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
-        let mut view = toodee.view_mut(2, 2, 8, 8);
+        let mut view = toodee.view_mut((2, 2), (8, 8));
         let mut col = view.col_mut(2);
         assert_eq!(col.len(), 6);
         assert_eq!(col.next().unwrap(), &24);

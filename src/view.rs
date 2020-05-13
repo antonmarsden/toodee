@@ -6,9 +6,8 @@ use crate::*;
 
 /// Provides a read-only view (or subset) of a `TooDee` array.
 #[derive(Copy,Clone)]
-pub struct TooDeeView<'a, T : 'a> {
-    col_start: usize,
-    row_start: usize,
+pub struct TooDeeView<'a, T> {
+    start: Coordinate,
     num_cols: usize,
     num_rows: usize,
     main_cols: usize,
@@ -25,8 +24,7 @@ impl<'a, T> TooDeeView<'a, T> {
         let size = num_cols * num_rows;
         assert!(size <= data.len());
         TooDeeView {
-            col_start: 0,
-            row_start: 0,
+            start: (0, 0),
             num_cols,
             num_rows,
             main_cols : num_cols,
@@ -35,17 +33,16 @@ impl<'a, T> TooDeeView<'a, T> {
     }
     
     /// Used internally by `TooDee` to create a `TooDeeView`.
-    pub(super) fn from_toodee(col_start: usize, row_start: usize,
-                              col_end: usize, row_end: usize, toodee: &'a TooDee<T>) -> TooDeeView<'a, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
+    pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a TooDee<T>) -> TooDeeView<'a, T> {
+        assert!(end.0 >= start.0);
+        assert!(end.1 >= start.1);
         let main_cols = toodee.num_cols();
         let main_rows = toodee.num_rows();
-        assert!(col_end <= main_cols);
-        assert!(row_end <= main_rows);
-        let num_cols = col_end - col_start;
-        let num_rows = row_end - row_start;
-        let data_start = row_start * main_cols + col_start;
+        assert!(end.0 <= main_cols);
+        assert!(end.1 <= main_rows);
+        let num_cols = end.0 - start.0;
+        let num_rows = end.1 - start.1;
+        let data_start = start.1 * main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
                 0
@@ -54,8 +51,7 @@ impl<'a, T> TooDeeView<'a, T> {
             }
         };
         TooDeeView {
-            col_start,
-            row_start,
+            start,
             num_cols,
             num_rows,
             main_cols,
@@ -76,23 +72,20 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
         self.num_rows
     }
     
-    fn bounds(&self) -> (usize, usize, usize, usize) {
-        (self.col_start,
-         self.row_start,
-         self.col_start + self.num_cols,
-         self.row_start + self.num_rows)
+    fn bounds(&self) -> (Coordinate, Coordinate) {
+        (self.start, (self.start.0 + self.num_cols, self.start.1 + self.num_rows))
     }
     
-    fn view(&self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeView<'_, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
-        assert!(col_end <= self.num_cols);
-        assert!(row_end <= self.num_rows);
+    fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
+        assert!(end.0 >= start.0);
+        assert!(end.1 >= start.1);
+        assert!(end.0 <= self.num_cols);
+        assert!(end.1 <= self.num_rows);
         
-        let num_cols = col_end - col_start;
-        let num_rows = row_end - row_start;
+        let num_cols = end.0 - start.0;
+        let num_rows = end.1 - start.1;
 
-        let data_start = row_start * self.main_cols + col_start;
+        let data_start = start.1 * self.main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
                 0
@@ -102,8 +95,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
         };
 
         TooDeeView {
-            col_start : self.col_start + col_start,
-            row_start : self.row_start + row_start,
+            start: (self.start.0 + start.0, self.start.1 + start.1),
             num_cols,
             num_rows,
             main_cols : self.main_cols,
@@ -147,9 +139,8 @@ impl<'a, T> Index<usize> for TooDeeView<'a, T> {
 }
 
 /// Provides a mutable view (or subset), of a `TooDee` array.
-pub struct TooDeeViewMut<'a, T : 'a> {
-    col_start: usize,
-    row_start: usize,
+pub struct TooDeeViewMut<'a, T> {
+    start: Coordinate,
     num_cols: usize,
     num_rows: usize,
     main_cols: usize,
@@ -167,8 +158,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
         let size = num_cols * num_rows;
         assert!(size <= data.len());
         TooDeeViewMut {
-            col_start: 0,
-            row_start: 0,
+            start: (0, 0),
             num_cols,
             num_rows,
             main_cols : num_cols,
@@ -177,16 +167,16 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
-    pub(super) fn from_toodee(col_start: usize, row_start: usize,
-                              col_end: usize, row_end: usize, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
+    pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
+        assert!(end.0 >= start.0);
+        assert!(end.1 >= start.1);
         let main_cols = toodee.num_cols();
-        assert!(col_end <= main_cols);
-        assert!(row_end <= main_cols);
-        let num_cols = col_end - col_start;
-        let num_rows = row_end - row_start;
-        let data_start = row_start * main_cols + col_start;
+        let main_rows = toodee.num_rows();
+        assert!(end.0 <= main_cols);
+        assert!(end.1 <= main_rows);
+        let num_cols = end.0 - start.0;
+        let num_rows = end.1 - start.1;
+        let data_start = start.1 * main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
                 0
@@ -195,8 +185,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
             }
         };
         TooDeeViewMut {
-            col_start,
-            row_start,
+            start,
             num_cols,
             num_rows,
             main_cols,
@@ -218,19 +207,19 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
         self.num_cols
     }
 
-    fn bounds(&self) -> (usize, usize, usize, usize) {
-        (self.col_start, self.row_start, self.col_start + self.num_cols, self.row_start + self.num_rows)
+    fn bounds(&self) -> (Coordinate, Coordinate) {
+        (self.start, (self.start.0 + self.num_cols, self.start.1 + self.num_rows))
     }
     
-    fn view(&self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeView<'_, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
-        assert!(col_end <= self.num_cols);
-        assert!(row_end <= self.num_rows);
-        let num_cols = col_end - col_start;
-        let num_rows = row_end - row_start;
+    fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
+        assert!(end.0 >= start.0);
+        assert!(end.1 >= start.1);
+        assert!(end.0 <= self.num_cols);
+        assert!(end.0 <= self.num_rows);
+        let num_cols = end.0 - start.0;
+        let num_rows = end.1 - start.1;
 
-        let data_start = row_start * self.main_cols + col_start;
+        let data_start = start.1 * self.main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
                 0
@@ -240,8 +229,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
         };
         
         TooDeeView {
-            col_start : self.col_start + col_start,
-            row_start : self.row_start + row_start,
+            start: (self.start.0 + start.0, self.start.1 + start.1),
             num_cols,
             num_rows,
             main_cols : self.main_cols,
@@ -277,15 +265,15 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
 
 impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
 
-    fn view_mut(&mut self, col_start: usize, row_start: usize, col_end: usize, row_end: usize) -> TooDeeViewMut<'_, T> {
-        assert!(col_end >= col_start);
-        assert!(row_end >= row_start);
-        assert!(col_end <= self.num_cols);
-        assert!(row_end <= self.num_rows);
-        let num_cols = col_end - col_start;
-        let num_rows = row_end - row_start;
+    fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
+        assert!(end.0 >= start.0);
+        assert!(end.1 >= start.1);
+        assert!(end.0 <= self.num_cols);
+        assert!(end.1 <= self.num_rows);
+        let num_cols = end.0 - start.0;
+        let num_rows = end.1 - start.1;
 
-        let data_start = row_start * self.main_cols + col_start;
+        let data_start = start.1 * self.main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
                 0
@@ -295,8 +283,7 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
         };
 
         TooDeeViewMut {
-            col_start : self.col_start + col_start,
-            row_start : self.row_start + row_start,
+            start: (self.start.0 + start.0, self.start.1 + start.1),
             num_cols,
             num_rows,
             main_cols : self.main_cols,
@@ -350,8 +337,7 @@ impl<'a, T> IndexMut<usize> for TooDeeViewMut<'a, T> {
 impl<'a, T> Into<TooDeeView<'a, T>> for TooDeeViewMut<'a, T> {
     fn into(self) -> TooDeeView<'a, T> {
         TooDeeView {
-            col_start: self.col_start,
-            row_start: self.row_start,
+            start:     self.start,
             num_cols:  self.num_cols,
             num_rows:  self.num_rows,
             main_cols: self.main_cols,
@@ -361,7 +347,7 @@ impl<'a, T> Into<TooDeeView<'a, T>> for TooDeeViewMut<'a, T> {
 }
 
 impl<T> Debug for TooDeeView<'_, T> where T : Debug {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut dl = f.debug_list();
         for r in self.rows() {
             dl.entry(&r);
@@ -371,7 +357,7 @@ impl<T> Debug for TooDeeView<'_, T> where T : Debug {
 }
 
 impl<T> Debug for TooDeeViewMut<'_, T> where T : Debug {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut dl = f.debug_list();
         for r in self.rows() {
             dl.entry(&r);

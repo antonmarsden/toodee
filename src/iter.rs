@@ -1,7 +1,8 @@
 use core::mem;
 
 /// An Iterator over each row of a `TooDee[View]`, where each row is represented as a slice.
-pub struct Rows<'a, T : 'a> {
+#[derive(Debug)]
+pub struct Rows<'a, T> {
     pub(super) cols: usize,
     pub(super) skip_cols: usize,
     /// This reference contains row data at each end. When iterating in either direction the row will
@@ -92,7 +93,8 @@ impl<'a, T> DoubleEndedIterator for Rows<'a, T> {
 impl<T> ExactSizeIterator for Rows<'_, T> {}
 
 /// A mutable Iterator over each row of a `TooDee[ViewMut]`, where each row is represented as a slice.
-pub struct RowsMut<'a, T : 'a> {
+#[derive(Debug)]
+pub struct RowsMut<'a, T> {
     pub(super) cols: usize,
     pub(super) skip_cols: usize,
     /// This reference contains row data at each end. When iterating in either direction the row will
@@ -189,7 +191,8 @@ impl<T> ExactSizeIterator for RowsMut<'_, T> {}
 
 
 /// An iterator over a single column.
-pub struct Col<'a, T : 'a> {
+#[derive(Debug)]
+pub struct Col<'a, T> {
     pub(super) skip: usize,
     pub(super) v: &'a [T],
 }
@@ -277,7 +280,8 @@ impl<T> ExactSizeIterator for Col<'_, T> {}
 
 
 /// A mutable iterator over a single column.
-pub struct ColMut<'a, T : 'a> {
+#[derive(Debug)]
+pub struct ColMut<'a, T> {
     pub(super) skip: usize,
     pub(super) v: &'a mut [T],
 }

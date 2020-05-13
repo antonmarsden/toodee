@@ -8,6 +8,8 @@ A lightweight two-dimensional wrapper around a slice.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+#![warn(rust_2018_idioms)]
+#![warn(missing_debug_implementations)]
 
 // Need this to use the vec! macro
 #[macro_use]

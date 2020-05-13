@@ -9,13 +9,13 @@ fn translate_benchmark(c: &mut Criterion) {
         let mut toodee = TooDee::new(dims.0, dims.1, 0u32);
         
         group.bench_with_input(BenchmarkId::new("translate", size), &size, |b, _| {
-            b.iter(|| toodee.translate_with_wrap(5, 5))
+            b.iter(|| toodee.translate_with_wrap((5, 5)))
         });
 
-        let mut view = toodee.view_mut(0, 0, dims.0, dims.1);
+        let mut view = toodee.view_mut((0, 0), (dims.0, dims.1));
 
         group.bench_with_input(BenchmarkId::new("view_translate", size), &size, |b, _| {
-            b.iter(|| view.translate_with_wrap(5, 5))
+            b.iter(|| view.translate_with_wrap((5, 5)))
         });
 
     }
@@ -36,7 +36,7 @@ fn flip_benchmark(c: &mut Criterion) {
             b.iter(|| toodee.flip_cols())
         });
 
-        let mut view = toodee.view_mut(0, 0, dims.0, dims.1);
+        let mut view = toodee.view_mut((0, 0), (dims.0, dims.1));
 
         group.bench_with_input(BenchmarkId::new("view_flip_rows", size), &size, |b, _| {
             b.iter(|| view.flip_rows())
