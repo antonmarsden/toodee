@@ -216,17 +216,12 @@ impl<T> TooDee<T> {
         self.data.clear();
     }
     
-    /// Removes the last row from the array and returns it as a `Drain`, or [`None`] if it is empty.
+    /// Removes the last row from the array and returns it as a `Drain`, or `None` if it is empty.
     pub fn pop_row(&mut self) -> Option<Drain<'_, T>> {
         if self.num_rows == 0 {
             None
         } else {
-            self.num_rows -= 1;
-            if self.num_rows == 0 {
-                self.num_cols = 0;
-            }
-            let len = self.data.len();
-            Some(self.data.drain(len-self.num_cols..len))
+            Some(self.remove_row(self.num_rows - 1))
         }
     }
     
@@ -256,7 +251,24 @@ impl<T> TooDee<T> {
         // TODO: optimise this - translate_with_wrap is overkill
         self.view_mut((0, row), (self.num_cols, self.num_rows)).translate_with_wrap((0, 1));
     }
-    
+
+    /// Removes the specified row from the array and returns it as a `Drain`
+    /// 
+    /// Panics if the specified row index is out of bounds.
+    pub fn remove_row(&mut self, index : usize) -> Drain<'_, T>
+    {
+        assert!(index < self.num_rows);
+        // Rotate the row to the end, then drain it.
+        // TODO: optimise this - translate_with_wrap is overkill
+        self.view_mut((0, index), (self.num_cols, self.num_rows)).translate_with_wrap((0, 1));
+        self.num_rows -= 1;
+        if self.num_rows == 0 {
+            self.num_cols = 0;
+        }
+        let len = self.data.len();
+        self.data.drain(len-self.num_cols..len)
+    }
+
 }
 
 impl<'a, T> IntoIterator for &'a TooDee<T> {

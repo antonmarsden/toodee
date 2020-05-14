@@ -109,7 +109,7 @@ mod toodee_tests {
     fn view_mut_into_iter() {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let view = toodee.view_mut((2, 2), (4, 4));
-        assert_eq!(view.into_iter().map(|v| *v).sum::<u32>(), 22+23+32+33);
+        assert_eq!(view.into_iter().copied().sum::<u32>(), 22+23+32+33);
     }
 
     #[test]
@@ -398,6 +398,7 @@ mod toodee_tests {
         tmp.push(1);
         tmp.push(6);
         toodee.insert_row(0, tmp);
+        assert_eq!(toodee.size(), (2, 2));
         assert_eq!(toodee.data().iter().copied().sum::<u32>(), 7);
         assert_eq!(toodee[0][0], 1);
         assert_eq!(toodee[0][1], 6);
@@ -414,6 +415,7 @@ mod toodee_tests {
         tmp2.push(16);
         toodee.push_row(tmp2);
         assert_eq!(toodee.data().iter().copied().sum::<u32>(), 27);
+        assert_eq!(toodee.size(), (2, 2));
         assert_eq!(toodee[0][0], 0);
         assert_eq!(toodee[0][1], 0);
         assert_eq!(toodee[1][0], 11);
@@ -447,6 +449,9 @@ mod toodee_tests {
         let drain = toodee.pop_row().unwrap();
         assert_eq!(drain.sum::<u32>(), 90+91+92+93+94+95+96+97+98+99);
         assert_eq!(toodee.data().iter().copied().sum::<u32>(), (90*90 - 90) / 2);
+        assert_eq!(toodee[0][0], 0);
+        assert_eq!(toodee[8][9], 89);
+        assert_eq!(toodee.size(), (10, 9))
     }
 
     #[test]
@@ -460,5 +465,22 @@ mod toodee_tests {
         let mut toodee : TooDee<u32> = TooDee::new(1, 1, 0u32);
         toodee.pop_row();
         assert_eq!(toodee.size(), (0usize, 0usize));
+    }
+    
+    #[test]
+    fn remove_row() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let drain = toodee.remove_row(3);
+        assert_eq!(drain.sum::<u32>(), 30+31+32+33+34+35+36+37+38+39);
+        assert_eq!(toodee[0][0], 0);
+        assert_eq!(toodee[8][9], 99);
+        assert_eq!(toodee.size(), (10, 9))
+    }
+    
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn remove_row_bad_idx() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        toodee.remove_row(10);
     }
 }
