@@ -28,6 +28,11 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
         (self.num_cols(), self.num_rows())
     }
 
+    /// Returns `true` if the array contains no elements.
+    fn is_empty(&self) -> bool {
+        self.num_cols() * self.num_rows() == 0
+    }
+
     /// Returns the bounds of the object's area within the original `TooDee` area (views
     /// are not nested for now).
     fn bounds(&self) -> (Coordinate, Coordinate);

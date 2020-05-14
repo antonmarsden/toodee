@@ -3,23 +3,28 @@ use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
 use core::slice;
 use core::borrow::Borrow;
+use core::iter::IntoIterator;
 
 extern crate alloc;
 
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
+use alloc::vec::Drain;
 
 pub use crate::iter::*;
 pub use crate::view::*;
 pub use crate::ops::*;
+pub use crate::translate::*;
 
-/// Represents a two-dimensional array
-#[derive(Clone)]
+/// Represents a two-dimensional array.
+/// 
+/// Empty arrays will always have dimensions of zero.
+#[derive(Clone,Default)]
 pub struct TooDee<T> {
     num_rows: usize,
     num_cols: usize,
-    data: Box<[T]>,
+    data: Vec<T>,
 }
 
 impl<T> Index<usize> for TooDee<T> {
@@ -123,34 +128,72 @@ impl<T> TooDee<T> {
 
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
     /// an initial value.
+    /// 
+    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
     pub fn new(num_cols: usize, num_rows: usize, init_value: T) -> TooDee<T>
     where T: Clone {
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
+        }
         let len = num_rows * num_cols;
-        // the algorithms won't cope with arrays beyond this isize::MAX
-        assert!(len < isize::MAX as usize);
         let v = vec![init_value; len];
         TooDee {
             num_cols,
             num_rows,
-            data : v.into_boxed_slice(),
+            data : v,
+        }
+    }
+    
+    /// Constructs a new, empty `TooDee<T>` with the specified element capacity.
+    /// 
+    /// TODO: need a way to set/update num_cols.
+    pub fn with_capacity(capacity: usize) -> TooDee<T> {
+        TooDee {
+            num_cols : 0,
+            num_rows : 0,
+            data     : Vec::with_capacity(capacity),
         }
     }
 
+    /// Reserves the minimum capacity for at least `additional` more elements to be inserted
+    /// into the `TooDee<T>`.
+    pub fn reserve_exact(&mut self, capacity: usize) {
+        self.data.reserve_exact(capacity);
+    }
+    
+    /// Reserves capacity for at least `additional` more elements to be inserted
+    /// in the given `TooDee<T>`.    
+    pub fn reserve(&mut self, capacity: usize) {
+        self.data.reserve(capacity);
+    }
+
+    /// Shrinks the capacity of the underlying vector as much as possible.
+    pub fn shrink_to_fit(&mut self) {
+        self.data.shrink_to_fit();
+    }
+    
     /// Create a new `TooDee` array using the provided vector. The vector's length
     /// must match the dimensions of the array.
+    /// 
+    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
     pub fn from_vec(num_cols: usize, num_rows: usize, v: Vec<T>) -> TooDee<T> {
-        TooDee::from_box(num_cols, num_rows, v.into_boxed_slice())
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
+        }
+        assert_eq!(num_cols * num_rows, v.len());
+        TooDee {
+            num_cols,
+            num_rows,
+            data : v,
+        }
     }
     
     /// Create a new `TooDee` array using the provided boxed slice. The slice's length
     /// must match the dimensions of the array.
     pub fn from_box(num_cols: usize, num_rows: usize, b: Box<[T]>) -> TooDee<T> {
-        assert_eq!(num_cols * num_rows, b.len());
-        TooDee {
-            num_cols,
-            num_rows,
-            data : b,
-        }
+        TooDee::from_vec(num_cols, num_rows, b.into_vec())
     }
     
     /// Returns a reference to the raw array data
@@ -161,6 +204,57 @@ impl<T> TooDee<T> {
     /// Returns a mutable reference to the raw array data
     pub fn data_mut(&mut self) -> &mut [T] {
         &mut self.data
+    }
+    
+    
+    /// Clears the array, removing all values and zeroing the number of columns and rows.
+    ///
+    /// Note that this method has no effect on the allocated capacity of the array.
+    pub fn clear(&mut self) {
+        self.num_cols = 0;
+        self.num_rows = 0;
+        self.data.clear();
+    }
+    
+    /// Removes the last row from the array and returns it as a `Drain`, or [`None`] if it is empty.
+    pub fn pop_row(&mut self) -> Option<Drain<'_, T>> {
+        if self.num_rows == 0 {
+            None
+        } else {
+            self.num_rows -= 1;
+            if self.num_rows == 0 {
+                self.num_cols = 0;
+            }
+            let len = self.data.len();
+            Some(self.data.drain(len-self.num_cols..len))
+        }
+    }
+    
+    /// Appends a new row to the array.
+    /// 
+    /// Panics if the data's length doesn't match the length of existing rows (if any).
+    pub fn push_row<I>(&mut self, data: impl IntoIterator<Item=T, IntoIter=I>)
+    where I : Iterator<Item=T> + ExactSizeIterator
+    {
+        self.insert_row(self.num_rows, data);
+    }
+
+    /// Inserts new `data` into the array at the specified `row`
+    /// 
+    /// Panics if the data's length doesn't match the length of existing rows (if any).
+    pub fn insert_row<I>(&mut self, row: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
+    where I : Iterator<Item=T> + ExactSizeIterator
+    {
+        let iter = data.into_iter();
+        if self.num_rows == 0 {
+            self.num_cols = iter.len();
+        } else {
+            assert_eq!(self.num_cols, iter.len());
+        }
+        self.num_rows += 1;
+        self.data.extend(iter);
+        // TODO: optimise this - translate_with_wrap is overkill
+        self.view_mut((0, row), (self.num_cols, self.num_rows)).translate_with_wrap((0, 1));
     }
     
 }
@@ -184,7 +278,7 @@ impl<'a, T> IntoIterator for &'a mut TooDee<T> {
 /// Support conversion into a `Vec`.
 impl<T> Into<Vec<T>> for TooDee<T> {
     fn into(self) -> Vec<T> {
-        self.data.into()
+        self.data
     }
 }
 
@@ -220,7 +314,7 @@ impl<T> From<TooDeeView<'_, T>> for TooDee<T> where T : Clone {
         TooDee {
             num_cols,
             num_rows,
-            data : v.into_boxed_slice(),
+            data : v,
         }
     }
 }
@@ -236,7 +330,7 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
         TooDee {
             num_cols,
             num_rows,
-            data : v.into_boxed_slice(),
+            data : v,
         }
     }
 }

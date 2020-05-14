@@ -4,6 +4,22 @@ use core::ops::{Index, IndexMut};
 
 use crate::*;
 
+/// Checks the proposed view dimensions, and returns the correct cols and rows for view construction.
+fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &impl TooDeeOps<T>) -> (usize, usize) {
+    assert!(end.0 >= start.0);
+    assert!(end.1 >= start.1);
+    assert!(end.0 <= toodee.num_cols());
+    assert!(end.1 <= toodee.num_rows());
+    let mut num_cols = end.0 - start.0;
+    let mut num_rows = end.1 - start.1;
+    // zero out dimensions for empty arrays
+    if num_cols == 0 || num_rows == 0 {
+        num_cols = 0;
+        num_rows = 0;
+    }
+    (num_cols, num_rows)
+}
+
 /// Provides a read-only view (or subset) of a `TooDee` array.
 #[derive(Copy,Clone)]
 pub struct TooDeeView<'a, T> {
@@ -18,9 +34,15 @@ impl<'a, T> TooDeeView<'a, T> {
 
     /// Create a new `TooDeeViewMut` using the provided slice reference.
     /// 
+    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
     /// Will panic if the slice's length is not sufficient to represent
     /// the desired array dimensions.
     pub fn new(num_cols: usize, num_rows: usize, data: &'a [T]) -> TooDeeView<'a, T> {
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
+        }
         let size = num_cols * num_rows;
         assert!(size <= data.len());
         TooDeeView {
@@ -34,14 +56,8 @@ impl<'a, T> TooDeeView<'a, T> {
     
     /// Used internally by `TooDee` to create a `TooDeeView`.
     pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a TooDee<T>) -> TooDeeView<'a, T> {
-        assert!(end.0 >= start.0);
-        assert!(end.1 >= start.1);
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, toodee);
         let main_cols = toodee.num_cols();
-        let main_rows = toodee.num_rows();
-        assert!(end.0 <= main_cols);
-        assert!(end.1 <= main_rows);
-        let num_cols = end.0 - start.0;
-        let num_rows = end.1 - start.1;
         let data_start = start.1 * main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
@@ -77,14 +93,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
     }
     
     fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
-        assert!(end.0 >= start.0);
-        assert!(end.1 >= start.1);
-        assert!(end.0 <= self.num_cols);
-        assert!(end.1 <= self.num_rows);
-        
-        let num_cols = end.0 - start.0;
-        let num_rows = end.1 - start.1;
-
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, self);
         let data_start = start.1 * self.main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
@@ -152,9 +161,15 @@ impl<'a, T> TooDeeViewMut<'a, T> {
 
     /// Create a new `TooDeeViewMut` using the provided mutable slice reference.
     /// 
+    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
     /// Will panic if the slice's length is not sufficient to represent
     /// the desired array dimensions.
     pub fn new(num_cols: usize, num_rows: usize, data: &'a mut [T]) -> TooDeeViewMut<'a, T> {
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
+        }
         let size = num_cols * num_rows;
         assert!(size <= data.len());
         TooDeeViewMut {
@@ -168,14 +183,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
     pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
-        assert!(end.0 >= start.0);
-        assert!(end.1 >= start.1);
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, toodee);
         let main_cols = toodee.num_cols();
-        let main_rows = toodee.num_rows();
-        assert!(end.0 <= main_cols);
-        assert!(end.1 <= main_rows);
-        let num_cols = end.0 - start.0;
-        let num_rows = end.1 - start.1;
         let data_start = start.1 * main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
@@ -189,7 +198,6 @@ impl<'a, T> TooDeeViewMut<'a, T> {
             num_cols,
             num_rows,
             main_cols,
-//            main_rows,
             data: &mut toodee.data_mut()[data_start..data_start + data_len],
         }
     }
@@ -212,13 +220,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
     }
     
     fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
-        assert!(end.0 >= start.0);
-        assert!(end.1 >= start.1);
-        assert!(end.0 <= self.num_cols);
-        assert!(end.0 <= self.num_rows);
-        let num_cols = end.0 - start.0;
-        let num_rows = end.1 - start.1;
-
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, self);
         let data_start = start.1 * self.main_cols + start.0;
         let data_len = {
             if num_rows == 0 {
@@ -266,12 +268,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
 impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
 
     fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
-        assert!(end.0 >= start.0);
-        assert!(end.1 >= start.1);
-        assert!(end.0 <= self.num_cols);
-        assert!(end.1 <= self.num_rows);
-        let num_cols = end.0 - start.0;
-        let num_rows = end.1 - start.1;
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, self);
 
         let data_start = start.1 * self.main_cols + start.0;
         let data_len = {

@@ -2,11 +2,11 @@
 
 # toodee
 
-TooDee is a lightweight and high performance two-dimensional wrapper around a slice.
+TooDee is a lightweight and high performance two-dimensional wrapper around a `Vec`.
 
 ## Core features
 
-- Raw access to the underlying slice via `data()` and `data_mut()`.
+- Raw access to the underlying vector's slice via `data()` and `data_mut()`.
 - Creation of performant two-dimensional subsets using `view()` and `view_mut()`.
 - Get/set specific cells using indexing, e.g., `toodee[row][col] = val`.
 - Index by row (i.e., row major) to get/set row slices, e.g., `toodee[row]`.
@@ -21,14 +21,12 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a sl
 
 ## TODO
 
-- Pathfinding algorithms?
-- Think about masks/clipping.
 - Robustness - check for zero rows/cols (div/mod, etc.).
 - Range operators that return a `TooDeeView[Mut]`?
 - Implement `nth()` and `nth_back()` for FlattenExact.
-- Implement `try_fold()` and `try_rfold()` for FlattenExact once the `Try` trait is stable.
 - More documentation, with examples.
 - `tiles(..)` and `tiles_mut()`?
+- Pathfinding algorithms?
 
 ## Motivation
 
@@ -50,9 +48,9 @@ Here's a small feature comparison chart:
 ## Goals
  
 - High performance and good flexibility by providing a core data model that:
-    - Uses a one-dimensional slice to store the two-dimensional array elements. Useful for frame buffers and
-      other scenarios where you want raw access to the underlying data (use `data()` or `data_mut()`).
-    - Provides views (subsets of the array) which have good performance.
+    - Uses a one-dimensional `Vec` to store the two-dimensional array elements. Useful for frame buffers and
+      other scenarios where you want raw access to the underlying slice (use `data()` or `data_mut()`).
+    - Provides non-contiguous views (subsets of the array) which have good performance.
     - Can access each row as a slice using either `self[row]` or a `rows()` iterator. Useful for bulk or vector-style manipulation.
     - Has useful iterators, e.g., `rows()`, `col()`, `cells()`
 - Suitable for use in image processing, but not restricted to this problem domain.
@@ -64,8 +62,6 @@ Here's a small feature comparison chart:
 
 ## Limitations
 
-- The underlying data is fixed in size.
-- The array dimensions are immutable. This may change if `transpose()` is ever implemented
 - Views are not nested for the time being, The only impact is that the `bounds()` of a view
   are not always relative to its parent.
 
