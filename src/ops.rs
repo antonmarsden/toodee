@@ -109,6 +109,52 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
         }
     }
 
+    /// Copies the `src` area (top-left to bottom-right) to a destination area. `dest` specifies
+    /// the top-left position of destination area. The `src` area will be partially overwritten
+    /// if the regions overlap.
+    /// 
+    /// Panics if:
+    /// - `src` dimensions are outside the array's bounds
+    /// - there's insufficient room to copy all of `src` to `dest`
+    fn copy_within(&mut self, src: (Coordinate, Coordinate), dest: Coordinate)
+    // TODO: support T : Clone, or create a separate clone_within() impl
+    where T : Copy {
+        let (top_left, bottom_right) = src;
+        assert!(top_left.0 <= bottom_right.0);
+        assert!(top_left.1 <= bottom_right.1);
+        let num_cols = self.num_cols();
+        let num_rows = self.num_rows();
+        assert!(bottom_right.0 <= num_cols);
+        assert!(bottom_right.1 <= num_rows);
+        let cols = bottom_right.0 - top_left.0;
+        let rows = bottom_right.1 - top_left.1;
+        assert!(dest.0 + cols <= num_cols);
+        assert!(dest.1 + rows <= num_rows);
+        // Ensure that we don't copy over src before copying it to dest.
+        match top_left.1.cmp(&dest.1) {
+            Ordering::Less => {
+                let row_offset = dest.1 - top_left.1;
+                for r in (top_left.1..bottom_right.1).rev() {
+                    let (s, d) = self.row_pair_mut(r, r + row_offset);
+                    d[dest.0..dest.0 + cols].copy_from_slice(&s[top_left.0..bottom_right.0]);
+                }
+            },
+            Ordering::Greater => {
+                let row_offset = top_left.1 - dest.1;
+                for r in top_left.1..bottom_right.1 {
+                    let (s, d) = self.row_pair_mut(r, r - row_offset);
+                    d[dest.0..dest.0 + cols].copy_from_slice(&s[top_left.0..bottom_right.0]);
+                }
+            },
+            Ordering::Equal => {
+                for r in top_left.1..bottom_right.1 {
+                    let row_data = &mut self[r];
+                    row_data.copy_within(top_left.0..bottom_right.0, dest.0);
+                }
+            },
+        }
+    }
+
     /// Fills the entire area with the specified value.
     fn fill<V>(&mut self, fill: V)
     where

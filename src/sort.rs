@@ -10,7 +10,6 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 /// Common re-indexing logic used internally by the `SortOps` trait.
-/// May need to re-visit performance of this algorithm at some stage.
 fn reindex_in_place<F>(ordering : &mut [usize], mut swap_func : F)
 where F: FnMut(usize, usize)
 {
@@ -81,28 +80,3 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
 impl<T> SortOps<T> for TooDeeViewMut<'_, T> {}
 
 impl<T> SortOps<T> for TooDee<T> {}
-
-// This was the original re-indexing algorithm, which didn't perform well in benchmarks.
-// Leaving it here for future reference :)
-//
-//fn reindex_in_place<F>(ordering : &mut [usize], mut swap_func : F)
-//where F: FnMut(usize, usize)
-//{
-//    // swap rows/columns until everything is in the right spot
-//    for i in 0..ordering.len() {
-//        if i != ordering[i] {
-//            let mut j = i;
-//            loop {
-//                let k = ordering[j];
-//                if i == k {
-//                    break;
-//                }
-//                swap_func(j, k);
-//                ordering[j] = j;
-//                j = k;
-//            }
-//            ordering[j] = j;
-//        }
-//    }
-//}
-
