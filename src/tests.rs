@@ -444,6 +444,105 @@ mod toodee_tests {
     }
     
     #[test]
+    fn remove_col_1_0() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        {
+            let mut drain = toodee.remove_col(0);
+            assert_eq!(drain.next(), Some(0));
+        }
+        assert_eq!(toodee.data().len(), 3);
+        assert_eq!(toodee.data()[0], 1);
+        assert_eq!(toodee.data()[1], 2);
+        assert_eq!(toodee.data()[2], 3);
+        assert_eq!(toodee.num_cols(), 3);
+    }
+
+    #[test]
+    fn remove_col_1_2() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        {
+            let mut drain = toodee.remove_col(2);
+            assert_eq!(drain.next(), Some(2));
+        }
+        assert_eq!(toodee.data().len(), 3);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[1], 1);
+        assert_eq!(toodee.data()[2], 3);
+        assert_eq!(toodee.num_cols(), 3);
+    }    
+
+    #[test]
+    fn remove_col_1_3() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        {
+            let mut drain = toodee.remove_col(3);
+            assert_eq!(drain.next(), Some(3));
+        }
+        assert_eq!(toodee.data().len(), 3);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[1], 1);
+        assert_eq!(toodee.data()[2], 2);
+        assert_eq!(toodee.num_cols(), 3);
+    }
+    
+    #[test]
+    fn remove_col_5_2() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 5, (0u32..20).collect());
+        {
+            let mut drain = toodee.remove_col(2);
+            assert_eq!(drain.len(), 5);
+            assert_eq!(drain.next(), Some(2));
+            assert_eq!(drain.next(), Some(6));
+            assert_eq!(drain.next(), Some(10));
+            assert_eq!(drain.next(), Some(14));
+            assert_eq!(drain.next(), Some(18));
+        }
+        assert_eq!(toodee.data().len(), 15);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[14], 19);
+        assert_eq!(toodee.num_cols(), 3);
+        assert_eq!(toodee.num_rows(), 5);
+    }
+    
+    #[test]
+    fn remove_col_5_3() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 5, (0u32..20).collect());
+        {
+            let mut drain = toodee.remove_col(3);
+            assert_eq!(drain.len(), 5);
+            assert_eq!(drain.next(), Some(3));
+            assert_eq!(drain.next(), Some(7));
+            assert_eq!(drain.next(), Some(11));
+            assert_eq!(drain.next(), Some(15));
+            assert_eq!(drain.next(), Some(19));
+        }
+        assert_eq!(toodee.data().len(), 15);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[14], 18);
+        assert_eq!(toodee.num_cols(), 3);
+        assert_eq!(toodee.num_rows(), 5);
+    }
+
+    #[test]
+    fn remove_col_5_0() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 5, (0u32..20).collect());
+        {
+            let mut drain = toodee.remove_col(0);
+            assert_eq!(drain.len(), 5);
+            assert_eq!(drain.next(), Some(0));
+            assert_eq!(drain.next(), Some(4));
+            assert_eq!(drain.next(), Some(8));
+            assert_eq!(drain.next(), Some(12));
+            assert_eq!(drain.next(), Some(16));
+        }
+        assert_eq!(toodee.data().len(), 15);
+        assert_eq!(toodee.data()[0], 1);
+        assert_eq!(toodee.data()[14], 19);
+        assert_eq!(toodee.num_cols(), 3);
+        assert_eq!(toodee.num_rows(), 5);
+    }
+
+    #[test]
     fn pop_row() {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let drain = toodee.pop_row().unwrap();

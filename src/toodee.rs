@@ -237,9 +237,10 @@ impl<T> TooDee<T> {
     /// Inserts new `data` into the array at the specified `row`
     /// 
     /// Panics if the data's length doesn't match the length of existing rows (if any).
-    pub fn insert_row<I>(&mut self, row: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
+    pub fn insert_row<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
     where I : Iterator<Item=T> + ExactSizeIterator
     {
+        assert!(index <= self.num_rows);
         let iter = data.into_iter();
         if self.num_rows == 0 {
             self.num_cols = iter.len();
@@ -247,9 +248,11 @@ impl<T> TooDee<T> {
             assert_eq!(self.num_cols, iter.len());
         }
         self.num_rows += 1;
+        // append the new row to the end of the vector
         self.data.extend(iter);
-        // TODO: optimise this - translate_with_wrap is overkill
-        self.view_mut((0, row), (self.num_cols, self.num_rows)).translate_with_wrap((0, 1));
+        // rotate a subset of the vector
+        let start = index * self.num_cols;
+        self.data[start..].rotate_right(self.num_cols);
     }
 
     /// Removes the specified row from the array and returns it as a `Drain`
@@ -258,16 +261,70 @@ impl<T> TooDee<T> {
     pub fn remove_row(&mut self, index : usize) -> Drain<'_, T>
     {
         assert!(index < self.num_rows);
-        // Rotate the row to the end, then drain it.
-        // TODO: optimise this - translate_with_wrap is overkill
-        self.view_mut((0, index), (self.num_cols, self.num_rows)).translate_with_wrap((0, 1));
+        let start = index * self.num_cols;
+        let drain = self.data.drain(start..start + self.num_cols);
         self.num_rows -= 1;
         if self.num_rows == 0 {
             self.num_cols = 0;
         }
-        let len = self.data.len();
-        self.data.drain(len-self.num_cols..len)
+        drain
     }
+
+    /// Removes the specified column from the array and returns it as a `Drain`
+    /// 
+    /// Panics if the specified column index is out of bounds.
+    pub fn remove_col(&mut self, index: usize) -> Drain<'_, T>
+    {
+        assert!(index < self.num_cols);
+        
+        let len = self.data.len();
+
+        // TODO: tidy this logic up a bit
+        let mut start = index;
+        let incr = self.num_cols - 1;
+        let mut n = 1;
+        while start + self.num_cols + n - 1 < len {
+            self.data[start..start + self.num_cols + n - 1].rotate_left(n);
+            start += incr;
+            n += 1;
+        }
+        
+        self.data[start..].rotate_left(n);
+        
+        let drain = self.data.drain(len - self.num_rows..len);
+
+        self.num_cols -= 1;
+        if self.num_cols == 0 {
+            self.num_rows = 0;
+        }
+        
+        drain
+    }
+
+    /// Inserts new `data` into the array at the specified `col`.
+    /// 
+    /// Panics if the data's length doesn't match the length of existing columns (if any).
+    pub fn insert_col<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
+    where I : Iterator<Item=T> + ExactSizeIterator
+    {
+        assert!(index <= self.num_cols);
+        let iter = data.into_iter();
+        if self.num_cols == 0 {
+            self.num_rows = iter.len();
+        } else {
+            assert_eq!(self.num_rows, iter.len());
+        }
+        // append new column data to end of array
+        self.data.extend(iter);
+        
+        // TODO!
+        
+        // update the number of columns to finish up
+        self.num_cols += 1;
+        
+        unimplemented!("TODO!");
+    }
+
 
 }
 
