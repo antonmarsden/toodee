@@ -17,7 +17,7 @@ mod toodee_tests {
 
     #[test]
     fn new() {
-        let toodee = TooDee::new(200, 150, 0u32);
+        let toodee : TooDee<u32> = TooDee::new(200, 150);
         assert_eq!(toodee.data().len(), 200 * 150);
         assert_eq!((200, 150), toodee.size());
         assert_eq!(toodee.num_rows(), 150);
@@ -26,7 +26,7 @@ mod toodee_tests {
 
     #[test]
     fn new_view() {
-        let toodee = TooDee::new(200, 150, 0u32);
+        let toodee : TooDee<u32> = TooDee::new(200, 150);
         let view = toodee.view((50, 50), (150, 100));
         assert_eq!((100, 50), view.size());
         assert_eq!(view.num_rows(), 50);
@@ -58,14 +58,14 @@ mod toodee_tests {
 
     #[test]
     fn into_vec() {
-        let toodee = TooDee::new(10, 10, 22u32);
+        let toodee = TooDee::init(10, 10, 22u32);
         let v: Vec<u32> = toodee.into();
         assert_eq!(v.iter().sum::<u32>(), 2200);
     }
 
     #[test]
     fn fill() {
-        let mut toodee = TooDee::new(10, 10, 22u32);
+        let mut toodee = TooDee::init(10, 10, 22u32);
         assert_eq!(toodee.data().iter().sum::<u32>(), 2200);
         toodee.view_mut((0, 0), (10, 10)).fill(11);
         assert_eq!(toodee.data().iter().sum::<u32>(), 1100);
@@ -160,7 +160,7 @@ mod toodee_tests {
 
     #[test]
     fn index() {
-        let mut toodee = TooDee::new(4, 3, 0u32);
+        let mut toodee = TooDee::init(4, 3, 0u32);
         toodee[0].copy_from_slice(&vec![1u32; 4][..4]);
         toodee[1].copy_from_slice(&vec![2u32; 4][..4]);
         toodee[2].copy_from_slice(&vec![3u32; 4][..4]);
@@ -171,20 +171,20 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn index_bad() {
-        let mut toodee = TooDee::new(4, 3, 0u32);
+        let mut toodee = TooDee::init(4, 3, 0u32);
         toodee[5][5] = 1;
     }
 
     #[test]
     #[should_panic(expected = "index out of bounds: the len is 4 but the index is 5")]
     fn index_bad_2() {
-        let mut toodee = TooDee::new(4, 3, 0u32);
+        let mut toodee = TooDee::init(4, 3, 0u32);
         toodee[2][5] = 1;
     }
 
     #[test]
     fn set_value() {
-        let mut toodee = TooDee::new(3, 3, 0u32);
+        let mut toodee = TooDee::init(3, 3, 0u32);
         toodee[1][1] = 1;
         toodee[2][2] = 2;
         assert_eq!(toodee.data().iter().sum::<u32>(), 3);
@@ -244,14 +244,14 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn swap_rows_out_of_bounds() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
+        let mut toodee = TooDee::init(10, 10, 0u32);
         toodee.swap_rows(0,10);
     }
 
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn swap_cols_out_of_bounds() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
+        let mut toodee = TooDee::init(10, 10, 0u32);
         toodee.swap_cols(0,10);
     }
 
@@ -277,7 +277,7 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn view_empty() {
-        let toodee = TooDee::new(10, 10, 42u32);
+        let toodee = TooDee::init(10, 10, 42u32);
         let view = toodee.view((0, 0), (0, 10));
         let tmp = view[0][0];
         assert_eq!(tmp, 42);
@@ -305,8 +305,8 @@ mod toodee_tests {
 
     #[test]
     fn copy_from_view() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
-        let tile = TooDee::new(3, 3, 1u32);
+        let mut toodee = TooDee::init(10, 10, 0u32);
+        let tile = TooDee::init(3, 3, 1u32);
         let tile_view = tile.view((0, 0), (3, 3));
         toodee.view_mut((0, 0), (3, 3)).copy_from_toodee(&tile_view);
         toodee.view_mut((6, 6), (9, 9)).copy_from_toodee(&tile_view);
@@ -315,7 +315,7 @@ mod toodee_tests {
     
     #[test]
     fn zero_size_toodee() {
-        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut toodee = TooDee::init(0, 0, 0u32);
         assert_eq!(toodee.rows_mut().next(), None);
         assert_eq!(toodee.rows().next(), None);
         assert_eq!(toodee.cells().next(), None);
@@ -324,7 +324,7 @@ mod toodee_tests {
 
     #[test]
     fn zero_size_view() {
-        let mut toodee = TooDee::new(10, 10, 0u32);
+        let mut toodee = TooDee::init(10, 10, 0u32);
         let mut view = toodee.view_mut((5, 5), (5, 5));
         assert_eq!(view.rows_mut().next(), None);
         assert_eq!(view.rows().next(), None);
@@ -344,7 +344,7 @@ mod toodee_tests {
     
     #[test]
     fn zero_size_view_of_zero() {
-        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut toodee = TooDee::init(0, 0, 0u32);
         let mut view = toodee.view_mut((0, 0), (0, 0));
         assert_eq!(view.rows_mut().next(), None);
         assert_eq!(view.rows().next(), None);
@@ -355,7 +355,7 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn zero_size_view_col() {
-        let toodee = TooDee::new(0, 0, 0u32);
+        let toodee = TooDee::init(0, 0, 0u32);
         let view = toodee.view((0, 0), (0, 0));
         view.col(0);
     }
@@ -363,7 +363,7 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn zero_size_view_mut_col_mut() {
-        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut toodee = TooDee::init(0, 0, 0u32);
         let mut view = toodee.view_mut((0, 0), (0, 0));
         view.col_mut(0);
     }
@@ -371,7 +371,7 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn zero_size_view_mut_col() {
-        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut toodee = TooDee::init(0, 0, 0u32);
         let view = toodee.view_mut((0, 0), (0, 0));
         view.col(0);
     }
@@ -379,21 +379,21 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn zero_size_col() {
-        let toodee = TooDee::new(0, 0, 0u32);
+        let toodee = TooDee::init(0, 0, 0u32);
         toodee.col(0);
     }
     
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn zero_size_col_mut() {
-        let mut toodee = TooDee::new(0, 0, 0u32);
+        let mut toodee = TooDee::init(0, 0, 0u32);
         toodee.col_mut(0);
     }
     
     
     #[test]
     fn insert_row() {
-        let mut toodee : TooDee<u32> = TooDee::new(2, 1, 0u32);
+        let mut toodee : TooDee<u32> = TooDee::init(2, 1, 0u32);
         let mut tmp = Vec::new();
         tmp.push(1);
         tmp.push(6);
@@ -408,7 +408,7 @@ mod toodee_tests {
     
     #[test]
     fn push_row() {
-        let mut toodee : TooDee<u32> = TooDee::new(2, 1, 0u32);
+        let mut toodee : TooDee<u32> = TooDee::init(2, 1, 0u32);
         // test push_row
         let mut tmp2 = Vec::new();
         tmp2.push(11);
@@ -436,13 +436,77 @@ mod toodee_tests {
     #[test]
     #[should_panic(expected = "assertion failed")]
     fn insert_row_bad_row_len() {
-        let mut toodee : TooDee<u32> = TooDee::new(1, 1, 0u32);
+        let mut toodee : TooDee<u32> = TooDee::init(1, 1, 0u32);
         let mut tmp = Vec::new();
         tmp.push(1);
         tmp.push(6);
         toodee.insert_row(1, tmp);
     }
+
+    #[test]
+    fn insert_col_1_0() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        toodee.insert_col(0, 7..8);
+        assert_eq!(toodee.data().len(), 5);
+        assert_eq!(toodee.data()[0], 7);
+        assert_eq!(toodee.data()[1], 0);
+        assert_eq!(toodee.data()[2], 1);
+        assert_eq!(toodee.data()[3], 2);
+        assert_eq!(toodee.data()[4], 3);
+    }
     
+    #[test]
+    fn insert_col_1_4() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        toodee.insert_col(4, 7..8);
+        assert_eq!(toodee.data().len(), 5);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[1], 1);
+        assert_eq!(toodee.data()[2], 2);
+        assert_eq!(toodee.data()[3], 3);
+        assert_eq!(toodee.data()[4], 7);
+    }
+
+    #[test]
+    fn insert_col_4_0() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 4, (0u32..16).collect());
+        toodee.insert_col(0, 10..14);
+        assert_eq!(toodee.data().len(), 20);
+        assert_eq!(toodee.data()[0], 10);
+        assert_eq!(toodee.data()[5], 11);
+        assert_eq!(toodee.data()[10], 12);
+        assert_eq!(toodee.data()[15], 13);
+        assert_eq!(toodee.data()[19], 15);
+        assert_eq!(toodee.num_cols(), 5);
+        assert_eq!(toodee.num_rows(), 4);
+    }
+
+    #[test]
+    fn insert_col_4_4() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 4, (0u32..16).collect());
+        toodee.insert_col(4, 10..14);
+        assert_eq!(toodee.data().len(), 20);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[4], 10);
+        assert_eq!(toodee.data()[9], 11);
+        assert_eq!(toodee.data()[14], 12);
+        assert_eq!(toodee.data()[19], 13);
+        assert_eq!(toodee.num_cols(), 5);
+        assert_eq!(toodee.num_rows(), 4);
+    }
+
+    #[test]
+    fn insert_col_1_3() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        toodee.insert_col(3, 7..8);
+        assert_eq!(toodee.data().len(), 5);
+        assert_eq!(toodee.data()[0], 0);
+        assert_eq!(toodee.data()[1], 1);
+        assert_eq!(toodee.data()[2], 2);
+        assert_eq!(toodee.data()[3], 7);
+        assert_eq!(toodee.data()[4], 3);
+    }
+
     #[test]
     fn remove_col_1_0() {
         let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
@@ -561,7 +625,7 @@ mod toodee_tests {
     
     #[test]
     fn pop_row_zero_dims() {
-        let mut toodee : TooDee<u32> = TooDee::new(1, 1, 0u32);
+        let mut toodee : TooDee<u32> = TooDee::new(1, 1);
         toodee.pop_row();
         assert_eq!(toodee.size(), (0usize, 0usize));
     }

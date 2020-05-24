@@ -5,21 +5,21 @@ mod toodee_tests_iter {
 
     #[test]
     fn rows_iter() {
-        let toodee = TooDee::new(10, 10, 22u32);
+        let toodee = TooDee::init(10, 10, 22u32);
         assert_eq!(toodee.rows().len(), 10);
         assert_eq!(toodee.rows().fold(0, |count, r| count + r.len()), 10 * 10);
     }
 
     #[test]
     fn rows_mut_iter() {
-        let mut toodee = TooDee::new(10, 10, 22u32);
+        let mut toodee = TooDee::init(10, 10, 22u32);
         assert_eq!(toodee.rows_mut().len(), 10);
         assert_eq!(toodee.rows_mut().fold(0, |count, r| count + r.len()), 10 * 10);
     }
 
     #[test]
     fn view_rows_iter() {
-        let toodee = TooDee::new(10, 10, 22u32);
+        let toodee = TooDee::init(10, 10, 22u32);
         let v = toodee.view((2, 2), (10, 10));
         assert_eq!(v.rows().len(), 8);
         assert_eq!(v.rows().fold(0, |count, r| count + r.len()), 8 * 8);
@@ -27,7 +27,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn view_rows_iter_rev() {
-        let toodee = TooDee::new(10, 10, 22u32);
+        let toodee = TooDee::init(10, 10, 22u32);
         let v = toodee.view((2, 2), (10, 10));
         assert_eq!(v.rows().rev().len(), 8);
         assert_eq!(v.rows().rev().fold(0, |count, r| count + r.len()), 8 * 8);
@@ -35,7 +35,7 @@ mod toodee_tests_iter {
     
     #[test]
     fn view_rows_iter_mut() {
-        let mut toodee = TooDee::new(10, 10, 22u32);
+        let mut toodee = TooDee::init(10, 10, 22u32);
         let mut v = toodee.view_mut((2, 2), (10, 10));
         assert_eq!(v.rows().len(), 8);
         assert_eq!(v.rows_mut().len(), 8);
@@ -45,7 +45,7 @@ mod toodee_tests_iter {
 
     #[test]
     fn view_rows_iter_mut_rev() {
-        let mut toodee = TooDee::new(10, 10, 22u32);
+        let mut toodee = TooDee::init(10, 10, 22u32);
         let mut v = toodee.view_mut((2, 2), (10, 10));
         assert_eq!(v.rows().rev().len(), 8);
         assert_eq!(v.rows_mut().rev().len(), 8);

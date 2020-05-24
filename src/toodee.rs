@@ -127,11 +127,30 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
 impl<T> TooDee<T> {
 
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
+    /// the type's default value.
+    /// 
+    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
+    pub fn new(num_cols: usize, num_rows: usize) -> TooDee<T>
+    where T: Default + Clone {
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
+        }
+        let len = num_rows * num_cols;
+        let v = vec![T::default(); len];
+        TooDee {
+            num_cols,
+            num_rows,
+            data : v,
+        }
+    }
+
+    /// Create a new `TooDee` array of the specified dimensions, and fill it with
     /// an initial value.
     /// 
     /// Will panic if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
-    pub fn new(num_cols: usize, num_rows: usize, init_value: T) -> TooDee<T>
+    pub fn init(num_cols: usize, num_rows: usize, init_value: T) -> TooDee<T>
     where T: Clone {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
@@ -270,6 +289,24 @@ impl<T> TooDee<T> {
         drain
     }
 
+    /// Removes the last column from the array and returns it as a `Drain`, or `None` if it is empty.
+    pub fn pop_col(&mut self) -> Option<Drain<'_, T>> {
+        if self.num_cols == 0 {
+            None
+        } else {
+            Some(self.remove_col(self.num_cols - 1))
+        }
+    }
+    
+    /// Appends a new column to the array.
+    /// 
+    /// Panics if the data's length doesn't match the length of existing rows (if any).
+    pub fn push_col<I>(&mut self, data: impl IntoIterator<Item=T, IntoIter=I>)
+    where I : Iterator<Item=T> + ExactSizeIterator
+    {
+        self.insert_col(self.num_cols, data);
+    }
+
     /// Removes the specified column from the array and returns it as a `Drain`
     /// 
     /// Panics if the specified column index is out of bounds.
@@ -289,7 +326,7 @@ impl<T> TooDee<T> {
             n += 1;
         }
         
-        self.data[start..].rotate_left(n);
+        self.data[start..].rotate_left(self.num_rows);
         
         let drain = self.data.drain(len - self.num_rows..len);
 
@@ -314,15 +351,28 @@ impl<T> TooDee<T> {
         } else {
             assert_eq!(self.num_rows, iter.len());
         }
+        
+        // This algorithm is basically a reverse of the remove_col() impl
+        
         // append new column data to end of array
         self.data.extend(iter);
         
-        // TODO!
+        let incr = self.num_cols;
         
-        // update the number of columns to finish up
+        // update the number of columns
         self.num_cols += 1;
+
+        let mut start = self.data.len() - self.num_rows - (self.num_cols - 1 - index);
         
-        unimplemented!("TODO!");
+        self.data[start..].rotate_right(self.num_rows);
+        
+        let mut n = self.num_rows - 1;
+        while start >= incr && n > 0 {
+            start -= incr;
+            self.data[start..start + self.num_cols + n - 1].rotate_right(n);
+            n -= 1;
+        }
+
     }
 
 

@@ -6,7 +6,7 @@ fn translate_benchmark(c: &mut Criterion) {
     for dims in [(32usize, 20usize), (320, 200), (640, 480)].iter() {
         let size = dims.0 * dims.1;
         group.throughput(Throughput::Elements(size as u64));
-        let mut toodee = TooDee::new(dims.0, dims.1, 0u32);
+        let mut toodee = TooDee::init(dims.0, dims.1, 0u32);
         
         group.bench_with_input(BenchmarkId::new("translate", size), &size, |b, _| {
             b.iter(|| toodee.translate_with_wrap((5, 5)))
@@ -26,7 +26,7 @@ fn flip_benchmark(c: &mut Criterion) {
     for dims in [(32usize, 20usize), (320, 200), (640, 480)].iter() {
         let size = dims.0 * dims.1;
         group.throughput(Throughput::Elements(size as u64));
-        let mut toodee = TooDee::new(dims.0, dims.1, 0u32);
+        let mut toodee = TooDee::init(dims.0, dims.1, 0u32);
         
         group.bench_with_input(BenchmarkId::new("flip_rows", size), &size, |b, _| {
             b.iter(|| toodee.flip_rows())
