@@ -1,5 +1,17 @@
-use criterion::{BenchmarkId, black_box, criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{BenchmarkId, black_box, criterion_group, criterion_main, Criterion, Throughput, BatchSize};
 use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
+use rand::{SeedableRng, Rng};
+use rand::rngs::StdRng;
+use rand::distributions::Uniform;
+
+fn new_rnd_toodee(cols: usize, rows: usize) -> TooDee<u32>
+{
+    let size = cols * rows;
+    let rng : StdRng = SeedableRng::seed_from_u64(42);
+//    let v = vec![0]
+    let generator = rng.sample_iter(Uniform::from(0u32..100_000));
+    TooDee::from_vec(cols, rows, generator.take(size).collect())
+}
 
 fn fill_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("fill");
@@ -58,5 +70,33 @@ fn iter_mut_benchmark(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, fill_benchmark, iter_benchmark, iter_mut_benchmark);
+fn insert_benchmark(c: &mut Criterion) {
+    let mut group = c.benchmark_group("insert");
+    for size in [100usize, 200, 300, 400].iter() {
+        
+        group.throughput(Throughput::Elements((*size * *size) as u64));
+        
+        let toodee = new_rnd_toodee(*size, *size);
+        
+        let new_data = 0u32..(*size as u32);
+        
+        // insert_row
+        {
+            group.bench_with_input(BenchmarkId::new("insert_row", size), &size, |b, _| {
+                b.iter_batched(|| (toodee.clone(), new_data.clone() ), |(mut data, new_data)| data.insert_row(0, new_data), BatchSize::LargeInput)
+            });
+        }
+
+        // insert_col
+        {
+            group.bench_with_input(BenchmarkId::new("insert_col", size), &size, |b, _| {
+                b.iter_batched(|| (toodee.clone(), new_data.clone() ), |(mut data, new_data)| data.insert_col(0, new_data), BatchSize::LargeInput)
+            });
+        }
+        
+    }
+}
+
+
+criterion_group!(benches, fill_benchmark, iter_benchmark, iter_mut_benchmark, insert_benchmark);
 criterion_main!(benches);
