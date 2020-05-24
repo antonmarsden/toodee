@@ -220,8 +220,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
                 (iter.nth(r1-r2-1).unwrap(), tmp)
             },
             Ordering::Equal => {
-                // unreachable, in theory
-                unimplemented!("r1 != r2");
+                unreachable!("r1 != r2");
             },
         }
     }
