@@ -109,4 +109,25 @@ impl<T> CopyOps<T> for TooDee<T> {
         self.data_mut().clone_from_slice(src);
     }
     
+    fn copy_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Copy {
+        assert_eq!(self.size(), src.size());
+        let num_cols = self.num_cols();
+        let mut v = self.data_mut();
+        for r in src.rows() {
+            let (fst, snd) = v.split_at_mut(num_cols);
+            fst.copy_from_slice(r);
+            v = snd;
+        }
+    }
+
+    fn clone_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Clone {
+        assert_eq!(self.size(), src.size());
+        let num_cols = self.num_cols();
+        let mut v = self.data_mut();
+        for r in src.rows() {
+            let (fst, snd) = v.split_at_mut(num_cols);
+            fst.clone_from_slice(r);
+            v = snd;
+        }
+    }
 }

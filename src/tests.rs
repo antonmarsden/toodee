@@ -284,6 +284,7 @@ mod toodee_tests {
     #[test]
     fn zero_size_toodee() {
         let mut toodee = TooDee::init(0, 0, 0u32);
+        assert!(toodee.is_empty());
         assert_eq!(toodee.rows_mut().next(), None);
         assert_eq!(toodee.rows().next(), None);
         assert_eq!(toodee.cells().next(), None);
@@ -294,6 +295,7 @@ mod toodee_tests {
     fn zero_size_view() {
         let mut toodee = TooDee::init(10, 10, 0u32);
         let mut view = toodee.view_mut((5, 5), (5, 5));
+        assert!(view.is_empty());
         assert_eq!(view.rows_mut().next(), None);
         assert_eq!(view.rows().next(), None);
         assert_eq!(view.cells().next(), None);

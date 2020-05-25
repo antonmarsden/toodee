@@ -30,7 +30,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
 
     /// Returns `true` if the array contains no elements.
     fn is_empty(&self) -> bool {
-        self.num_cols() * self.num_rows() == 0
+        self.num_cols() == 0 || self.num_rows() == 0
     }
 
     /// Returns the bounds of the object's area within the original `TooDee` area (views
@@ -87,8 +87,9 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     
     /// Swap/exchange the data between two columns.
     fn swap_cols(&mut self, c1: usize, c2: usize) {
-        assert!(c1 < self.num_cols());
-        assert!(c2 < self.num_cols());
+        let num_cols = self.num_cols();
+        assert!(c1 < num_cols);
+        assert!(c2 < num_cols);
         for r in self.rows_mut() {
             r.swap(c1, c2);
         }
@@ -97,8 +98,9 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     /// Swap/exchange the data between two rows.
     /// Will panic if either row index is out of bounds.
     fn swap_rows(&mut self, r1: usize, r2: usize) {
-        assert!(r1 < self.num_rows());
-        assert!(r2 < self.num_rows());
+        let num_rows = self.num_rows();
+        assert!(r1 < num_rows);
+        assert!(r2 < num_rows);
         match r1.cmp(&r2) {
             Ordering::Less => {
                 let mut iter = self.rows_mut();
@@ -117,8 +119,9 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     /// Return the specified rows as mutable slices.
     /// Will panic if `r1` and `r2` are equal, or if either row index is out of bounds.
     fn row_pair_mut(&mut self, r1: usize, r2: usize) -> (&mut [T], &mut [T]) {
-        assert!(r1 < self.num_rows());
-        assert!(r2 < self.num_rows());
+        let num_rows = self.num_rows();
+        assert!(r1 < num_rows);
+        assert!(r2 < num_rows);
         assert!(r1 != r2);
         match r1.cmp(&r2) {
             Ordering::Less => {
