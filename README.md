@@ -43,18 +43,12 @@ Here's a small feature comparison chart:
   <tr><td><code>grid::Grid</code></td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>No</td><td>Yes</td><td>Similar to <code>TooDee</code>, but not as functionally rich.</td></tr>
   <tr><td><code>array2d::Array2D</code></td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td>Yes</td><td></td></tr>
   <tr><td><code>imgref::Img</code></td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td></td></tr>
-  <tr><td><code>nalgebra::Matrix</code></td><td><code>Scalar</code></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td><code>nalgebra::Matrix</code></td><td><code>Scalar</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>Use this for vector/matrix math.</td></tr>
 </table>
 
 ## Goals
  
-- High performance and good flexibility by providing a core data model that:
-    - Uses a one-dimensional `Vec` to store the two-dimensional array elements. Useful for frame buffers and
-      other scenarios where you want raw access to the underlying slice (use `data()` or `data_mut()`).
-    - Provides non-contiguous views (subsets of the array) which have good performance.
-    - Can access each row as a slice using either `self[row]` or a `rows()` iterator. Useful for bulk or vector-style manipulation.
-    - Has useful iterators, e.g., `rows()`, `col()`, `cells()`
-    - Allows the rows and columns to be inserted and removed.
+- High performance and good flexibility, with the constraint of using a 1-D vector.
 - Suitable for use in image processing, but not restricted to this problem domain.
 - Provide solid implementations of non-trivial 2D operations.
 
@@ -65,7 +59,7 @@ Here's a small feature comparison chart:
 ## Limitations
 
 - Views are not nested for the time being, The only impact is that the `bounds()` of a view
-  are not always relative to its parent.
+  are always relative to the underlying `TooDee` array.
 
 ## License
 
