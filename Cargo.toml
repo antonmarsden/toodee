@@ -12,11 +12,13 @@ license = "MIT OR Apache-2.0"
 categories = ["data-structures", "no-std"]
 
 [features]
-default = ["translate", "sort"]
+default = ["translate", "sort", "copy"]
 
 translate = []
 
 sort = []
+
+copy = []
 
 [dependencies]
 
