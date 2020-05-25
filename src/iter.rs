@@ -1,6 +1,6 @@
 use core::mem;
 
-/// An Iterator over each row of a `TooDee[View]`, where each row is represented as a slice.
+/// An `Iterator` over each row of a `TooDee[View]`, where each row is represented as a slice.
 #[derive(Debug)]
 pub struct Rows<'a, T> {
     pub(super) cols: usize,

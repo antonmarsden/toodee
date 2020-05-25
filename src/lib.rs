@@ -1,6 +1,6 @@
 /*!
 
-A lightweight two-dimensional wrapper around a slice.
+A lightweight two-dimensional wrapper around a `Vec`.
 
 */
 

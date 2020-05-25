@@ -79,15 +79,17 @@ impl<'a, T> TooDeeView<'a, T> {
 
 impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
 {
-    
+    #[inline]
     fn num_cols(&self) -> usize {
         self.num_cols
     }
 
+    #[inline]
     fn num_rows(&self) -> usize {
         self.num_rows
     }
     
+    #[inline]
     fn bounds(&self) -> (Coordinate, Coordinate) {
         (self.start, (self.start.0 + self.num_cols, self.start.1 + self.num_rows))
     }
@@ -207,14 +209,17 @@ impl<'a, T> TooDeeViewMut<'a, T> {
 
 impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
 
+    #[inline]
     fn num_rows(&self) -> usize {
         self.num_rows
     }
 
+    #[inline]
     fn num_cols(&self) -> usize {
         self.num_cols
     }
 
+    #[inline]
     fn bounds(&self) -> (Coordinate, Coordinate) {
         (self.start, (self.start.0 + self.num_cols, self.start.1 + self.num_rows))
     }
