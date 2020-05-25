@@ -134,6 +134,37 @@ where
             }
         }
     }
+
+    #[inline]
+    fn nth_back(&mut self, mut n: usize) -> Option<<I::Item as IntoIterator>::Item> {
+        
+        if self.len_per_iter == 0 {
+            return None;
+        }
+        
+        if let Some(ref mut inner) = self.backiter {
+            if n < inner.len() {
+                return inner.nth_back(n);
+            } else {
+                n -= inner.len();
+                self.backiter = None;
+            }
+        }
+        
+        let iter_skip = self.iter.len().min(n / self.len_per_iter);
+        if let Some(inner) = self.iter.nth_back(iter_skip) {
+            let mut tmp = inner.into_iter();
+            n -= iter_skip * self.len_per_iter;
+            debug_assert!(n < tmp.len());
+            let ret_val = tmp.nth_back(n);
+            self.backiter = Some(tmp);
+            ret_val
+        } else {
+            n -= iter_skip * self.len_per_iter;
+            self.frontiter.as_mut()?.nth_back(n)
+        }
+        
+    }
     
     #[inline]
     #[allow(clippy::toplevel_ref_arg)]

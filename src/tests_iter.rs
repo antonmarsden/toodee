@@ -143,4 +143,17 @@ mod toodee_tests_iter {
         assert_eq!(cells.next_back(), Some(&mut 98u32));
         assert_eq!(cells.size_hint(), (96, Some(96)));
     }
+    
+    #[test]
+    #[allow(clippy::iter_nth_zero)]
+    fn cells_iter_nth_back() {
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let mut cells = toodee.cells();
+        assert_eq!(cells.nth_back(10), Some(&89u32));
+        assert_eq!(cells.nth_back(0), Some(&88u32));
+        assert_eq!(cells.nth_back(9), Some(&78u32));
+        assert_eq!(cells.nth_back(69), Some(&8u32));
+        assert_eq!(cells.nth_back(7), Some(&0u32));
+        assert_eq!(cells.nth_back(0), None);
+    }
 }
