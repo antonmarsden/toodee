@@ -90,14 +90,6 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         TooDeeViewMut::from_toodee(start, end, self)
     }
     
-    fn copy_from_slice(&mut self, src: &[T]) where T: Copy {
-        self.data.copy_from_slice(src);
-    }
-    
-    fn clone_from_slice(&mut self, src: &[T]) where T: Clone {
-        self.data.clone_from_slice(src);
-    }
-    
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
         RowsMut {
             cols : self.num_cols,

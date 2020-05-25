@@ -20,6 +20,7 @@ mod view;
 mod ops;
 mod toodee;
 mod flattenexact;
+mod copy;
 
 #[cfg(feature = "translate")] mod translate;
 #[cfg(feature = "translate")] mod tests_translate;
@@ -31,10 +32,12 @@ mod flattenexact;
 
 mod tests;
 mod tests_iter;
+mod tests_copy;
 
 pub use crate::iter::*;
 pub use crate::view::*;
 pub use crate::ops::*;
 pub use crate::toodee::*;
 pub use crate::flattenexact::*;
+pub use crate::copy::*;
 
