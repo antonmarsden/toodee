@@ -17,6 +17,9 @@ pub use crate::view::*;
 pub use crate::ops::*;
 pub use crate::translate::*;
 
+/// Drain type alias for future-proofing.
+pub type DrainTooDee<'a, T> = Drain<'a, T>;
+
 /// Represents a two-dimensional array.
 /// 
 /// Empty arrays will always have dimensions of zero.
@@ -236,7 +239,7 @@ impl<T> TooDee<T> {
     }
     
     /// Removes the last row from the array and returns it as a `Drain`, or `None` if it is empty.
-    pub fn pop_row(&mut self) -> Option<Drain<'_, T>> {
+    pub fn pop_row(&mut self) -> Option<DrainTooDee<'_, T>> {
         if self.num_rows == 0 {
             None
         } else {
@@ -277,7 +280,7 @@ impl<T> TooDee<T> {
     /// Removes the specified row from the array and returns it as a `Drain`
     /// 
     /// Panics if the specified row index is out of bounds.
-    pub fn remove_row(&mut self, index : usize) -> Drain<'_, T>
+    pub fn remove_row(&mut self, index : usize) -> DrainTooDee<'_, T>
     {
         assert!(index < self.num_rows);
         let start = index * self.num_cols;
@@ -290,7 +293,7 @@ impl<T> TooDee<T> {
     }
 
     /// Removes the last column from the array and returns it as a `Drain`, or `None` if it is empty.
-    pub fn pop_col(&mut self) -> Option<Drain<'_, T>> {
+    pub fn pop_col(&mut self) -> Option<DrainTooDee<'_, T>> {
         if self.num_cols == 0 {
             None
         } else {
@@ -310,7 +313,7 @@ impl<T> TooDee<T> {
     /// Removes the specified column from the array and returns it as a `Drain`
     /// 
     /// Panics if the specified column index is out of bounds.
-    pub fn remove_col(&mut self, index: usize) -> Drain<'_, T>
+    pub fn remove_col(&mut self, index: usize) -> DrainTooDee<'_, T>
     {
         assert!(index < self.num_cols);
         

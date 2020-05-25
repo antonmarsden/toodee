@@ -95,8 +95,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     /// Copies data from another `TooDeeOps` object into this one. The source and
     /// destination dimensions must match.
     fn copy_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Copy {
-        assert_eq!(self.num_cols(), src.num_cols());
-        assert_eq!(self.num_rows(), src.num_rows());
+        assert_eq!(self.size(), src.size());
         // Data is copied row by row.
         for (d, s) in self.rows_mut().zip(src.rows()) {
             d.copy_from_slice(s);
@@ -106,8 +105,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     /// Copies data from another `TooDeeOps` object into this one. The source and
     /// destination dimensions must match.
     fn clone_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Clone {
-        assert_eq!(self.num_cols(), src.num_cols());
-        assert_eq!(self.num_rows(), src.num_rows());
+        assert_eq!(self.size(), src.size());
         // Data is copied row by row.
         for (d, s) in self.rows_mut().zip(src.rows()) {
             d.clone_from_slice(s);
@@ -175,8 +173,8 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     
     /// Swap/exchange the data between two columns.
     fn swap_cols(&mut self, c1: usize, c2: usize) {
-        assert!(c1 < self.num_rows());
-        assert!(c2 < self.num_rows());
+        assert!(c1 < self.num_cols());
+        assert!(c2 < self.num_cols());
         for r in self.rows_mut() {
             r.swap(c1, c2);
         }

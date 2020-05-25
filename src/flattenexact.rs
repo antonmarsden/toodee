@@ -1,6 +1,6 @@
 #![allow(missing_debug_implementations)]
 /// An iterator that behaves like `core::iter::adapters::Flatten` but has the added advantage of implementing
-/// `ExactSizeIterator` (we know how many cells are in our `TooDee` arrays).
+/// `ExactSizeIterator` (we know how many cells there are per row in a `TooDee` array).
 pub struct FlattenExact<I>
 where
     I : Iterator + ExactSizeIterator + DoubleEndedIterator,
