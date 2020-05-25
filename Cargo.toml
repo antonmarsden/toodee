@@ -10,6 +10,7 @@ readme = "README.md"
 keywords = ["2d", "array", "matrix"]
 license = "MIT OR Apache-2.0"
 categories = ["data-structures", "no-std"]
+exclude = [ ".github/*", ]
 
 [features]
 default = ["translate", "sort"]
