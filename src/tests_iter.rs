@@ -112,6 +112,7 @@ mod toodee_tests_iter {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn cells() {
         let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut cells = toodee.cells();
@@ -121,6 +122,14 @@ mod toodee_tests_iter {
         assert_eq!(cells.next_back(), Some(&99u32));
         assert_eq!(cells.next_back(), Some(&98u32));
         assert_eq!(cells.size_hint(), (96, Some(96)));
+        // tests nth() in FlattenExact
+        assert_eq!(cells.nth(18), Some(&20u32));
+        assert_eq!(cells.nth(8),  Some(&29u32));
+        assert_eq!(cells.nth(63), Some(&93u32));
+        assert_eq!(cells.nth(1), Some(&95u32));
+        assert_eq!(cells.nth(0), Some(&96u32));
+        assert_eq!(cells.nth(0), Some(&97u32));
+        assert_eq!(cells.nth(0), None);
     }
     
     #[test]

@@ -1,4 +1,5 @@
 #![allow(missing_debug_implementations)]
+
 /// An iterator that behaves like `core::iter::adapters::Flatten` but has the added advantage of implementing
 /// `ExactSizeIterator` (we know how many cells there are per row in a `TooDee` array).
 pub struct FlattenExact<I>
@@ -45,6 +46,37 @@ where
                 Some(inner) => self.frontiter = Some(inner.into_iter()),
             }
         }
+    }
+    
+    #[inline]
+    fn nth(&mut self, mut n: usize) -> Option<<I::Item as IntoIterator>::Item> {
+        
+        if self.len_per_iter == 0 {
+            return None;
+        }
+        
+        if let Some(ref mut inner) = self.frontiter {
+            if n < inner.len() {
+                return inner.nth(n);
+            } else {
+                n -= inner.len();
+                self.frontiter = None;
+            }
+        }
+        
+        let iter_skip = self.iter.len().min(n / self.len_per_iter);
+        if let Some(inner) = self.iter.nth(iter_skip) {
+            let mut tmp = inner.into_iter();
+            n -= iter_skip * self.len_per_iter;
+            debug_assert!(n < tmp.len());
+            let ret_val = tmp.nth(n);
+            self.frontiter = Some(tmp);
+            ret_val
+        } else {
+            n -= iter_skip * self.len_per_iter;
+            self.backiter.as_mut()?.nth(n)
+        }
+        
     }
 
     #[inline]
