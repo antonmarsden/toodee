@@ -1,9 +1,8 @@
 use core::cmp::Ordering;
 
-pub use crate::iter::*;
-pub use crate::ops::*;
-pub use crate::toodee::*;
-pub use crate::view::*;
+use crate::ops::*;
+use crate::toodee::*;
+use crate::view::*;
 
 extern crate alloc;
 

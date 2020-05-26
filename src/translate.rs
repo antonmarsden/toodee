@@ -1,7 +1,6 @@
-pub use crate::iter::*;
-pub use crate::ops::*;
-pub use crate::toodee::*;
-pub use crate::view::*;
+use crate::ops::*;
+use crate::toodee::*;
+use crate::view::*;
 
 /// Provides implementations for translate (also known as scroll) operations, and other internal data
 /// movement operations such as flipping.

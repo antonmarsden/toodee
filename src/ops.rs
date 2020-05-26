@@ -2,9 +2,9 @@ use core::ops::{Index, IndexMut};
 use core::cmp::Ordering;
 use core::borrow::Borrow;
 
-pub use crate::iter::*;
-pub use crate::view::*;
-pub use crate::flattenexact::*;
+use crate::iter::*;
+use crate::view::*;
+use crate::flattenexact::*;
 
 /// A (col, row) coordinate in 2D space.
 pub type Coordinate = (usize, usize);

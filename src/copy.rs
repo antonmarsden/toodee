@@ -1,9 +1,8 @@
 use core::cmp::Ordering;
 
-pub use crate::iter::*;
-pub use crate::ops::*;
-pub use crate::toodee::*;
-pub use crate::view::*;
+use crate::toodee::*;
+use crate::view::*;
+use crate::ops::*;
 
 /// Provides basic copying operations for `TooDee` structures.
 pub trait CopyOps<T> : TooDeeOpsMut<T> {

@@ -2,7 +2,9 @@ use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
 
-use crate::*;
+use crate::toodee::*;
+use crate::ops::*;
+use crate::iter::*;
 
 /// Checks the proposed view dimensions, and returns the correct cols and rows for view construction.
 fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &impl TooDeeOps<T>) -> (usize, usize) {
