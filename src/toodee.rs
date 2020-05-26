@@ -159,8 +159,6 @@ impl<T> TooDee<T> {
     }
     
     /// Constructs a new, empty `TooDee<T>` with the specified element capacity.
-    /// 
-    /// TODO: need a way to set/update num_cols.
     pub fn with_capacity(capacity: usize) -> TooDee<T> {
         TooDee {
             num_cols : 0,
