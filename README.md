@@ -11,8 +11,8 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 - Get/set specific cells using indexing, e.g., `toodee[row][col] = val`.
 - Index by row (i.e., row major) to get/set row slices, e.g., `toodee[row]`.
 - Iteration, any which way - `rows()`, `rows_mut()`, `col()`, `col_mut()`, `cells()`, `cells_mut()`.
-- `no_std` compliant.
-- Can create a new `TooDeeView` or `TooDeeViewMut` directly from a `&[T]` or `&mut [T]` (respectively).
+- `#[no_std]` compliant.
+- Can create a new `TooDeeView`  from a `&[T]`, or a `TooDeeViewMut`  from  a `&mut [T]`.
 - `insert_col()`, `remove_col()`, `insert_row()`, and `remove_row()` implementations with good performance.
 
 ## Extras
@@ -22,9 +22,6 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 
 ## TODO
 
-- Robustness - check for zero rows/cols (div/mod, etc.).
-- Range operators that return a `TooDeeView[Mut]`?
-- Implement `nth()` and `nth_back()` for FlattenExact.
 - More documentation, with examples.
 - `tiles(..)` and `tiles_mut()`?
 - Pathfinding algorithms?
@@ -43,7 +40,7 @@ Here's a small feature comparison chart:
   <tr><td><code>grid::Grid</code></td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>No</td><td>Yes</td><td>Similar to <code>TooDee</code>, but not as functionally rich.</td></tr>
   <tr><td><code>array2d::Array2D</code></td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td>Yes</td><td></td></tr>
   <tr><td><code>imgref::Img</code></td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td></td></tr>
-  <tr><td><code>nalgebra::Matrix</code></td><td><code>Scalar</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>Use this for vector/matrix math.</td></tr>
+  <tr><td><code>nalgebra::Matrix</code></td><td><code>Scalar</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>Use this for vector/matrix math.</td></tr>
 </table>
 
 ## Goals
