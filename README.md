@@ -1,4 +1,7 @@
 ![Build Status](https://github.com/antonmarsden/toodee/workflows/Test/badge.svg)
+[![Current Version](https://img.shields.io/crates/v/toodee.svg)](https://crates.io/crates/toodee)
+[![Documentation](https://docs.rs/toodee/badge.svg)](https://docs.rs/toodee)
+[![License: MIT OR Apache-2.0](https://img.shields.io/crates/l/toodee.svg)](#license)
 
 # toodee
 
