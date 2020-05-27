@@ -1,5 +1,11 @@
 use core::mem;
 
+/// An `Iterator` that knows how many columns it emits per row.
+pub trait TooDeeIterator : Iterator {
+    /// The number of columns the iterator emits per row
+    fn num_cols(&self) -> usize;
+}
+
 /// An `Iterator` over each row of a `TooDee[View]`, where each row is represented as a slice.
 #[derive(Debug)]
 pub struct Rows<'a, T> {
@@ -91,6 +97,12 @@ impl<'a, T> DoubleEndedIterator for Rows<'a, T> {
 }
 
 impl<T> ExactSizeIterator for Rows<'_, T> {}
+
+impl<T> TooDeeIterator for Rows<'_, T> {
+    fn num_cols(&self) -> usize {
+        self.cols
+    }
+}
 
 /// A mutable Iterator over each row of a `TooDee[ViewMut]`, where each row is represented as a slice.
 #[derive(Debug)]
@@ -189,6 +201,11 @@ impl<'a, T> DoubleEndedIterator for RowsMut<'a, T> {
 
 impl<T> ExactSizeIterator for RowsMut<'_, T> {}
 
+impl<T> TooDeeIterator for RowsMut<'_, T> {
+    fn num_cols(&self) -> usize {
+        self.cols
+    }
+}
 
 /// An iterator over a single column.
 #[derive(Debug)]
@@ -371,3 +388,4 @@ impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
 }
 
 impl<T> ExactSizeIterator for ColMut<'_, T> {}
+

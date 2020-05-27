@@ -7,6 +7,7 @@ mod toodee_tests_iter {
     fn rows_iter() {
         let toodee = TooDee::init(10, 10, 22u32);
         assert_eq!(toodee.rows().len(), 10);
+        assert_eq!(toodee.rows().num_cols(), 10);
         assert_eq!(toodee.rows().fold(0, |count, r| count + r.len()), 10 * 10);
     }
 
@@ -14,6 +15,7 @@ mod toodee_tests_iter {
     fn rows_mut_iter() {
         let mut toodee = TooDee::init(10, 10, 22u32);
         assert_eq!(toodee.rows_mut().len(), 10);
+        assert_eq!(toodee.rows_mut().num_cols(), 10);
         assert_eq!(toodee.rows_mut().fold(0, |count, r| count + r.len()), 10 * 10);
     }
 
@@ -22,6 +24,7 @@ mod toodee_tests_iter {
         let toodee = TooDee::init(10, 10, 22u32);
         let v = toodee.view((2, 2), (10, 10));
         assert_eq!(v.rows().len(), 8);
+        assert_eq!(v.rows().num_cols(), 8);
         assert_eq!(v.rows().fold(0, |count, r| count + r.len()), 8 * 8);
     }
 
@@ -134,14 +137,15 @@ mod toodee_tests_iter {
     
     #[test]
     fn cells_mut() {
-        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let mut toodee = TooDee::from_vec(10, 11, (0u32..110).collect());
         let mut cells = toodee.cells_mut();
+        assert_eq!(10, cells.num_cols());
         assert_eq!(cells.next(), Some(&mut 0u32));
         assert_eq!(cells.next(), Some(&mut 1u32));
-        assert_eq!(cells.size_hint(), (98, Some(98)));
-        assert_eq!(cells.next_back(), Some(&mut 99u32));
-        assert_eq!(cells.next_back(), Some(&mut 98u32));
-        assert_eq!(cells.size_hint(), (96, Some(96)));
+        assert_eq!(cells.size_hint(), (108, Some(108)));
+        assert_eq!(cells.next_back(), Some(&mut 109u32));
+        assert_eq!(cells.next_back(), Some(&mut 108u32));
+        assert_eq!(cells.size_hint(), (106, Some(106)));
     }
     
     #[test]
