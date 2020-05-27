@@ -160,4 +160,27 @@ mod toodee_tests_iter {
         assert_eq!(cells.nth_back(7), Some(&0u32));
         assert_eq!(cells.nth_back(0), None);
     }
+
+    #[test]
+    fn into_iter() {
+        let toodee = TooDee::init(10, 10, 22u32);
+        let iter = toodee.into_iter();
+        assert_eq!(iter.len(), 100);
+    }
+
+    #[test]
+    fn ref_into_iter() {
+        let toodee = TooDee::init(10, 13, 22u32);
+        let iter = (&toodee).into_iter();
+        assert_eq!(iter.len(), 130);
+        assert_eq!(iter.num_cols(), 10);
+    }
+
+    #[test]
+    fn mut_ref_into_iter() {
+        let mut toodee = TooDee::init(10, 13, 22u32);
+        let iter = (&mut toodee).into_iter();
+        assert_eq!(iter.len(), 130);
+        assert_eq!(iter.num_cols(), 10);
+    }
 }

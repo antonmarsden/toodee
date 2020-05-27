@@ -10,6 +10,7 @@ use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 use alloc::vec::Drain;
+use alloc::vec::IntoIter;
 
 use crate::iter::*;
 use crate::view::*;
@@ -17,6 +18,9 @@ use crate::ops::*;
 
 /// Drain type alias for future-proofing.
 pub type DrainTooDee<'a, T> = Drain<'a, T>;
+
+/// IntoIter type alias for future-proofing.
+pub type IntoIterTooDee<T> = IntoIter<T>;
 
 /// Represents a two-dimensional array.
 /// 
@@ -379,25 +383,32 @@ impl<T> TooDee<T> {
 
     }
 
+}
 
+/// Use `Vec`'s `IntoIter` for performance reasons.
+/// TODO: return type that implements `TooDeeIterator`
+impl<T> IntoIterator for TooDee<T> {
+    type Item = T;
+    type IntoIter = IntoIterTooDee<T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
+    }
 }
 
 impl<'a, T> IntoIterator for &'a TooDee<T> {
     type Item = &'a T;
     type IntoIter = Cells<'a, T>;
+    /// `Cells` is the preferred iterator type here, because it implements `TooDeeIterator`
     fn into_iter(self) -> Self::IntoIter {
-        // `Cells` is the preferred iterator type here, because it implements
-        // `TooDeeIterator` - see the `FromIterator` implementation
         self.cells()
     }
 }
 
 impl<'a, T> IntoIterator for &'a mut TooDee<T> {
     type Item = &'a mut T;
+    /// `CellsMut` is the preferred iterator type here, because it implements `TooDeeIterator`
     type IntoIter = CellsMut<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
-        // `CellsMut` is the preferred iterator type here, because it implements
-        // `TooDeeIterator` - see the `FromIterator` implementation
         self.cells_mut()
     }
 }
