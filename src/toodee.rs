@@ -1,7 +1,6 @@
 use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
-use core::slice;
 use core::borrow::Borrow;
 use core::iter::IntoIterator;
 
@@ -22,11 +21,24 @@ pub type DrainTooDee<'a, T> = Drain<'a, T>;
 /// Represents a two-dimensional array.
 /// 
 /// Empty arrays will always have dimensions of zero.
-#[derive(Clone,Default)]
+#[derive(Clone)]
 pub struct TooDee<T> {
     num_rows: usize,
     num_cols: usize,
     data: Vec<T>,
+}
+
+/// Custom `Default` implementation because `T` does not need to implement `Default`.
+/// See https://github.com/rust-lang/rust/issues/26925
+impl<T> Default for TooDee<T> {
+    fn default() -> Self {
+        let v = Vec::default();
+        TooDee {
+            num_rows : 0,
+            num_cols : 0,
+            data : v,
+        }
+    }
 }
 
 impl<T> Index<usize> for TooDee<T> {
@@ -372,17 +384,21 @@ impl<T> TooDee<T> {
 
 impl<'a, T> IntoIterator for &'a TooDee<T> {
     type Item = &'a T;
-    type IntoIter = slice::Iter<'a, T>;
+    type IntoIter = Cells<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
-        self.data.iter()
+        // `Cells` is the preferred iterator type here, because it implements
+        // `TooDeeIterator` - see the `FromIterator` implementation
+        self.cells()
     }
 }
 
 impl<'a, T> IntoIterator for &'a mut TooDee<T> {
     type Item = &'a mut T;
-    type IntoIter = slice::IterMut<'a, T>;
+    type IntoIter = CellsMut<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
-        self.data.iter_mut()
+        // `CellsMut` is the preferred iterator type here, because it implements
+        // `TooDeeIterator` - see the `FromIterator` implementation
+        self.cells_mut()
     }
 }
 
