@@ -48,7 +48,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
 
     /// Returns an iterator that traverses all cells within the area.
     fn cells(&self) -> Cells<'_, T> {
-        FlattenExact::new(self.rows(), self.num_cols())
+        FlattenExact::new(self.rows())
     }
 
 }
@@ -68,8 +68,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     
     /// Returns an iterator that traverses all cells within the area.
     fn cells_mut(&mut self) -> CellsMut<'_, T> {
-        let num_cols = self.num_cols();
-        FlattenExact::new(self.rows_mut(), num_cols)
+        FlattenExact::new(self.rows_mut())
     }
     
     /// Fills the entire area with the specified value.
