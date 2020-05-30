@@ -324,14 +324,17 @@ impl<T> TooDee<T> {
         
         let len = self.data.len();
 
-        // TODO: tidy this logic up a bit
         let mut start = index;
-        let incr = self.num_cols - 1;
-        let mut n = 1;
-        while start + self.num_cols + n - 1 < len {
-            self.data[start..start + self.num_cols + n - 1].rotate_left(n);
-            start += incr;
-            n += 1;
+        {
+            let incr = self.num_cols - 1;
+            let mut n = 1;
+            let mut end = start + self.num_cols;
+            while end < len {
+                self.data[start..end].rotate_left(n);
+                start += incr;
+                n += 1;
+                end += self.num_cols;
+            }
         }
         
         self.data[start..].rotate_left(self.num_rows);
@@ -375,9 +378,11 @@ impl<T> TooDee<T> {
         self.data[start..].rotate_right(self.num_rows);
         
         let mut n = self.num_rows - 1;
+        let mut end = start + self.num_cols + n;
         while start >= incr && n > 0 {
             start -= incr;
-            self.data[start..start + self.num_cols + n - 1].rotate_right(n);
+            end -= self.num_cols;
+            self.data[start..end].rotate_right(n);
             n -= 1;
         }
 
