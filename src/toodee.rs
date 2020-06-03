@@ -55,7 +55,6 @@ impl<T> Default for TooDee<T> {
 
 impl<T> Index<usize> for TooDee<T> {
     type Output = [T];
-    
     /// # Examples
     /// 
     /// ```
@@ -71,6 +70,23 @@ impl<T> Index<usize> for TooDee<T> {
     }
 }
 
+impl<T> Index<Coordinate> for TooDee<T> {
+    type Output = T;
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// assert_eq!(toodee[(1,3)], 0);
+    /// ```
+    fn index(&self, coord: Coordinate) -> &Self::Output {
+        assert!(coord.1 < self.num_rows);
+        assert!(coord.0 < self.num_cols);
+        &self.data[coord.1 * self.num_cols + coord.0]
+    }
+}
+
+
 impl<T> IndexMut<usize> for TooDee<T> {
 
     /// # Examples
@@ -85,6 +101,22 @@ impl<T> IndexMut<usize> for TooDee<T> {
         assert!(row < self.num_rows);
         let start = row * self.num_cols;
         &mut self.data[start..start + self.num_cols]
+    }
+}
+
+impl<T> IndexMut<Coordinate> for TooDee<T> {
+
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// assert_eq!(toodee[(1,3)], 0);
+    /// ```
+    fn index_mut(&mut self, coord: Coordinate) -> &mut Self::Output {
+        assert!(coord.1 < self.num_rows);
+        assert!(coord.0 < self.num_cols);
+        &mut self.data[coord.1 * self.num_cols + coord.0]
     }
 }
 

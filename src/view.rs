@@ -145,13 +145,27 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
 }
 
 impl<'a, T> Index<usize> for TooDeeView<'a, T> {
+
     type Output = [T];
+
     fn index(&self, row: usize) -> &Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.main_cols;
         &self.data[start..start + self.num_cols]
     }
 }
+
+impl<'a, T> Index<Coordinate> for TooDeeView<'a, T> {
+
+    type Output = T;
+
+    fn index(&self, coord: Coordinate) -> &Self::Output {
+        assert!(coord.1 < self.num_rows);
+        assert!(coord.0 < self.num_cols);
+        &self.data[coord.1 * self.main_cols + coord.0]
+    }
+}
+
 
 /// Provides a mutable view (or subset), of a `TooDee` array.
 pub struct TooDeeViewMut<'a, T> {
@@ -334,11 +348,28 @@ impl<'a, T> Index<usize> for TooDeeViewMut<'a, T> {
     }
 }
 
+impl<'a, T> Index<Coordinate> for TooDeeViewMut<'a, T> {
+    type Output = T;
+    fn index(&self, coord: Coordinate) -> &Self::Output {
+        assert!(coord.1 < self.num_rows);
+        assert!(coord.0 < self.num_cols);
+        &self.data[coord.1 * self.main_cols + coord.0]
+    }
+}
+
 impl<'a, T> IndexMut<usize> for TooDeeViewMut<'a, T> {
     fn index_mut(&mut self, row: usize) -> &mut Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.main_cols;
         &mut self.data[start..start + self.num_cols]
+    }
+}
+
+impl<'a, T> IndexMut<Coordinate> for TooDeeViewMut<'a, T> {
+    fn index_mut(&mut self, coord: Coordinate) -> &mut Self::Output {
+        assert!(coord.1 < self.num_rows);
+        assert!(coord.0 < self.num_cols);
+        &mut self.data[coord.1 * self.main_cols + coord.0]
     }
 }
 

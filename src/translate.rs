@@ -11,6 +11,31 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     /// 
     /// All data is preserved by wrapping at the array edges, so `fill()` could be used
     /// to clear old data if required.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TranslateOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// toodee[1][1] = 1;
+    /// // move (1, 1) to (0, 0)
+    /// toodee.translate_with_wrap((1, 1));
+    /// assert_eq!(toodee[0][0], 1);
+    /// assert_eq!(toodee[1][1], 42);
+    /// ```
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TranslateOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// // set (4, 2) to 1
+    /// toodee[2][4] = 1;
+    /// // move (4, 2) to (0, 0)
+    /// toodee.translate_with_wrap((4, 2));
+    /// assert_eq!(toodee[0][0], 1);
+    /// assert_eq!(toodee[2][4], 42);
+    /// ```
     fn translate_with_wrap(&mut self, mid: Coordinate) {
 
         let (mut col_mid, mut row_mid) = mid;
@@ -108,6 +133,17 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     }
     
     /// Flips (or mirrors) the rows.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TranslateOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// toodee[0][1] = 1;
+    /// toodee.flip_rows();
+    /// assert_eq!(toodee[2][1], 1);
+    /// ```
     fn flip_rows(&mut self) {
         let mut iter = self.rows_mut();
         while let (Some(r1), Some(r2)) = (iter.next(), iter.next_back()) {
@@ -116,6 +152,15 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     }
 
     /// Flips (or mirrors) the columns.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TranslateOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// toodee[1][1] = 1;
+    /// toodee.flip_cols();
+    /// assert_eq!(toodee[1][3], 1);
+    /// ```
     fn flip_cols(&mut self) {
         for r in self.rows_mut() {
             r.reverse();

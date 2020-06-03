@@ -169,10 +169,40 @@ mod toodee_tests {
     }
 
     #[test]
+    fn index_coord() {
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        assert_eq!(toodee[(9, 0)], 9);
+        assert_eq!(toodee[(2, 9)], 92);
+    }
+
+    #[test]
+    fn index_mut_coord() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        toodee[(9, 2)] = 42;
+        assert_eq!(toodee[(9, 2)], 42);
+        toodee[(0, 9)] = 42;
+        assert_eq!(toodee[(0, 9)], 42);
+    }
+
+    #[test]
     #[should_panic(expected = "assertion failed")]
     fn index_bad() {
         let mut toodee = TooDee::init(4, 3, 0u32);
         toodee[5][5] = 1;
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn index_coord_bad() {
+        let mut toodee = TooDee::init(4, 3, 0u32);
+        toodee[(5, 5)] = 1;
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn index_coord_bad_2() {
+        let mut toodee = TooDee::init(4, 3, 0u32);
+        toodee[(2, 5)] = 1;
     }
 
     #[test]

@@ -268,7 +268,7 @@ impl<'a, T> Iterator for Col<'a, T> {
     #[inline]
     fn last(mut self) -> Option<Self::Item> {
         self.next_back()
-    }    
+    }
 }
 
 impl<'a, T> DoubleEndedIterator for Col<'a, T> {

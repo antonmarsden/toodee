@@ -16,7 +16,7 @@ pub type CellsMut<'a, T> = FlattenExact<RowsMut<'a, T>>;
 
 /// Defines operations common to both `TooDee` and `TooDeeView`. Default implementations are provided
 /// where possible/practical.
-pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
+pub trait TooDeeOps<T> : Index<usize, Output=[T]> + Index<Coordinate, Output=T> {
     
     /// The number of columns in the area represented by this object.
     fn num_cols(&self) -> usize;
@@ -55,7 +55,7 @@ pub trait TooDeeOps<T> : Index<usize,Output=[T]> {
 
 /// Defines operations common to both `TooDee` and `TooDeeViewMut`. Default implementations
 /// are provided where possible/practical.
-pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
+pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMut<Coordinate, Output=T> {
 
     /// Returns a mutable view (or subset) of the current area based on the coordinates provided.
     fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T>;

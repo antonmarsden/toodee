@@ -2,6 +2,11 @@
 
 ## Changes
 
+### Unreleased
+
+- More documentation improvements
+- Added `Index<Coordinate>` and `IndexMut<Coordinate>` implementations
+
 ### Version 0.1.3
 
 - Fixed divide by zero bug in size_hint() when there were zero columns

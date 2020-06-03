@@ -12,7 +12,8 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 - Raw access to the underlying vector's slice via `data()` and `data_mut()`.
 - Creation of performant two-dimensional subsets using `view()` and `view_mut()`.
 - Get/set specific cells using indexing, e.g., `toodee[row][col] = val`.
-- Index by row (i.e., row major) to get/set row slices, e.g., `toodee[row]`.
+- Index with a `Coordinate` if you prefer, e.g., `toodee[(col, row)] = val`.
+- Index by row index (i.e., row major) to access row slices, e.g., `&toodee[row]`.
 - Iteration, any which way - `rows()`, `rows_mut()`, `col()`, `col_mut()`, `cells()`, `cells_mut()`.
 - `#[no_std]` compliant.
 - Can create a new `TooDeeView`  from a `&[T]`, or a `TooDeeViewMut`  from  a `&mut [T]`.
@@ -20,8 +21,8 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 
 ## Extras
 
-- `translate_with_wrap()` (scroll), `flip_rows()`, and `flip_cols()` operations.
-- `sort_by_row()` and `sort_by_col()` operations.
+- The `TranslateOps` trait provides `translate_with_wrap()` (efficient vertical and/or horizontal scrolling), `flip_rows()`, and `flip_cols()` operations.
+- The `SortOps` trait provides `sort_by_row()`, `sort_by_col()` and other related operations.
 
 ## TODO
 
