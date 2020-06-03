@@ -226,16 +226,15 @@ impl<'a, T> Iterator for Col<'a, T> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.v.is_empty() {
-            None
-        } else {
-            let (fst, snd) = self.v.split_at(1);
+        if let Some((fst, snd)) = self.v.split_first() {
             if snd.is_empty() {
                 self.v = &[];
             } else {
                 self.v = &snd[self.skip..];
             }
-            Some(&fst[0])
+            Some(fst)
+        } else {
+            None
         }
     }
 
@@ -274,16 +273,15 @@ impl<'a, T> Iterator for Col<'a, T> {
 impl<'a, T> DoubleEndedIterator for Col<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.v.is_empty() {
-            None
-        } else {
-            let (fst, snd) = self.v.split_at(self.v.len() - 1);
+        if let Some((last, fst)) = self.v.split_last() {
             if fst.is_empty() {
                 self.v = &[];
             } else {
                 self.v = &fst[..fst.len() - self.skip];
             }
-            Some(&snd[0])
+            Some(last)
+        } else {
+            None
         }
     }
 
@@ -315,17 +313,16 @@ impl<'a, T> Iterator for ColMut<'a, T> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if self.v.is_empty() {
-            None
-        } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
-            let (head, tail) = tmp.split_at_mut(1);
-            if tail.is_empty() {
+        let tmp = mem::replace(&mut self.v, &mut []);
+        if let Some((fst, snd)) = tmp.split_first_mut() {
+            if snd.is_empty() {
                 self.v = &mut [];
             } else {
-                self.v = &mut tail[self.skip..];
+                self.v = &mut snd[self.skip..];
             }
-            Some(&mut head[0])
+            Some(fst)
+        } else {
+            None
         }
     }
 
@@ -364,18 +361,17 @@ impl<'a, T> Iterator for ColMut<'a, T> {
 impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.v.is_empty() {
-            None
-        } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
-            let tmp_len = tmp.len();
-            let (fst, snd) = tmp.split_at_mut(tmp_len - 1);
+        let tmp = mem::replace(&mut self.v, &mut []);
+        if let Some((last, fst)) = tmp.split_last_mut() {
             if fst.is_empty() {
                 self.v = &mut [];
             } else {
-                self.v = &mut fst[..tmp_len - 1 - self.skip];
+                let new_len = fst.len() - self.skip;
+                self.v = &mut fst[..new_len];
             }
-            Some(&mut snd[0])
+            Some(last)
+        } else {
+            None
         }
     }
 
