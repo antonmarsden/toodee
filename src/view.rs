@@ -36,10 +36,12 @@ impl<'a, T> TooDeeView<'a, T> {
 
     /// Create a new `TooDeeViewMut` using the provided slice reference.
     /// 
-    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// # Panics
+    /// 
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
     /// 
-    /// Will panic if the slice's length is not sufficient to represent
+    /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
     pub fn new(num_cols: usize, num_rows: usize, data: &'a [T]) -> TooDeeView<'a, T> {
         if num_cols == 0 || num_rows == 0 {
@@ -165,10 +167,12 @@ impl<'a, T> TooDeeViewMut<'a, T> {
 
     /// Create a new `TooDeeViewMut` using the provided mutable slice reference.
     /// 
-    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// # Panics
+    /// 
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
     /// 
-    /// Will panic if the slice's length is not sufficient to represent
+    /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
     pub fn new(num_cols: usize, num_rows: usize, data: &'a mut [T]) -> TooDeeViewMut<'a, T> {
         if num_cols == 0 || num_rows == 0 {

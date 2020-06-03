@@ -95,7 +95,10 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     }
     
     /// Swap/exchange the data between two rows.
-    /// Will panic if either row index is out of bounds.
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if either row index is out of bounds.
     fn swap_rows(&mut self, r1: usize, r2: usize) {
         let num_rows = self.num_rows();
         assert!(r1 < num_rows);
@@ -116,6 +119,9 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize> {
     }
     
     /// Return the specified rows as mutable slices.
+    /// 
+    /// # Panics
+    /// 
     /// Will panic if `r1` and `r2` are equal, or if either row index is out of bounds.
     fn row_pair_mut(&mut self, r1: usize, r2: usize) -> (&mut [T], &mut [T]) {
         let num_rows = self.num_rows();

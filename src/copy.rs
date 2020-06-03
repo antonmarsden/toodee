@@ -51,6 +51,8 @@ pub trait CopyOps<T> : TooDeeOpsMut<T> {
     /// the top-left position of destination area. The `src` area will be partially overwritten
     /// if the regions overlap.
     /// 
+    /// # Panics
+    /// 
     /// Panics if:
     /// - `src` dimensions are outside the array's bounds
     /// - there's insufficient room to copy all of `src` to `dest`

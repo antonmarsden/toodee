@@ -33,13 +33,16 @@ pub struct TooDee<T> {
 }
 
 /// Custom `Default` implementation because `T` does not need to implement `Default`.
-/// See https://github.com/rust-lang/rust/issues/26925
-/// 
-/// ```
-/// use toodee::TooDee;
-/// let toodee : TooDee<u32> = TooDee::default();
-/// ```
+/// See rust issue [#26925](https://github.com/rust-lang/rust/issues/26925)
 impl<T> Default for TooDee<T> {
+    
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::TooDee;
+    /// struct Abc { }
+    /// let toodee : TooDee<Abc> = TooDee::default();
+    /// ```
     fn default() -> Self {
         let v = Vec::default();
         TooDee {
@@ -78,6 +81,8 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         self.num_rows
     }
 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
     /// let toodee : TooDee<u32> = TooDee::new(10, 5);
@@ -87,6 +92,8 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         ((0, 0), (self.num_cols, self.num_rows))
     }
     
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
     /// let toodee : TooDee<u32> = TooDee::new(10, 5);
@@ -118,6 +125,8 @@ impl<T> TooDeeOps<T> for TooDee<T> {
 
 impl<T> TooDeeOpsMut<T> for TooDee<T> {
     
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
     /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
@@ -146,6 +155,8 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         }
     }
 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
     /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
@@ -169,8 +180,12 @@ impl<T> TooDee<T> {
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
     /// the type's default value.
     /// 
-    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// # Panics
+    /// 
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -196,8 +211,12 @@ impl<T> TooDee<T> {
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
     /// an initial value.
     /// 
-    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// # Panics
+    /// 
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -221,6 +240,9 @@ impl<T> TooDee<T> {
     }
     
     /// Returns the element capacity of the underlying `Vec`.
+    /// 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::TooDee;
     /// let v = vec![42u32; 10];
@@ -232,6 +254,8 @@ impl<T> TooDee<T> {
     }
     
     /// Constructs a new, empty `TooDee<T>` with the specified element capacity.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::TooDee;
@@ -249,6 +273,8 @@ impl<T> TooDee<T> {
     /// Reserves the minimum capacity for at least `additional` more elements to be inserted
     /// into the `TooDee<T>`.
     /// 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::TooDee;
     /// let mut toodee : TooDee<u32> = TooDee::default();
@@ -262,6 +288,8 @@ impl<T> TooDee<T> {
     /// Reserves capacity for at least `additional` more elements to be inserted
     /// in the given `TooDee<T>`.    
     /// 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::TooDee;
     /// let mut toodee : TooDee<u32> = TooDee::default();
@@ -273,6 +301,8 @@ impl<T> TooDee<T> {
     }
 
     /// Shrinks the capacity of the underlying vector as much as possible.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::TooDee;
@@ -287,8 +317,12 @@ impl<T> TooDee<T> {
     /// Create a new `TooDee` array using the provided vector. The vector's length
     /// must match the dimensions of the array.
     /// 
-    /// Will panic if one of the dimensions is zero but the other is non-zero. This
+    /// # Panics
+    /// 
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -313,6 +347,8 @@ impl<T> TooDee<T> {
     /// Create a new `TooDee` array using the provided boxed slice. The slice's length
     /// must match the dimensions of the array.
     /// 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
     /// let v = vec![42u32; 10];
@@ -327,6 +363,8 @@ impl<T> TooDee<T> {
     
     /// Returns a reference to the raw array data
     /// 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
     /// let v = vec![42u32; 10];
@@ -338,6 +376,8 @@ impl<T> TooDee<T> {
     }
 
     /// Returns a mutable reference to the raw array data
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -353,6 +393,8 @@ impl<T> TooDee<T> {
     /// Clears the array, removing all values and zeroing the number of columns and rows.
     ///
     /// Note that this method has no effect on the allocated capacity of the array.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -370,6 +412,8 @@ impl<T> TooDee<T> {
     }
     
     /// Removes the last row from the array and returns it as a `Drain`, or `None` if it is empty.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -392,6 +436,8 @@ impl<T> TooDee<T> {
     
     /// Appends a new row to the array.
     /// 
+    /// # Panics
+    /// 
     /// Panics if the data's length doesn't match the length of existing rows (if any).
     pub fn push_row<I>(&mut self, data: impl IntoIterator<Item=T, IntoIter=I>)
     where I : Iterator<Item=T> + ExactSizeIterator
@@ -400,6 +446,8 @@ impl<T> TooDee<T> {
     }
 
     /// Inserts new `data` into the array at the specified `row`
+    /// 
+    /// # Panics
     /// 
     /// Panics if the data's length doesn't match the length of existing rows (if any).
     pub fn insert_row<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
@@ -422,7 +470,11 @@ impl<T> TooDee<T> {
 
     /// Removes the specified row from the array and returns it as a `Drain`
     /// 
+    /// # Panics
+    /// 
     /// Panics if the specified row index is out of bounds.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -449,6 +501,8 @@ impl<T> TooDee<T> {
 
     /// Removes the last column from the array and returns it as a `Drain`, or `None` if it is empty.
     /// 
+    /// # Examples
+    /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
     /// let v = vec![42u32; 15];
@@ -470,6 +524,8 @@ impl<T> TooDee<T> {
     
     /// Appends a new column to the array.
     /// 
+    /// # Panics
+    /// 
     /// Panics if the data's length doesn't match the length of existing rows (if any).
     pub fn push_col<I>(&mut self, data: impl IntoIterator<Item=T, IntoIter=I>)
     where I : Iterator<Item=T> + ExactSizeIterator
@@ -479,7 +535,11 @@ impl<T> TooDee<T> {
 
     /// Removes the specified column from the array and returns it as a `Drain`
     /// 
+    /// # Panics
+    /// 
     /// Panics if the specified column index is out of bounds.
+    /// 
+    /// # Examples
     /// 
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
@@ -524,6 +584,8 @@ impl<T> TooDee<T> {
     }
 
     /// Inserts new `data` into the array at the specified `col`.
+    /// 
+    /// # Panics
     /// 
     /// Panics if the data's length doesn't match the length of existing columns (if any).
     pub fn insert_col<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
