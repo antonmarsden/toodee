@@ -34,6 +34,11 @@ pub struct TooDee<T> {
 
 /// Custom `Default` implementation because `T` does not need to implement `Default`.
 /// See https://github.com/rust-lang/rust/issues/26925
+/// 
+/// ```
+/// use toodee::TooDee;
+/// let toodee : TooDee<u32> = TooDee::default();
+/// ```
 impl<T> Default for TooDee<T> {
     fn default() -> Self {
         let v = Vec::default();
@@ -73,10 +78,22 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         self.num_rows
     }
 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// assert_eq!(toodee.bounds(), ((0, 0), (10, 5)));
+    /// ```
     fn bounds(&self) -> (Coordinate, Coordinate) {
         ((0, 0), (self.num_cols, self.num_rows))
     }
     
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let view = toodee.view((1,2), (8,4));
+    /// assert_eq!(view.num_cols(), 7);
+    /// assert_eq!(view.num_rows(), 2);
+    /// ```
     fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
         TooDeeView::from_toodee(start, end, self)
     }
@@ -101,6 +118,13 @@ impl<T> TooDeeOps<T> for TooDee<T> {
 
 impl<T> TooDeeOpsMut<T> for TooDee<T> {
     
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let view = toodee.view_mut((1,2), (8,4));
+    /// assert_eq!(view.num_cols(), 7);
+    /// assert_eq!(view.num_rows(), 2);
+    /// ```
     fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
         TooDeeViewMut::from_toodee(start, end, self)
     }
@@ -122,6 +146,12 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         }
     }
 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// toodee.fill(42);
+    /// assert_eq!(toodee[1][1], 42);
+    /// ```
     fn fill<V>(&mut self, fill: V)
     where
         V: Borrow<T>,
@@ -191,6 +221,12 @@ impl<T> TooDee<T> {
     }
     
     /// Returns the element capacity of the underlying `Vec`.
+    /// ```
+    /// use toodee::TooDee;
+    /// let v = vec![42u32; 10];
+    /// let toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
+    /// assert!(toodee.capacity() >= 10);
+    /// ```
     pub fn capacity(&self) -> usize {
         self.data.capacity()
     }
@@ -334,6 +370,18 @@ impl<T> TooDee<T> {
     }
     
     /// Removes the last row from the array and returns it as a `Drain`, or `None` if it is empty.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// {
+    ///    let drain = toodee.pop_row().unwrap();
+    ///    assert_eq!(drain.len(), 5);
+    /// }
+    /// assert_eq!(toodee.num_cols(), 5);
+    /// assert_eq!(toodee.num_rows(), 2);
+    /// ```
     pub fn pop_row(&mut self) -> Option<DrainTooDee<'_, T>> {
         if self.num_rows == 0 {
             None
@@ -375,6 +423,18 @@ impl<T> TooDee<T> {
     /// Removes the specified row from the array and returns it as a `Drain`
     /// 
     /// Panics if the specified row index is out of bounds.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// {
+    ///    let drain = toodee.remove_row(1);
+    ///    assert_eq!(drain.len(), 5);
+    /// }
+    /// assert_eq!(toodee.num_cols(), 5);
+    /// assert_eq!(toodee.num_rows(), 2);
+    /// ```
     pub fn remove_row(&mut self, index : usize) -> DrainTooDee<'_, T>
     {
         assert!(index < self.num_rows);
@@ -388,6 +448,18 @@ impl<T> TooDee<T> {
     }
 
     /// Removes the last column from the array and returns it as a `Drain`, or `None` if it is empty.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// {
+    ///    let drain = toodee.pop_col().unwrap();
+    ///    assert_eq!(drain.len(), 3);
+    /// }
+    /// assert_eq!(toodee.num_cols(), 4);
+    /// assert_eq!(toodee.num_rows(), 3);
+    /// ```
     pub fn pop_col(&mut self) -> Option<DrainTooDee<'_, T>> {
         if self.num_cols == 0 {
             None
@@ -408,6 +480,18 @@ impl<T> TooDee<T> {
     /// Removes the specified column from the array and returns it as a `Drain`
     /// 
     /// Panics if the specified column index is out of bounds.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 15];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
+    /// {
+    ///    let drain = toodee.remove_col(1);
+    ///    assert_eq!(drain.len(), 3);
+    /// }
+    /// assert_eq!(toodee.num_cols(), 4);
+    /// assert_eq!(toodee.num_rows(), 3);
+    /// ```
     pub fn remove_col(&mut self, index: usize) -> DrainTooDee<'_, T>
     {
         assert!(index < self.num_cols);
