@@ -38,6 +38,9 @@ impl<'a, T> Iterator for Rows<'a, T> {
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.cols == 0 {
+            return (0, Some(0));
+        }
         let len = self.v.len();
         let denom = self.cols + self.skip_cols;
         let n = len / denom + (len % denom) / self.cols;
@@ -137,6 +140,9 @@ impl<'a, T> Iterator for RowsMut<'a, T> {
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
+        if self.cols == 0 {
+            return (0, Some(0));
+        }
         let len = self.v.len();
         let denom = self.cols + self.skip_cols;
         let n = len / denom + (len % denom) / self.cols;

@@ -12,6 +12,14 @@ mod toodee_tests_iter {
     }
 
     #[test]
+    fn rows_iter_empty() {
+        let toodee : TooDee<u32> = TooDee::default();
+        assert_eq!(toodee.rows().len(), 0);
+        assert_eq!(toodee.rows().num_cols(), 0);
+        assert_eq!(toodee.rows().next(), None);
+    }
+
+    #[test]
     fn rows_mut_iter() {
         let mut toodee = TooDee::init(10, 10, 22u32);
         assert_eq!(toodee.rows_mut().len(), 10);
@@ -19,6 +27,14 @@ mod toodee_tests_iter {
         assert_eq!(toodee.rows_mut().fold(0, |count, r| count + r.len()), 10 * 10);
     }
 
+    #[test]
+    fn rows_mut_iter_empty() {
+        let mut toodee : TooDee<u32> = TooDee::default();
+        assert_eq!(toodee.rows_mut().len(), 0);
+        assert_eq!(toodee.rows_mut().num_cols(), 0);
+        assert_eq!(toodee.rows_mut().next(), None);
+    }
+    
     #[test]
     fn view_rows_iter() {
         let toodee = TooDee::init(10, 10, 22u32);
