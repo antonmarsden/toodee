@@ -141,6 +141,14 @@ impl<T> TooDee<T> {
     /// 
     /// Will panic if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// assert_eq!(toodee.num_cols(), 10);
+    /// assert_eq!(toodee.num_rows(), 5);
+    /// assert_eq!(toodee[0][0], 0);
+    /// ```
     pub fn new(num_cols: usize, num_rows: usize) -> TooDee<T>
     where T: Default + Clone {
         if num_cols == 0 || num_rows == 0 {
@@ -160,6 +168,14 @@ impl<T> TooDee<T> {
     /// 
     /// Will panic if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let toodee = TooDee::init(10, 5, 42u32);
+    /// assert_eq!(toodee.num_cols(), 10);
+    /// assert_eq!(toodee.num_rows(), 5);
+    /// assert_eq!(toodee[0][0], 42);
+    /// ```
     pub fn init(num_cols: usize, num_rows: usize, init_value: T) -> TooDee<T>
     where T: Clone {
         if num_cols == 0 || num_rows == 0 {
@@ -174,7 +190,18 @@ impl<T> TooDee<T> {
         }
     }
     
+    /// Returns the element capacity of the underlying `Vec`.
+    pub fn capacity(&self) -> usize {
+        self.data.capacity()
+    }
+    
     /// Constructs a new, empty `TooDee<T>` with the specified element capacity.
+    /// 
+    /// ```
+    /// use toodee::TooDee;
+    /// let toodee : TooDee<u32> = TooDee::with_capacity(50);
+    /// assert!(toodee.capacity() >= 50);
+    /// ```
     pub fn with_capacity(capacity: usize) -> TooDee<T> {
         TooDee {
             num_cols : 0,
@@ -185,17 +212,38 @@ impl<T> TooDee<T> {
 
     /// Reserves the minimum capacity for at least `additional` more elements to be inserted
     /// into the `TooDee<T>`.
+    /// 
+    /// ```
+    /// use toodee::TooDee;
+    /// let mut toodee : TooDee<u32> = TooDee::default();
+    /// toodee.reserve_exact(50);
+    /// assert_eq!(toodee.capacity(), 50);
+    /// ```
     pub fn reserve_exact(&mut self, capacity: usize) {
         self.data.reserve_exact(capacity);
     }
     
     /// Reserves capacity for at least `additional` more elements to be inserted
     /// in the given `TooDee<T>`.    
+    /// 
+    /// ```
+    /// use toodee::TooDee;
+    /// let mut toodee : TooDee<u32> = TooDee::default();
+    /// toodee.reserve(50);
+    /// assert!(toodee.capacity() >= 50);
+    /// ```
     pub fn reserve(&mut self, capacity: usize) {
         self.data.reserve(capacity);
     }
 
     /// Shrinks the capacity of the underlying vector as much as possible.
+    /// 
+    /// ```
+    /// use toodee::TooDee;
+    /// let mut toodee : TooDee<u32> = TooDee::with_capacity(50);
+    /// toodee.shrink_to_fit();
+    /// assert_eq!(toodee.capacity(), 0);
+    /// ```
     pub fn shrink_to_fit(&mut self) {
         self.data.shrink_to_fit();
     }
@@ -205,6 +253,15 @@ impl<T> TooDee<T> {
     /// 
     /// Will panic if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 10];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
+    /// assert_eq!(toodee.num_cols(), 5);
+    /// assert_eq!(toodee.num_rows(), 2);
+    /// assert_eq!(toodee[0][0], 42);
+    /// ```
     pub fn from_vec(num_cols: usize, num_rows: usize, v: Vec<T>) -> TooDee<T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
@@ -219,16 +276,39 @@ impl<T> TooDee<T> {
     
     /// Create a new `TooDee` array using the provided boxed slice. The slice's length
     /// must match the dimensions of the array.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 10];
+    /// let mut toodee : TooDee<u32> = TooDee::from_box(5, 2, v.into_boxed_slice());
+    /// assert_eq!(toodee.num_cols(), 5);
+    /// assert_eq!(toodee.num_rows(), 2);
+    /// assert_eq!(toodee[0][0], 42);
+    /// ```
     pub fn from_box(num_cols: usize, num_rows: usize, b: Box<[T]>) -> TooDee<T> {
         TooDee::from_vec(num_cols, num_rows, b.into_vec())
     }
     
     /// Returns a reference to the raw array data
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 10];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
+    /// assert_eq!(toodee.data()[0], 42);
+    /// ```
     pub fn data(&self) -> &[T] {
         &self.data
     }
 
     /// Returns a mutable reference to the raw array data
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 10];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
+    /// assert_eq!(toodee.data_mut()[0], 42);
+    /// ```
     pub fn data_mut(&mut self) -> &mut [T] {
         &mut self.data
     }
@@ -237,6 +317,16 @@ impl<T> TooDee<T> {
     /// Clears the array, removing all values and zeroing the number of columns and rows.
     ///
     /// Note that this method has no effect on the allocated capacity of the array.
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps};
+    /// let v = vec![42u32; 10];
+    /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
+    /// toodee.clear();
+    /// assert_eq!(toodee.num_cols(), 0);
+    /// assert_eq!(toodee.num_rows(), 0);
+    /// assert!(toodee.capacity() >= 10);
+    /// ```
     pub fn clear(&mut self) {
         self.num_cols = 0;
         self.num_rows = 0;
