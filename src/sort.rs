@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use core::cmp::Ordering;
 
 use crate::ops::*;
@@ -9,25 +10,26 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 /// Common re-indexing logic used internally by the `SortOps` trait.
-fn reindex_in_place<F>(ordering : &mut [usize], mut swap_func : F)
+fn reindex_in_place<F>(ordering : &mut [(usize,usize)], mut swap_func : F)
 where F: FnMut(usize, usize)
 {
     let len = ordering.len();
-    // Set up a reverse lookup
-    let mut inverse : Vec<usize> = vec![0usize; len];
-    for i in 0..len {
-        inverse[ordering[i]] = i;
+    
+    // create a reverse lookup
+    for idx in 0..len {
+        let v = ordering[idx].0;
+        ordering[v].1 = idx;
     }
     
     // Swap until everything is in the right position.
     for i in 0..len {
-        let other = ordering[i];
+        let other = ordering[i].0;
         if i != other {
             swap_func(i, other);
-            let inv_i = inverse[i];
+            let inv_i = ordering[i].1;
             if inv_i > i {
-                ordering[inv_i] = other;
-                inverse[other] = inv_i;
+                ordering[inv_i].0 = other;
+                ordering[other].1 = inv_i;
             }
         }
     }
@@ -58,10 +60,10 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         F: FnMut(&T, &T) -> Ordering, 
     {
         assert!(row < self.num_rows());
-        let mut sort_data : Vec<(usize, &T)> = self[row].iter().enumerate().collect();
+        let mut sort_data : Box<[(usize, &T)]> = self[row].iter().enumerate().collect();
         sort_data.sort_by(|(_, vi), (_, vj)| compare(vi, vj));
         
-        let mut ordering : Vec<usize> = sort_data.iter().map(|(i, _)| *i).collect();
+        let mut ordering : Box<[(usize,usize)]> = sort_data.iter().map(|(i, _)| (*i, 0usize)).collect();
 
         // Build up a "trace" of swaps, then apply the swap trace to each row
         // This is faster than applying swap_cols() directly.
@@ -69,8 +71,8 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         reindex_in_place(&mut ordering, |a, b| swap_trace.push((a, b)));
         
         for r in self.rows_mut() {
-            for (a, b) in swap_trace.iter() {
-                r.swap(*a, *b);
+            for &(a, b) in swap_trace.iter() {
+                r.swap(a, b);
             }
         }
     }
@@ -82,10 +84,10 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         F: FnMut(&T, &T) -> Ordering, 
     {
         assert!(row < self.num_rows());
-        let mut sort_data : Vec<(usize, &T)> = self[row].iter().enumerate().collect();
+        let mut sort_data : Box<[(usize, &T)]> = self[row].iter().enumerate().collect();
         sort_data.sort_unstable_by(|(_, vi), (_, vj)| compare(vi, vj));
         
-        let mut ordering : Vec<usize> = sort_data.iter().map(|(i, _)| *i).collect();
+        let mut ordering : Box<[(usize,usize)]> = sort_data.iter().map(|(i, _)| (*i, 0usize)).collect();
 
         // Build up a "trace" of swaps, then apply the swap trace to each row
         // This is faster than applying swap_cols() directly.
@@ -93,8 +95,8 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         reindex_in_place(&mut ordering, |a, b| swap_trace.push((a, b)));
         
         for r in self.rows_mut() {
-            for (a, b) in swap_trace.iter() {
-                r.swap(*a, *b);
+            for &(a, b) in swap_trace.iter() {
+                r.swap(a, b);
             }
         }
     }
@@ -134,10 +136,10 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         F: FnMut(&T, &T) -> Ordering, 
     {
         assert!(col < self.num_cols());
-        let mut sort_data : Vec<(usize, &T)> = self.col(col).enumerate().collect();
+        let mut sort_data : Box<[(usize, &T)]> = self.col(col).enumerate().collect();
         sort_data.sort_by(|(_, vi), (_, vj)| compare(vi, vj));
         
-        let mut ordering : Vec<usize> = sort_data.iter().map(|(i, _)| *i).collect();
+        let mut ordering : Box<[(usize,usize)]> = sort_data.iter().map(|(i, _)| (*i, 0usize)).collect();
         reindex_in_place(&mut ordering, |a, b| self.swap_rows(a, b));
     }
 
@@ -148,10 +150,10 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         F: FnMut(&T, &T) -> Ordering, 
     {
         assert!(col < self.num_cols());
-        let mut sort_data : Vec<(usize, &T)> = self.col(col).enumerate().collect();
+        let mut sort_data : Box<[(usize, &T)]> = self.col(col).enumerate().collect();
         sort_data.sort_unstable_by(|(_, vi), (_, vj)| compare(vi, vj));
         
-        let mut ordering : Vec<usize> = sort_data.iter().map(|(i, _)| *i).collect();
+        let mut ordering : Box<[(usize,usize)]> = sort_data.iter().map(|(i, _)| (*i, 0usize)).collect();
         reindex_in_place(&mut ordering, |a, b| self.swap_rows(a, b));
     }
 

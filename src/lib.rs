@@ -11,10 +11,6 @@ A lightweight two-dimensional wrapper around a `Vec`.
 #![warn(rust_2018_idioms)]
 #![warn(missing_debug_implementations)]
 
-// Need this to use the vec! macro
-#[macro_use]
-extern crate alloc;
-
 mod iter;
 mod view;
 mod ops;
