@@ -56,6 +56,14 @@ impl<T> Default for TooDee<T> {
 impl<T> Index<usize> for TooDee<T> {
     type Output = [T];
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let row = &toodee[3];
+    /// assert_eq!(row.len(), 10);
+    /// ```
     fn index(&self, row: usize) -> &Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.num_cols;
@@ -64,6 +72,15 @@ impl<T> Index<usize> for TooDee<T> {
 }
 
 impl<T> IndexMut<usize> for TooDee<T> {
+
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut row = &mut toodee[3];
+    /// row[0] = 42;
+    /// ```
     fn index_mut(&mut self, row: usize) -> &mut Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.num_cols;
@@ -73,10 +90,24 @@ impl<T> IndexMut<usize> for TooDee<T> {
 
 impl<T> TooDeeOps<T> for TooDee<T> {
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// assert_eq!(toodee.num_cols(), 10);
+    ///
     fn num_cols(&self) -> usize {
         self.num_cols
     }
 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// assert_eq!(toodee.num_rows(), 5);
+    ///
     fn num_rows(&self) -> usize {
         self.num_rows
     }
@@ -105,6 +136,16 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         TooDeeView::from_toodee(start, end, self)
     }
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut rows = toodee.rows();
+    /// assert_eq!(rows.len(), 5);
+    /// let r0 = rows.next().unwrap();
+    /// assert_eq!(r0.len(), 10);
+    /// ```
     fn rows(&self) -> Rows<'_, T> {
         Rows {
             cols : self.num_cols,
@@ -113,6 +154,14 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         }
     }
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut col = toodee.col(8);
+    /// assert_eq!(col.len(), 5);
+    /// ```
     fn col(&self, col: usize) -> Col<'_, T> {
         assert!(col < self.num_cols);
         Col {
@@ -138,6 +187,16 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         TooDeeViewMut::from_toodee(start, end, self)
     }
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut rows = toodee.rows_mut();
+    /// assert_eq!(rows.len(), 5);
+    /// let r0 = rows.next().unwrap();
+    /// assert_eq!(r0.len(), 10);
+    /// ```
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
         RowsMut {
             cols : self.num_cols,
@@ -146,6 +205,14 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         }
     }
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut col = toodee.col_mut(8);
+    /// assert_eq!(col.len(), 5);
+    /// ```
     fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
         assert!(col < self.num_cols);
         let dlen = self.data.len();
@@ -627,6 +694,7 @@ impl<T> TooDee<T> {
 }
 
 /// Use `Vec`'s `IntoIter` for performance reasons.
+/// 
 /// TODO: return type that implements `TooDeeIterator`
 impl<T> IntoIterator for TooDee<T> {
     type Item = T;
