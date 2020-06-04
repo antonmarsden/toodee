@@ -253,7 +253,7 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
             v : &mut self.data[col..dlen - self.num_cols + col + 1],
         }
     }
-
+    
     /// # Examples
     /// 
     /// ```
