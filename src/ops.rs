@@ -41,7 +41,7 @@ pub trait TooDeeOps<T> : Index<usize, Output=[T]> + Index<Coordinate, Output=T> 
     /// Returns a view (or subset) of the current area based on the coordinates provided.
     fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T>;
     
-    /// Returns an iterator of slices, where each slice represents the entire row of the object's area.
+    /// Returns an iterator of slices, where each slice represents an entire row.
     fn rows(&self) -> Rows<'_, T>;
     
     /// Returns an iterator over a single column

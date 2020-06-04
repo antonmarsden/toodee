@@ -11,6 +11,7 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 
 - Raw access to the underlying vector's slice via `data()` and `data_mut()`.
 - Creation of performant two-dimensional subsets using `view()` and `view_mut()`.
+- Most operations work on both `TooDee` and `TooDeeViewMut` structs - see below for how this pattern can be extended.
 - Get/set specific cells using indexing, e.g., `toodee[row][col] = val`.
 - Index with a `Coordinate` if you prefer, e.g., `toodee[(col, row)] = val`.
 - Index by row index (i.e., row major) to access row slices, e.g., `&toodee[row]`.
@@ -19,10 +20,60 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 - Can create a new `TooDeeView`  from a `&[T]`, or a `TooDeeViewMut`  from  a `&mut [T]`.
 - `insert_col()`, `remove_col()`, `insert_row()`, and `remove_row()` implementations with good performance.
 
-## Extras
+## Additional Algorithms
 
-- The `TranslateOps` trait provides `translate_with_wrap()` (efficient vertical and/or horizontal scrolling), `flip_rows()`, and `flip_cols()` operations.
-- The `SortOps` trait provides `sort_by_row()`, `sort_by_col()` and other related operations.
+### CopyOps (always included)
+
+Various operations that copy data within the same 2D array, or copy data from one array to another. Many of these
+operations are named like their slice counterparts, e.g., `copy_from_slice()` or `copy_from_toodee()`.
+
+### TranslateOps (`translate` feature, included by default)
+
+The `TranslateOps` trait provides common translation algorithms, including:
+- `translate_with_wrap()`, a way to shift data around vertically and horizontally.
+- `flip_rows()`, i.e., a mirror translation of data about the center row.
+- `flip_cols()`, i.e., a mirror translation of data about the center column.
+
+### SortOps (`sort` feature, included by default)
+
+The `SortOps` trait provides efficient implementations of:
+- `sort_by_row()` operations, with stable and unstable variants.
+- `sort_by_col()` operations, with stable and unstable variants.
+
+## Build Your Own 2D Algorithms
+
+Traits such as `SortOps` contain additional algorithms. These traits are defined by extending
+the `TooDeeOpsMut` trait, which has been implemented for `TooDee` and `TooDeeViewMut`. I recommend
+taking the same approach because the algorithms you implement will work on both structs. Your implementation
+could look something like:
+
+```
+pub trait FooOps<T> : TooDeeOpsMut<T> {
+
+    fn foo(&mut self) -> Bar {
+        ...
+        return bar;
+    }
+}
+```
+
+The above code would provide a default `foo()` implementation that could be overridden if required. Then it's
+simply a matter of stating that `TooDee` and `TooDeeOpsMut` both implement `FooOps`:
+
+```
+impl<T> FooOps<T> for TooDeeViewMut<'_, T> {}
+
+impl<T> FooOps<T> for TooDee<T> {}
+```
+
+Then it's just a matter of calling the method, e.g.,
+
+```
+let bar = my_toodee.foo();
+let bar_view = my_toodee_mut_view.foo();
+```
+
+Happy coding :)
 
 ## TODO
 
