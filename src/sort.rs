@@ -27,9 +27,7 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
         if i != other {
             let inv_i = ordering[i].1;
             // we re-use the ordering slice to store the swap trace
-            let latest = &mut ordering[swap_count];
-            latest.0 = i;
-            latest.1 = other;
+            ordering[swap_count] = (i, other);
             swap_count += 1;
             if inv_i > i {
                 ordering[inv_i].0 = other;
