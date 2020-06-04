@@ -2,8 +2,9 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.1.4
 
+- Improved performance of `SortOps` functions, particularly `sort_by_row` and variants.
 - More documentation improvements
 - Added `Index<Coordinate>` and `IndexMut<Coordinate>` implementations
 
