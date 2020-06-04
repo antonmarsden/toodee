@@ -44,8 +44,12 @@ The `SortOps` trait provides efficient implementations of:
 
 Traits such as `SortOps` contain additional algorithms. These traits are defined by extending
 the `TooDeeOpsMut` trait, which has been implemented for `TooDee` and `TooDeeViewMut`. I recommend
-taking the same approach because the algorithms you implement will work on both structs. Your implementation
-could look something like:
+taking the same approach because the algorithms you implement will then work on both structs. This may not seem
+useful at first glance, but a great use case would be sorting a spreadsheet by column. If each column
+had a header row, you'd want to exclude that header row from sorting. You can achieve this by creating
+a `TooDeeViewMut` and sorting the view.
+
+The implementation of your new trait could look something like:
 
 ```
 pub trait FooOps<T> : TooDeeOpsMut<T> {
@@ -58,7 +62,7 @@ pub trait FooOps<T> : TooDeeOpsMut<T> {
 ```
 
 The above code would provide a default `foo()` implementation that could be overridden if required. Then it's
-simply a matter of stating that `TooDee` and `TooDeeOpsMut` both implement `FooOps`:
+simply a matter of stating that both `TooDee` and `TooDeeOpsMut` implement `FooOps`:
 
 ```
 impl<T> FooOps<T> for TooDeeViewMut<'_, T> {}
