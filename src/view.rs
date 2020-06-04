@@ -45,6 +45,14 @@ impl<'a, T> TooDeeView<'a, T> {
     /// 
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::TooDeeView;
+    /// let data = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    /// let view = TooDeeView::new(4, 3, &data);
+    /// ```
     pub fn new(num_cols: usize, num_rows: usize, data: &'a [T]) -> TooDeeView<'a, T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
@@ -190,6 +198,14 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// 
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::TooDeeViewMut;
+    /// let mut data = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    /// let view_mut = TooDeeViewMut::new(4, 3, &mut data);
+    /// ```
     pub fn new(num_cols: usize, num_rows: usize, data: &'a mut [T]) -> TooDeeViewMut<'a, T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
