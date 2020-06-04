@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use core::mem;
 
 /// An `Iterator` that knows how many columns it emits per row.

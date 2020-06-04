@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use core::cmp::Ordering;
 
 use crate::toodee::*;

@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use crate::ops::*;
 use crate::toodee::*;
 use crate::view::*;

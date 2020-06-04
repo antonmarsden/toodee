@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 #![allow(missing_debug_implementations)]
 
 use crate::iter::TooDeeIterator;

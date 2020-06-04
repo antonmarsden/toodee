@@ -1,6 +1,8 @@
 extern crate alloc;
 use alloc::boxed::Box;
 use core::cmp::Ordering;
+use core::slice;
+use core::ptr;
 
 use crate::ops::*;
 use crate::toodee::*;
@@ -25,8 +27,9 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
         if i != other {
             let inv_i = ordering[i].1;
             // we re-use the ordering slice to store the swap trace
-            ordering[swap_count].0 = i;
-            ordering[swap_count].1 = other;
+            let latest = &mut ordering[swap_count];
+            latest.0 = i;
+            latest.1 = other;
             swap_count += 1;
             if inv_i > i {
                 ordering[inv_i].0 = other;
@@ -35,7 +38,19 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
         }
     }
     
+    // Only return the portion of the slice containing the swap trace.
     &mut ordering[..swap_count]
+}
+
+/// Some unsafeness to coerce a [(usize, &T)] into a [(usize, usize)]. The `Box` is consumed,
+/// meaning that we "unborrow" the &T values.
+fn sorted_box_to_ordering<T>(sorted: Box<[(usize, &T)]>) -> Box<[(usize,usize)]> {
+    let len = sorted.len();
+    let p = Box::into_raw(sorted);
+    unsafe {
+        let p2 = slice::from_raw_parts_mut(p as *mut (usize, usize), len);
+        Box::from_raw(p2)
+    }
 }
 
 /// Provides sorting capabilities to two-dimensional arrays. Sorting of the rows and columns
@@ -69,13 +84,20 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         sort_data.sort_by(|i, j| compare(i.1, j.1));
         
         // Build up a "trace" of column swaps to apply
-        let mut ordering : Box<[(usize, usize)]> = sort_data.iter().map(|x| (x.0, 0usize)).collect();
+        
+        let mut ordering = sorted_box_to_ordering(sort_data);
+        
         let swap_trace = build_swap_trace(&mut ordering);
         
         // Apply the swap trace to each row. For larger arrays, this approach is faster than applying swap_cols() directly.
         for r in self.rows_mut() {
             for i in swap_trace.iter() {
-                r.swap(i.0, i.1);
+                unsafe {
+                    let pa: *mut T = r.get_unchecked_mut(i.0);
+                    let pb: *mut T = r.get_unchecked_mut(i.1);
+                    ptr::swap(pa, pb);
+                }
+//                r.swap(i.0, i.1);
             }
         }
     }
@@ -93,13 +115,20 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         sort_data.sort_unstable_by(|i, j| compare(i.1, j.1));
 
         // Build up a "trace" of column swaps to apply
-        let mut ordering : Box<[(usize, usize)]> = sort_data.iter().map(|x| (x.0, 0usize)).collect();
+
+        let mut ordering = sorted_box_to_ordering(sort_data);
+
         let swap_trace = build_swap_trace(&mut ordering);
         
         // Apply the swap trace to each row. For larger arrays, this approach is faster than applying swap_cols() directly.
         for r in self.rows_mut() {
             for i in swap_trace.iter() {
-                r.swap(i.0, i.1);
+                unsafe {
+                    let pa: *mut T = r.get_unchecked_mut(i.0);
+                    let pb: *mut T = r.get_unchecked_mut(i.1);
+                    ptr::swap(pa, pb);
+                }
+//                r.swap(i.0, i.1);
             }
         }
     }
@@ -144,7 +173,8 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
 
         sort_data.sort_by(|i, j| compare(i.1, j.1));
         
-        let mut ordering : Box<[(usize, usize)]> = sort_data.iter().map(|x| (x.0, 0usize)).collect();
+        let mut ordering = sorted_box_to_ordering(sort_data);
+        
         let swap_trace = build_swap_trace(&mut ordering);
         
         for i in swap_trace.iter() {
@@ -163,7 +193,8 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
 
         sort_data.sort_unstable_by(|i, j| compare(i.1, j.1));
 
-        let mut ordering : Box<[(usize, usize)]> = sort_data.iter().map(|x| (x.0, 0usize)).collect();
+        let mut ordering = sorted_box_to_ordering(sort_data);
+        
         let swap_trace = build_swap_trace(&mut ordering);
 
         for i in swap_trace.iter() {

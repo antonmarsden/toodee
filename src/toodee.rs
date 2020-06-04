@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
