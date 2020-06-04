@@ -99,23 +99,20 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// # Panics
     /// 
     /// Panics if either row index is out of bounds.
-    fn swap_rows(&mut self, r1: usize, r2: usize) {
-        let num_rows = self.num_rows();
-        assert!(r1 < num_rows);
-        assert!(r2 < num_rows);
+    fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
         match r1.cmp(&r2) {
-            Ordering::Less => {
-                let mut iter = self.rows_mut();
-                let tmp = iter.nth(r1).unwrap();
-                tmp.swap_with_slice(iter.nth(r2-r1-1).unwrap());
-            },
+            Ordering::Less => {},
             Ordering::Greater => {
-                let mut iter = self.rows_mut();
-                let tmp = iter.nth(r2).unwrap();
-                tmp.swap_with_slice(iter.nth(r1-r2-1).unwrap());
+                core::mem::swap(&mut r1, &mut r2);
             },
-            Ordering::Equal => {},
+            Ordering::Equal => {
+                return;
+            }
         }
+        assert!(r2 < self.num_rows());
+        let mut iter = self.rows_mut();
+        let tmp = iter.nth(r1).unwrap();
+        tmp.swap_with_slice(iter.nth(r2-r1-1).unwrap());
     }
     
     /// Return the specified rows as mutable slices.
