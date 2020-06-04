@@ -1,8 +1,7 @@
-#![forbid(unsafe_code)]
-
 use core::ops::{Index, IndexMut};
 use core::cmp::Ordering;
 use core::borrow::Borrow;
+use core::ptr;
 
 use crate::iter::*;
 use crate::view::*;
@@ -92,7 +91,13 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         assert!(c1 < num_cols);
         assert!(c2 < num_cols);
         for r in self.rows_mut() {
-            r.swap(c1, c2);
+            // The column indices have been checked with asserts (see above), so we can
+            // safely access and swap the elements using `get_unchecked_mut`.
+            unsafe {
+                let pa: *mut T = r.get_unchecked_mut(c1);
+                let pb: *mut T = r.get_unchecked_mut(c2);
+                ptr::swap(pa, pb);
+            }
         }
     }
     

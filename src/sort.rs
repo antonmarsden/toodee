@@ -42,7 +42,7 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
     &mut ordering[..swap_count]
 }
 
-/// Some unsafeness to coerce a [(usize, &T)] into a [(usize, usize)]. The `Box` is consumed,
+/// Use some unsafeness to coerce a [(usize, &T)] into a [(usize, usize)]. The `Box` is consumed,
 /// meaning that we "unborrow" the &T values.
 fn sorted_box_to_ordering<T>(sorted: Box<[(usize, &T)]>) -> Box<[(usize,usize)]> {
     let len = sorted.len();
@@ -92,6 +92,8 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         // Apply the swap trace to each row. For larger arrays, this approach is faster than applying swap_cols() directly.
         for r in self.rows_mut() {
             for i in swap_trace.iter() {
+                // The swap indices will definitely be within the expected range,
+                // so we can use `get_unchecked_mut` here
                 unsafe {
                     let pa: *mut T = r.get_unchecked_mut(i.0);
                     let pb: *mut T = r.get_unchecked_mut(i.1);
@@ -123,6 +125,8 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         // Apply the swap trace to each row. For larger arrays, this approach is faster than applying swap_cols() directly.
         for r in self.rows_mut() {
             for i in swap_trace.iter() {
+                // The swap indices will definitely be within the expected range,
+                // so we can use `get_unchecked_mut` here
                 unsafe {
                     let pa: *mut T = r.get_unchecked_mut(i.0);
                     let pb: *mut T = r.get_unchecked_mut(i.1);
