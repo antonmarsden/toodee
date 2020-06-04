@@ -8,11 +8,11 @@ use crate::view::*;
 /// movement operations such as flipping.
 pub trait TranslateOps<T> : TooDeeOpsMut<T> {
 
-    /// Translate (or scroll) the area by moving `col_mid` to the first column and
-    /// `row_mid` to the first row.
+    /// Translate (or scroll) the entire area. The `mid` coordinate will be moved to (0, 0), and
+    /// all other elements will be moved in the same fashion. All the original data is preserved by
+    /// wrapping at the array edges.
     /// 
-    /// All data is preserved by wrapping at the array edges, so `fill()` could be used
-    /// to clear old data if required.
+    /// If you don't want the wrapped data, simply overwrite it after translation.
     /// 
     /// # Examples
     /// 
@@ -32,7 +32,7 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     /// let v = vec![42u32; 15];
     /// let mut toodee : TooDee<u32> = TooDee::from_vec(5, 3, v);
     /// // set (4, 2) to 1
-    /// toodee[2][4] = 1;
+    /// toodee[(4, 2)] = 1;
     /// // move (4, 2) to (0, 0)
     /// toodee.translate_with_wrap((4, 2));
     /// assert_eq!(toodee[0][0], 1);
