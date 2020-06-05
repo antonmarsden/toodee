@@ -82,15 +82,19 @@ fn insert_benchmark(c: &mut Criterion) {
         
         // insert_row
         {
+            // reserves space to exclude memory allocation from benchmark time
             group.bench_with_input(BenchmarkId::new("insert_row", size), &size, |b, _| {
-                b.iter_batched(|| (toodee.clone(), new_data.clone() ), |(mut data, new_data)| data.insert_row(0, new_data), BatchSize::LargeInput)
+                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.reserve(*size); (tmp, new_data.clone()) },
+                |(mut data, new_data)| data.insert_row(0, new_data), BatchSize::LargeInput)
             });
         }
 
         // insert_col
         {
+            // reserves space to exclude memory allocation from benchmark time
             group.bench_with_input(BenchmarkId::new("insert_col", size), &size, |b, _| {
-                b.iter_batched(|| (toodee.clone(), new_data.clone() ), |(mut data, new_data)| data.insert_col(0, new_data), BatchSize::LargeInput)
+                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.reserve(*size); (tmp, new_data.clone()) },
+                |(mut data, new_data)| data.insert_col(0, new_data), BatchSize::LargeInput)
             });
         }
         
