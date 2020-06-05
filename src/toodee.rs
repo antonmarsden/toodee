@@ -3,6 +3,7 @@ use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
 use core::borrow::Borrow;
 use core::iter::IntoIterator;
+use core::ptr;
 
 extern crate alloc;
 
@@ -16,8 +17,11 @@ use crate::iter::*;
 use crate::view::*;
 use crate::ops::*;
 
-/// Drain type alias for future-proofing.
-pub type DrainTooDee<'a, T> = Drain<'a, T>;
+/// DrainRow type alias for future-proofing.
+pub type DrainRow<'a, T> = Drain<'a, T>;
+
+/// DrainCol type alias for future-proofing.
+pub type DrainCol<'a, T> = Drain<'a, T>;
 
 /// IntoIter type alias for future-proofing.
 pub type IntoIterTooDee<T> = IntoIter<T>;
@@ -531,7 +535,7 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee.num_cols(), 5);
     /// assert_eq!(toodee.num_rows(), 2);
     /// ```
-    pub fn pop_row(&mut self) -> Option<DrainTooDee<'_, T>> {
+    pub fn pop_row(&mut self) -> Option<DrainRow<'_, T>> {
         if self.num_rows == 0 {
             None
         } else {
@@ -565,12 +569,25 @@ impl<T> TooDee<T> {
         } else {
             assert_eq!(self.num_cols, iter.len());
         }
-        self.num_rows += 1;
-        // append the new row to the end of the vector
-        self.data.extend(iter);
-        // rotate a subset of the vector
+        
+        self.reserve(self.num_cols);
+
         let start = index * self.num_cols;
-        self.data[start..].rotate_right(self.num_cols);
+        let len = self.data.len();
+        unsafe {
+            let mut p = self.data.as_mut_ptr().add(start);
+            // shift everything to make space for the new row
+            ptr::copy(p, p.add(self.num_cols), len - start);
+            for e in iter {
+                ptr::write(p, e);
+                p = p.add(1);
+            }
+            self.data.set_len(len + self.num_cols);
+        }
+
+        // update the number of rows
+        self.num_rows += 1;
+
     }
 
     /// Removes the specified row from the array and returns it as a `Drain`
@@ -592,7 +609,7 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee.num_cols(), 5);
     /// assert_eq!(toodee.num_rows(), 2);
     /// ```
-    pub fn remove_row(&mut self, index : usize) -> DrainTooDee<'_, T>
+    pub fn remove_row(&mut self, index : usize) -> DrainRow<'_, T>
     {
         assert!(index < self.num_rows);
         let start = index * self.num_cols;
@@ -619,7 +636,7 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee.num_cols(), 4);
     /// assert_eq!(toodee.num_rows(), 3);
     /// ```
-    pub fn pop_col(&mut self) -> Option<DrainTooDee<'_, T>> {
+    pub fn pop_col(&mut self) -> Option<DrainCol<'_, T>> {
         if self.num_cols == 0 {
             None
         } else {
@@ -633,7 +650,7 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if the data's length doesn't match the length of existing rows (if any).
     pub fn push_col<I>(&mut self, data: impl IntoIterator<Item=T, IntoIter=I>)
-    where I : Iterator<Item=T> + ExactSizeIterator
+    where I : Iterator<Item=T> + ExactSizeIterator + DoubleEndedIterator
     {
         self.insert_col(self.num_cols, data);
     }
@@ -657,7 +674,7 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee.num_cols(), 4);
     /// assert_eq!(toodee.num_rows(), 3);
     /// ```
-    pub fn remove_col(&mut self, index: usize) -> DrainTooDee<'_, T>
+    pub fn remove_col(&mut self, index: usize) -> DrainCol<'_, T>
     {
         assert!(index < self.num_cols);
         
@@ -694,7 +711,7 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if the data's length doesn't match the length of existing columns (if any).
     pub fn insert_col<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
-    where I : Iterator<Item=T> + ExactSizeIterator
+    where I : Iterator<Item=T> + ExactSizeIterator + DoubleEndedIterator
     {
         assert!(index <= self.num_cols);
         let iter = data.into_iter();
@@ -704,28 +721,33 @@ impl<T> TooDee<T> {
             assert_eq!(self.num_rows, iter.len());
         }
         
-        // This algorithm is basically a reverse of the remove_col() impl
+        self.reserve(self.num_rows);
         
-        // append new column data to end of array
-        self.data.extend(iter);
-        
-        let incr = self.num_cols;
-        
+        let old_len = self.data.len();
+        let new_len = old_len + self.num_rows;
+        let suffix_len = self.num_cols - index;
+        unsafe {
+            let p = self.data.as_mut_ptr();
+            let mut read_p = p.add(old_len);
+            let mut write_p = p.add(new_len);
+            for e in iter.rev() {
+                // shift suffix
+                read_p = read_p.sub(suffix_len);
+                write_p = write_p.sub(suffix_len);
+                ptr::copy(read_p, write_p, suffix_len);
+                write_p = write_p.sub(1);
+                // place new col element
+                ptr::write(write_p, e);
+                // shift prefix
+                read_p = read_p.sub(index);
+                write_p = write_p.sub(index);
+                ptr::copy(read_p, write_p, index);
+            }
+            self.data.set_len(new_len);
+        }
+
         // update the number of columns
         self.num_cols += 1;
-
-        let mut start = self.data.len() - self.num_rows - (self.num_cols - 1 - index);
-        
-        self.data[start..].rotate_right(self.num_rows);
-        
-        let mut n = self.num_rows - 1;
-        let mut end = start + self.num_cols + n;
-        while start >= incr && n > 0 {
-            start -= incr;
-            end -= self.num_cols;
-            self.data[start..end].rotate_right(n);
-            n -= 1;
-        }
 
     }
 

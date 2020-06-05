@@ -89,6 +89,15 @@ fn insert_benchmark(c: &mut Criterion) {
             });
         }
 
+        // insert_row_alloc
+        {
+            // force allocation by shrinking the Vec
+            group.bench_with_input(BenchmarkId::new("insert_row_alloc", size), &size, |b, _| {
+                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.shrink_to_fit(); (tmp, new_data.clone()) },
+                |(mut data, new_data)| data.insert_row(0, new_data), BatchSize::LargeInput)
+            });
+        }
+
         // insert_col
         {
             // reserves space to exclude memory allocation from benchmark time
@@ -98,9 +107,43 @@ fn insert_benchmark(c: &mut Criterion) {
             });
         }
         
+        // insert_col_alloc
+        {
+            // reserves space to exclude memory allocation from benchmark time
+            group.bench_with_input(BenchmarkId::new("insert_col_alloc", size), &size, |b, _| {
+                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.shrink_to_fit(); (tmp, new_data.clone()) },
+                |(mut data, new_data)| data.insert_col(0, new_data), BatchSize::LargeInput)
+            });
+        }
     }
 }
 
+fn remove_benchmark(c: &mut Criterion) {
+    let mut group = c.benchmark_group("remove");
+    for size in [100usize, 200, 300, 400].iter() {
+        
+        group.throughput(Throughput::Elements((*size * *size) as u64));
+        
+        let toodee = new_rnd_toodee(*size, *size);
+        
+        // remove_row
+        {
+            group.bench_with_input(BenchmarkId::new("remove_row", size), &size, |b, _| {
+                b.iter_batched(|| toodee.clone(),
+                |mut data| { let drain = data.remove_row(0); black_box(drain.sum::<u32>()); }, BatchSize::LargeInput)
+            });
+        }
 
-criterion_group!(benches, fill_benchmark, iter_benchmark, iter_mut_benchmark, insert_benchmark);
+        // remove_col
+        {
+            group.bench_with_input(BenchmarkId::new("remove_col", size), &size, |b, _| {
+                b.iter_batched(|| toodee.clone(),
+                |mut data| { let drain = data.remove_col(0); black_box(drain.sum::<u32>()); }, BatchSize::LargeInput)
+            });
+        }
+        
+    }
+}
+
+criterion_group!(benches, fill_benchmark, iter_benchmark, iter_mut_benchmark, insert_benchmark, remove_benchmark);
 criterion_main!(benches);

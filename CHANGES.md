@@ -2,6 +2,12 @@
 
 ## Changes
 
+### Unreleased
+
+- Lots more documentation, with examples.
+- Various performance improvements by leveraging unsafe (lookup cell by `Coordinate`, `insert_row()`, `insert_col()`)
+- Potentially breaking changes to `remove_col()` and `remove_row()` - minor alterations to method signatures
+
 ### Version 0.1.4
 
 - Improved performance of `SortOps` functions, particularly `sort_by_row` and variants.
