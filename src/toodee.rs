@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
@@ -84,7 +82,10 @@ impl<T> Index<Coordinate> for TooDee<T> {
     fn index(&self, coord: Coordinate) -> &Self::Output {
         assert!(coord.1 < self.num_rows);
         assert!(coord.0 < self.num_cols);
-        &self.data[coord.1 * self.num_cols + coord.0]
+        // can access the element unchecked because the above assertions hold
+        unsafe {
+            self.data.get_unchecked(coord.1 * self.num_cols + coord.0)
+        }
     }
 }
 
@@ -118,7 +119,10 @@ impl<T> IndexMut<Coordinate> for TooDee<T> {
     fn index_mut(&mut self, coord: Coordinate) -> &mut Self::Output {
         assert!(coord.1 < self.num_rows);
         assert!(coord.0 < self.num_cols);
-        &mut self.data[coord.1 * self.num_cols + coord.0]
+        // can access the element unchecked because the above assertions hold
+        unsafe {
+            self.data.get_unchecked_mut(coord.1 * self.num_cols + coord.0)
+        }
     }
 }
 

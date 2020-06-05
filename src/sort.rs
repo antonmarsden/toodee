@@ -23,10 +23,8 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
     
     // Build a swap trace that will shuffle everything into the right position.
     for i in 0..len {
-        let other_tuple = ordering[i];
-        let other = other_tuple.0;
+        let (other, inv_i) = ordering[i];
         if i != other {
-            let inv_i = other_tuple.1;
             // we re-use the ordering slice to store the swap trace
             ordering[swap_count] = (i, other);
             swap_count += 1;
