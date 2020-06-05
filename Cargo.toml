@@ -13,11 +13,13 @@ categories = ["data-structures", "no-std"]
 exclude = [ ".github/*", ]
 
 [features]
-default = ["translate", "sort"]
+default = ["translate", "sort", "copy"]
 
 translate = []
 
 sort = []
+
+copy = []
 
 [dependencies]
 

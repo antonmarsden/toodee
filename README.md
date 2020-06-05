@@ -22,7 +22,7 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 
 ## Additional Algorithms
 
-### CopyOps (always included)
+### CopyOps (`copy` feature, included by default)
 
 Various operations that copy data within the same 2D array, or copy data from one array to another. Many of these
 operations are named like their slice counterparts, e.g., `copy_from_slice()` or `copy_from_toodee()`.

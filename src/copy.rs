@@ -11,6 +11,15 @@ pub trait CopyOps<T> : TooDeeOpsMut<T> {
 
     /// Copies data from another slice into this area. The source slice's length
     /// must match the size of this object's area. Data is copied row by row.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,CopyOps};
+    /// let ascending = vec![0, 1, 2, 3, 4];
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// toodee.view_mut((5, 1), (10, 2)).copy_from_slice(&ascending);
+    /// ```
     fn copy_from_slice(&mut self, src: &[T]) where T: Copy {
         let cols = self.num_cols();
         assert_eq!(cols * self.num_rows(), src.len());
@@ -21,6 +30,15 @@ pub trait CopyOps<T> : TooDeeOpsMut<T> {
     
     /// Clones data from another slice into this area. The source slice's length
     /// must match the size of this object's area. Data is cloned row by row.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,CopyOps};
+    /// let ascending = vec![0, 1, 2, 3, 4];
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// toodee.view_mut((5, 1), (10, 2)).clone_from_slice(&ascending);
+    /// ```
     fn clone_from_slice(&mut self, src: &[T]) where T: Clone {
         let cols = self.num_cols();
         assert_eq!(cols * self.num_rows(), src.len());
@@ -31,6 +49,15 @@ pub trait CopyOps<T> : TooDeeOpsMut<T> {
     
     /// Copies data from another `TooDeeOps` object into this one. The source and
     /// destination dimensions must match.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,CopyOps};
+    /// let ascending = TooDee::from_vec(5, 1, vec![0, 1, 2, 3, 4]);
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// toodee.view_mut((5, 1), (10, 2)).copy_from_toodee(&ascending);
+    /// ```
     fn copy_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Copy {
         assert_eq!(self.size(), src.size());
         // Data is copied row by row.
@@ -41,6 +68,15 @@ pub trait CopyOps<T> : TooDeeOpsMut<T> {
 
     /// Copies data from another `TooDeeOps` object into this one. The source and
     /// destination dimensions must match.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,CopyOps};
+    /// let ascending = TooDee::from_vec(5, 1, vec![0, 1, 2, 3, 4]);
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// toodee.view_mut((5, 1), (10, 2)).clone_from_toodee(&ascending);
+    /// ```
     fn clone_from_toodee(&mut self, src: &impl TooDeeOps<T>) where T : Clone {
         assert_eq!(self.size(), src.size());
         // Data is copied row by row.
@@ -58,8 +94,18 @@ pub trait CopyOps<T> : TooDeeOpsMut<T> {
     /// Panics if:
     /// - `src` dimensions are outside the array's bounds
     /// - there's insufficient room to copy all of `src` to `dest`
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,CopyOps};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// toodee.view_mut((0, 0), (5, 1)).fill(42);
+    /// assert_eq!(toodee[(3,1)], 0);
+    /// toodee.copy_within(((0, 0), (5, 1)), (0, 1));
+    /// assert_eq!(toodee[(3,1)], 42);
+    /// ```
     fn copy_within(&mut self, src: (Coordinate, Coordinate), dest: Coordinate)
-    // TODO: support T : Clone, or create a separate clone_within() impl
     where T : Copy {
         let (top_left, bottom_right) = src;
         assert!(top_left.0 <= bottom_right.0);
