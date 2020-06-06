@@ -2,11 +2,11 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.2.0
 
 - Lots more documentation, with examples.
 - Various performance improvements by leveraging unsafe (lookup cell by `Coordinate`, `insert_row()`, `insert_col()`)
-- Potentially breaking changes to `remove_col()` and `remove_row()` - minor alterations to method signatures
+- Performance enhancements and potentially breaking changes to `remove_col()` and `remove_row()` (minor alterations to method signatures)
 
 ### Version 0.1.4
 

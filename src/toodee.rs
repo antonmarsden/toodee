@@ -22,9 +22,6 @@ use crate::ops::*;
 /// DrainRow type alias for future-proofing.
 pub type DrainRow<'a, T> = Drain<'a, T>;
 
-/// DrainCol type alias for future-proofing.
-///pub type DrainCol<'a, T> = Drain<'a, T>;
-
 /// IntoIter type alias for future-proofing.
 pub type IntoIterTooDee<T> = IntoIter<T>;
 
