@@ -15,19 +15,19 @@ fn new_rnd_toodee(cols: usize, rows: usize) -> TooDee<u32>
 
 fn sort_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("sort");
-    for size in [100usize, 200, 300, 400].iter() {
+    for &size in [100usize, 200, 300, 400].iter() {
         
-        group.throughput(Throughput::Elements(*size as u64));
+        group.throughput(Throughput::Elements(size as u64));
         
         
         // sort_by_row
         {
-            let toodee = new_rnd_toodee(100, *size);
+            let toodee = new_rnd_toodee(100, size);
             group.bench_with_input(BenchmarkId::new("sort_by_row", size), &size, |b, _| {
                 b.iter_batched(|| toodee.clone(), |mut data| data.sort_by_row(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
             });
             group.bench_with_input(BenchmarkId::new("view_sort_by_row", size), &size, |b, _| {
-                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut((0, 0), (100, *size)).sort_by_row(50, |a, b| a.cmp(b)), BatchSize::LargeInput)
+                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut((0, 0), (100, size)).sort_by_row(50, |a, b| a.cmp(b)), BatchSize::LargeInput)
             });
             group.bench_with_input(BenchmarkId::new("sort_unstable_by_row", size), &size, |b, _| {
                 b.iter_batched(|| toodee.clone(), |mut data| data.sort_unstable_by_row(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
@@ -36,12 +36,12 @@ fn sort_benchmark(c: &mut Criterion) {
 
         // sort_by_col
         {
-            let toodee = new_rnd_toodee(*size, 100);
+            let toodee = new_rnd_toodee(size, 100);
             group.bench_with_input(BenchmarkId::new("sort_by_col", size), &size, |b, _| {
                 b.iter_batched(|| toodee.clone(), |mut data| data.sort_by_col(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)
             });
             group.bench_with_input(BenchmarkId::new("view_sort_by_col", size), &size, |b, _| {
-                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut((0, 0), (*size, 100)).sort_by_col(50, |a, b| a.cmp(b)), BatchSize::LargeInput)
+                b.iter_batched(|| toodee.clone(), |mut data| data.view_mut((0, 0), (size, 100)).sort_by_col(50, |a, b| a.cmp(b)), BatchSize::LargeInput)
             });
             group.bench_with_input(BenchmarkId::new("sort_unstable_by_col", size), &size, |b, _| {
                 b.iter_batched(|| toodee.clone(), |mut data| data.sort_unstable_by_col(size / 2, |a, b| a.cmp(b)), BatchSize::LargeInput)

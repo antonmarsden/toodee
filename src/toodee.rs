@@ -676,19 +676,22 @@ impl<T> TooDee<T> {
     pub fn remove_col(&mut self, index: usize) -> DrainCol<'_, T>
     {
         assert!(index < self.num_cols);
-        
-        DrainCol::new(self, index)
-        
-//        unsafe {
-//            DrainCol {
-//                col : index,
-//                iter : Col {
-//                    skip : self.num_cols - 1,
-//                    v : &'a slice::from_raw_parts_mut(self.data.as_mut_ptr().add(index), self.data.len() - self.num_cols + 1),
-//                },
-//                toodee : NonNull::from(self),
-//            }
-//        }
+
+        let v = &mut self.data;
+        let num_cols = self.num_cols;
+        let slice_len = v.len() - num_cols + 1;
+        unsafe {
+            // set the vec length to 0 to amplify any leaks
+            v.set_len(0);
+            DrainCol {
+               col : index,
+               iter : Col {
+                   skip : num_cols - 1,
+                   v : slice::from_raw_parts_mut(v.as_mut_ptr().add(index), slice_len),
+               },
+               toodee : NonNull::from(self),
+            }
+        }
     }
 
     /// Inserts new `data` into the array at the specified `col`.
@@ -835,28 +838,6 @@ pub struct DrainCol<'a, T> {
     /// Current remaining elements to remove
     iter: Col<'a, T>,
     toodee: NonNull<TooDee<T>>,
-}
-
-impl<'a, T> DrainCol<'a, T> {
-
-    fn new(toodee: &mut TooDee<T>, index: usize) -> DrainCol<'a, T> {
-        let v = &mut toodee.data;
-        let num_cols = toodee.num_cols;
-        let slice_len = v.len() - num_cols + 1;
-        unsafe {
-            // set the vec length to 0 to amplify any leaks
-            v.set_len(0);
-            DrainCol {
-               col : index,
-               iter : Col {
-                   skip : num_cols - 1,
-                   v : slice::from_raw_parts_mut(v.as_mut_ptr().add(index), slice_len),
-               },
-               toodee : NonNull::from(toodee),
-            }
-        }
-    }
-
 }
 
 // NonNull is !Sync, so we need to implement Sync manually

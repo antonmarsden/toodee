@@ -93,12 +93,12 @@ Here's a small feature comparison chart:
 
 <table>
   <tr><th></th><th>Storage order</th><th>Structs supported</th><th>Growable?</th><th>Mutable views?</th><th>Raw data access?</th><th>Iterate over row slices?</th><th>Notes</th></tr>
-  <tr><td><code>toodee::TooDee</code></td><td>Row-major</td><td>Anything</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td></td></tr>
+  <tr><td><code>toodee::TooDee</code></td><td>Row-major</td><td>Anything (`Sized`)</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td></td></tr>
   <tr><td><code>image::ImageBuffer</code></td><td>Row-major</td><td><code>image::Pixel</code></td><td>No</td><td>No</td><td>Yes</td><td>No</td><td>Good for image processing - see the <code>imageproc</code> crate.</tr>
   <tr><td><code>image::SubImage</code></td><td>Row-major</td><td><code>image::Pixel</code></td><td>No</td><td>Yes</td><td>No</td><td>No</td><td></td></tr>
   <tr><td><code>grid::Grid</code></td><td>Row-major</td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>No</td><td>Similar to <code>TooDee</code>, but not as functionally rich.</td></tr>
   <tr><td><code>array2d::Array2D</code></td><td>Row-major</td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td></td></tr>
-  <tr><td><code>imgref::Img</code></td><td>Row-major</td><td>Anything</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td></td></tr>
+  <tr><td><code>imgref::Img</code></td><td>Row-major</td><td>Anything (`Sized`)</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td></td></tr>
   <tr><td><code>nalgebra::Matrix</code></td><td>Column-major</td><td><code>Scalar</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>Use this for vector/matrix math.</td></tr>
 </table>
 

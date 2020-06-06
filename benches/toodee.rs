@@ -72,19 +72,19 @@ fn iter_mut_benchmark(c: &mut Criterion) {
 
 fn insert_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("insert");
-    for size in [100usize, 200, 300, 400].iter() {
+    for &size in [100usize, 200, 300, 400].iter() {
         
-        group.throughput(Throughput::Elements((*size * *size) as u64));
+        group.throughput(Throughput::Elements((size * size) as u64));
         
-        let toodee = new_rnd_toodee(*size, *size);
+        let toodee = new_rnd_toodee(size, size);
         
-        let new_data = 0u32..(*size as u32);
+        let new_data = 0u32..(size as u32);
         
         // insert_row
         {
             // reserves space to exclude memory allocation from benchmark time
             group.bench_with_input(BenchmarkId::new("insert_row", size), &size, |b, _| {
-                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.reserve(*size); (tmp, new_data.clone()) },
+                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.reserve(size); (tmp, new_data.clone()) },
                 |(mut data, new_data)| data.insert_row(0, new_data), BatchSize::LargeInput)
             });
         }
@@ -102,7 +102,7 @@ fn insert_benchmark(c: &mut Criterion) {
         {
             // reserves space to exclude memory allocation from benchmark time
             group.bench_with_input(BenchmarkId::new("insert_col", size), &size, |b, _| {
-                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.reserve(*size); (tmp, new_data.clone()) },
+                b.iter_batched(|| { let mut tmp = toodee.clone(); tmp.reserve(size); (tmp, new_data.clone()) },
                 |(mut data, new_data)| data.insert_col(0, new_data), BatchSize::LargeInput)
             });
         }
@@ -120,11 +120,11 @@ fn insert_benchmark(c: &mut Criterion) {
 
 fn remove_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("remove");
-    for size in [100usize, 200, 300, 400].iter() {
+    for &size in [100usize, 200, 300, 400].iter() {
         
-        group.throughput(Throughput::Elements((*size * *size) as u64));
+        group.throughput(Throughput::Elements((size * size) as u64));
         
-        let toodee = new_rnd_toodee(*size, *size);
+        let toodee = new_rnd_toodee(size, size);
         
         // remove_row
         {
