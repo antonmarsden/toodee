@@ -11,12 +11,12 @@ pub trait TooDeeIterator : Iterator {
 /// An `Iterator` over each row of a `TooDee[View]`, where each row is represented as a slice.
 #[derive(Debug)]
 pub struct Rows<'a, T> {
-    pub(super) cols: usize,
-    pub(super) skip_cols: usize,
     /// This reference contains row data at each end. When iterating in either direction the row will
     /// be pulled off the end then `skip_cols` elements will be skipped in preparation for reading the
     /// next row.
     pub(super) v: &'a [T],
+    pub(super) cols: usize,
+    pub(super) skip_cols: usize,
 }
 
 impl<'a, T> Iterator for Rows<'a, T> {
@@ -112,12 +112,12 @@ impl<T> TooDeeIterator for Rows<'_, T> {
 /// A mutable Iterator over each row of a `TooDee[ViewMut]`, where each row is represented as a slice.
 #[derive(Debug)]
 pub struct RowsMut<'a, T> {
-    pub(super) cols: usize,
-    pub(super) skip_cols: usize,
     /// This reference contains row data at each end. When iterating in either direction the row will
     /// be pulled off the end then `skip_cols` elements will be skipped in preparation for reading the
     /// next row.
     pub(super) v: &'a mut [T],
+    pub(super) cols: usize,
+    pub(super) skip_cols: usize,
 }
 
 impl<'a, T> Iterator for RowsMut<'a, T> {
@@ -218,8 +218,8 @@ impl<T> TooDeeIterator for RowsMut<'_, T> {
 /// An iterator over a single column.
 #[derive(Debug)]
 pub struct Col<'a, T> {
-    pub(super) skip: usize,
     pub(super) v: &'a [T],
+    pub(super) skip: usize,
 }
 
 impl<'a, T> Iterator for Col<'a, T> {
@@ -305,8 +305,8 @@ impl<T> ExactSizeIterator for Col<'_, T> {}
 /// A mutable iterator over a single column.
 #[derive(Debug)]
 pub struct ColMut<'a, T> {
-    pub(super) skip: usize,
     pub(super) v: &'a mut [T],
+    pub(super) skip: usize,
 }
 
 impl<'a, T> Iterator for ColMut<'a, T> {

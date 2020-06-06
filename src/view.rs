@@ -25,11 +25,11 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
 /// Provides a read-only view (or subset) of a `TooDee` array.
 #[derive(Copy,Clone)]
 pub struct TooDeeView<'a, T> {
-    start: Coordinate,
+    data: &'a [T],
     num_cols: usize,
     num_rows: usize,
     main_cols: usize,
-    data: &'a [T],
+    start: Coordinate,
 }
 
 impl<'a, T> TooDeeView<'a, T> {
@@ -58,11 +58,11 @@ impl<'a, T> TooDeeView<'a, T> {
         let size = num_cols * num_rows;
         assert!(size <= data.len());
         TooDeeView {
+            data : &data[..size],
             start: (0, 0),
             num_cols,
             num_rows,
             main_cols : num_cols,
-            data : &data[..size],
         }
     }
     
@@ -79,11 +79,11 @@ impl<'a, T> TooDeeView<'a, T> {
             }
         };
         TooDeeView {
+            data: &toodee.data()[data_start..data_start + data_len],
             start,
             num_cols,
             num_rows,
             main_cols,
-            data: &toodee.data()[data_start..data_start + data_len],
         }
     }
 
@@ -118,19 +118,19 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
         };
 
         TooDeeView {
+            data: &self.data[data_start..data_start + data_len],
             start: (self.start.0 + start.0, self.start.1 + start.1),
             num_cols,
             num_rows,
             main_cols : self.main_cols,
-            data: &self.data[data_start..data_start + data_len],
         }
     }
 
     fn rows(&self) -> Rows<'_, T> {
         Rows {
+            v : &self.data,
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
-            v : &self.data,
         }
     }
     
@@ -145,8 +145,8 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
             }
         };
         Col {
-            skip : self.main_cols - 1,
             v : &self.data[start..end],
+            skip : self.main_cols - 1,
         }
     }
 
@@ -180,11 +180,11 @@ impl<'a, T> Index<Coordinate> for TooDeeView<'a, T> {
 
 /// Provides a mutable view (or subset), of a `TooDee` array.
 pub struct TooDeeViewMut<'a, T> {
-    start: Coordinate,
+    data: &'a mut [T],
     num_cols: usize,
     num_rows: usize,
     main_cols: usize,
-    data: &'a mut [T],
+    start: Coordinate,
 }
 
 
@@ -214,11 +214,11 @@ impl<'a, T> TooDeeViewMut<'a, T> {
         let size = num_cols * num_rows;
         assert!(size <= data.len());
         TooDeeViewMut {
+            data : &mut data[..size],
             start: (0, 0),
             num_cols,
             num_rows,
             main_cols : num_cols,
-            data : &mut data[..size],
         }
     }
 
@@ -235,11 +235,11 @@ impl<'a, T> TooDeeViewMut<'a, T> {
             }
         };
         TooDeeViewMut {
+            data: &mut toodee.data_mut()[data_start..data_start + data_len],
             start,
             num_cols,
             num_rows,
             main_cols,
-            data: &mut toodee.data_mut()[data_start..data_start + data_len],
         }
     }
 
@@ -275,19 +275,19 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
         };
         
         TooDeeView {
+            data: &self.data[data_start..data_start + data_len],
             start: (self.start.0 + start.0, self.start.1 + start.1),
             num_cols,
             num_rows,
             main_cols : self.main_cols,
-            data: &self.data[data_start..data_start + data_len],
         }
     }
 
     fn rows(&self) -> Rows<'_, T> {
         Rows {
+            v : &self.data,
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
-            v : &self.data,
         }
     }
 
@@ -302,8 +302,8 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
             }
         };
         Col {
-            skip : self.main_cols - 1,
             v : &self.data[start..end],
+            skip : self.main_cols - 1,
         }
     }
 
@@ -324,19 +324,19 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
         };
 
         TooDeeViewMut {
+            data: &mut self.data[data_start..data_start + data_len],
             start: (self.start.0 + start.0, self.start.1 + start.1),
             num_cols,
             num_rows,
             main_cols : self.main_cols,
-            data: &mut self.data[data_start..data_start + data_len],
         }
     }
     
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
         RowsMut {
+            v : &mut self.data,
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
-            v : &mut self.data,
         }
     }
 
@@ -351,8 +351,8 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
             }
         };
         ColMut {
-            skip : self.main_cols - 1,
             v : &mut self.data[start..end],
+            skip : self.main_cols - 1,
         }
     }
 
@@ -401,11 +401,11 @@ impl<'a, T> IndexMut<Coordinate> for TooDeeViewMut<'a, T> {
 impl<'a, T> Into<TooDeeView<'a, T>> for TooDeeViewMut<'a, T> {
     fn into(self) -> TooDeeView<'a, T> {
         TooDeeView {
+            data:      self.data,
             start:     self.start,
             num_cols:  self.num_cols,
             num_rows:  self.num_rows,
             main_cols: self.main_cols,
-            data:      self.data,
         }
     }
 }

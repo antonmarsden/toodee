@@ -30,9 +30,9 @@ pub type IntoIterTooDee<T> = IntoIter<T>;
 /// Empty arrays will always have dimensions of zero.
 #[derive(Clone)]
 pub struct TooDee<T> {
+    data: Vec<T>,
     num_rows: usize,
     num_cols: usize,
-    data: Vec<T>,
 }
 
 /// Custom `Default` implementation because `T` does not need to implement `Default`.
@@ -49,9 +49,9 @@ impl<T> Default for TooDee<T> {
     fn default() -> Self {
         let v = Vec::default();
         TooDee {
+            data : v,
             num_rows : 0,
             num_cols : 0,
-            data : v,
         }
     }
 }
@@ -189,9 +189,9 @@ impl<T> TooDeeOps<T> for TooDee<T> {
     /// ```
     fn rows(&self) -> Rows<'_, T> {
         Rows {
+            v : &self.data,
             cols : self.num_cols,
             skip_cols : 0,
-            v : &self.data,
         }
     }
     
@@ -206,8 +206,8 @@ impl<T> TooDeeOps<T> for TooDee<T> {
     fn col(&self, col: usize) -> Col<'_, T> {
         assert!(col < self.num_cols);
         Col {
-            skip : self.num_cols - 1,
             v : &self.data[col..self.data.len() - self.num_cols + col + 1],
+            skip : self.num_cols - 1,
         }
     }
 
@@ -240,9 +240,9 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     /// ```
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
         RowsMut {
+            v : &mut self.data,
             cols : self.num_cols,
             skip_cols : 0,
-            v : &mut self.data,
         }
     }
     
@@ -258,8 +258,8 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         assert!(col < self.num_cols);
         let dlen = self.data.len();
         ColMut {
-            skip : self.num_cols - 1,
             v : &mut self.data[col..dlen - self.num_cols + col + 1],
+            skip : self.num_cols - 1,
         }
     }
     
@@ -310,9 +310,9 @@ impl<T> TooDee<T> {
         let len = num_rows * num_cols;
         let v = vec![T::default(); len];
         TooDee {
+            data : v,
             num_cols,
             num_rows,
-            data : v,
         }
     }
 
@@ -341,9 +341,9 @@ impl<T> TooDee<T> {
         let len = num_rows * num_cols;
         let v = vec![init_value; len];
         TooDee {
+            data : v,
             num_cols,
             num_rows,
-            data : v,
         }
     }
     
@@ -372,9 +372,9 @@ impl<T> TooDee<T> {
     /// ```
     pub fn with_capacity(capacity: usize) -> TooDee<T> {
         TooDee {
+            data     : Vec::with_capacity(capacity),
             num_cols : 0,
             num_rows : 0,
-            data     : Vec::with_capacity(capacity),
         }
     }
 
@@ -446,9 +446,9 @@ impl<T> TooDee<T> {
         }
         assert_eq!(num_cols * num_rows, v.len());
         TooDee {
+            data : v,
             num_cols,
             num_rows,
-            data : v,
         }
     }
     
@@ -684,11 +684,11 @@ impl<T> TooDee<T> {
             // set the vec length to 0 to amplify any leaks
             v.set_len(0);
             DrainCol {
-               col : index,
                iter : Col {
                    skip : num_cols - 1,
                    v : slice::from_raw_parts_mut(v.as_mut_ptr().add(index), slice_len),
                },
+               col : index,
                toodee : NonNull::from(self),
             }
         }
@@ -808,9 +808,9 @@ impl<T> From<TooDeeView<'_, T>> for TooDee<T> where T : Clone {
             v.extend_from_slice(r);
         }
         TooDee {
+            data : v,
             num_cols,
             num_rows,
-            data : v,
         }
     }
 }
@@ -824,9 +824,9 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
             v.extend_from_slice(r);
         }
         TooDee {
+            data : v,
             num_cols,
             num_rows,
-            data : v,
         }
     }
 }
@@ -834,9 +834,9 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
 /// Drains a column.
 #[derive(Debug)]
 pub struct DrainCol<'a, T> {
-    col: usize,
     /// Current remaining elements to remove
     iter: Col<'a, T>,
+    col: usize,
     toodee: NonNull<TooDee<T>>,
 }
 
@@ -928,3 +928,4 @@ impl<T> Drop for DrainCol<'_, T> {
         DropGuard(self);
     }
 }
+
