@@ -778,6 +778,13 @@ impl<T> Into<Vec<T>> for TooDee<T> {
     }
 }
 
+/// Support conversion into a boxed slice.
+impl<T> Into<Box<[T]>> for TooDee<T> {
+    fn into(self) -> Box<[T]> {
+        self.data.into_boxed_slice()
+    }
+}
+
 impl<T> AsRef<[T]> for TooDee<T> {
     fn as_ref(&self) -> &[T] {
         &self.data
@@ -787,6 +794,15 @@ impl<T> AsRef<[T]> for TooDee<T> {
 impl<T> AsMut<[T]> for TooDee<T> {
     fn as_mut(&mut self) -> &mut [T] {
         &mut self.data
+    }
+}
+
+/// We can allow immutable access to the underlying `Vec`,
+/// mut not mutable access because that could lead to changes
+/// in the `Vec`'s length.
+impl<T> AsRef<Vec<T>> for TooDee<T> {
+    fn as_ref(&self) -> &Vec<T> {
+        &self.data
     }
 }
 
