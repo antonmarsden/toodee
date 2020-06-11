@@ -2,6 +2,12 @@
 
 ## Changes
 
+### Version 0.2.1
+
+- Re-organised fields within structs (data/vec fields specified first)
+- `TooDee` now has derived `Hash`, `Eq`, and `PartialEq` implementations
+- Added `Into<Box<[T]>>` and `AsRef<Vec<T>>` implementations
+
 ### Version 0.2.0
 
 - Lots more documentation, with examples.
