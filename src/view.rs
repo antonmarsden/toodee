@@ -23,7 +23,7 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
 }
 
 /// Provides a read-only view (or subset) of a `TooDee` array.
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone, Hash, Eq, PartialEq)]
 pub struct TooDeeView<'a, T> {
     data: &'a [T],
     num_cols: usize,
@@ -179,6 +179,7 @@ impl<'a, T> Index<Coordinate> for TooDeeView<'a, T> {
 
 
 /// Provides a mutable view (or subset), of a `TooDee` array.
+#[derive(Hash, Eq, PartialEq)]
 pub struct TooDeeViewMut<'a, T> {
     data: &'a mut [T],
     num_cols: usize,

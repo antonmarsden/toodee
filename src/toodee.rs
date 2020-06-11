@@ -28,7 +28,7 @@ pub type IntoIterTooDee<T> = IntoIter<T>;
 /// Represents a two-dimensional array.
 /// 
 /// Empty arrays will always have dimensions of zero.
-#[derive(Clone)]
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct TooDee<T> {
     data: Vec<T>,
     num_rows: usize,
