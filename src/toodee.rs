@@ -859,7 +859,7 @@ pub struct DrainCol<'a, T> {
 // NonNull is !Sync, so we need to implement Sync manually
 unsafe impl<T: Sync> Sync for DrainCol<'_, T> {}
 
-// NonNull is !Send, so we need to implement Sync manually
+// NonNull is !Send, so we need to implement Send manually
 unsafe impl<T: Send> Send for DrainCol<'_, T> {}
 
 impl<T> Iterator for DrainCol<'_, T> {
