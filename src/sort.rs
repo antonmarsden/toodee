@@ -42,6 +42,7 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
 /// Use some unsafeness to coerce a [(usize, &T)] into a [(usize, usize)]. The `Box` is consumed,
 /// meaning that we "unborrow" the &T values.
 fn sorted_box_to_ordering<T>(sorted: Box<[(usize, &T)]>) -> Box<[(usize,usize)]> {
+    debug_assert_eq!(core::mem::size_of::<&T>(), core::mem::size_of::<usize>());
     let len = sorted.len();
     let p = Box::into_raw(sorted);
     unsafe {
