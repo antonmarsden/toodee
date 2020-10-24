@@ -2,6 +2,12 @@
 
 ## Changes
 
+### Unreleased
+
+- Performance improvements to `TooDeeOpsMut.swap_rows()` and the `SortOps`
+- Minor code style improvements
+- Small documentation updates
+
 ### Version 0.2.1
 
 - Re-organised fields within structs (data/vec fields specified first)

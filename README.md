@@ -12,7 +12,7 @@ TooDee is a lightweight and high performance two-dimensional wrapper around a `V
 - Raw access to the underlying vector's slice via `data()` and `data_mut()`.
 - Creation of performant two-dimensional subsets using `view()` and `view_mut()`.
 - Most operations are implemented for both `TooDee` and `TooDeeViewMut` structs - see below for how this pattern can be extended.
-- Get/set specific cells using indexing, e.g., `toodee[row][col] = val`.
+- Get/set specific cells using indexing, e.g., `let my_row = toodee[row]; my_row[col] = val;`.
 - Index with a `Coordinate` if you prefer, e.g., `toodee[(col, row)] = val`.
 - Index by row index (i.e., row major) to access row slices, e.g., `&toodee[row]`.
 - Iteration, any which way - `rows()`, `rows_mut()`, `col()`, `col_mut()`, `cells()`, `cells_mut()`.
@@ -70,7 +70,7 @@ impl<T> FooOps<T> for TooDeeViewMut<'_, T> {}
 impl<T> FooOps<T> for TooDee<T> {}
 ```
 
-Then it's just a matter of calling the method, e.g.,
+Once the implementations are available, just call the methods, e.g.,
 
 ```
 let bar = my_toodee.foo();
@@ -98,7 +98,7 @@ Here's a small feature comparison chart:
   <tr><td><code>image::SubImage</code></td><td>Row-major</td><td><code>image::Pixel</code></td><td>No</td><td>Yes</td><td>No</td><td>No</td><td></td></tr>
   <tr><td><code>grid::Grid</code></td><td>Row-major</td><td><code>Clone</code></td><td>Yes</td><td>No</td><td>Yes</td><td>No</td><td>Similar to <code>TooDee</code>, but not as functionally rich.</td></tr>
   <tr><td><code>array2d::Array2D</code></td><td>Row-major</td><td><code>Clone</code></td><td>No</td><td>No</td><td>No</td><td>No</td><td></td></tr>
-  <tr><td><code>imgref::Img</code></td><td>Row-major</td><td>Anything (<code>Sized</code>)</td><td>No</td><td>Yes</td><td>Yes</td><td>No</td><td></td></tr>
+  <tr><td><code>imgref::Img</code></td><td>Row-major</td><td>Anything (<code>Sized</code>)</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td><td></td></tr>
   <tr><td><code>nalgebra::Matrix</code></td><td>Column-major</td><td><code>Scalar</code></td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>Use this for vector/matrix math.</td></tr>
 </table>
 

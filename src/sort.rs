@@ -15,22 +15,30 @@ fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
     
     // Create a reverse lookup
     for idx in 0..len {
-        let v = ordering[idx].0;
-        ordering[v].1 = idx;
+        unsafe {
+            // We know 0 <= idx < ordering.len(), so we don't need to check the indexing.
+            let v = ordering.get_unchecked(idx).0;
+            // It's less trivial to figure out that 0 <= v <= ordering.len() - the input
+            // array is created by sorted_box_to_ordering()
+            ordering.get_unchecked_mut(v).1 = idx;
+        }
     }
     
     let mut swap_count = 0;
     
     // Build a swap trace that will shuffle everything into the right position.
     for i in 0..len {
-        let (other, inv_i) = ordering[i];
-        if i != other {
-            // we re-use the ordering slice to store the swap trace
-            ordering[swap_count] = (i, other);
-            swap_count += 1;
-            if inv_i > i {
-                ordering[inv_i].0 = other;
-                ordering[other].1 = inv_i;
+        // Used get_unchecked for the same reason as above
+        unsafe {
+            let (other, inv_i) = *ordering.get_unchecked(i);
+            if i != other {
+                // we re-use the ordering slice to store the swap trace
+                *ordering.get_unchecked_mut(swap_count) = (i, other);
+                swap_count += 1;
+                if inv_i > i {
+                    ordering.get_unchecked_mut(inv_i).0 = other;
+                    ordering.get_unchecked_mut(other).1 = inv_i;
+                }
             }
         }
     }

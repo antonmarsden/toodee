@@ -210,7 +210,8 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         }
     }
     
-    /// Swap/exchange the data between two rows.
+    /// Swap/exchange the data between two rows. Note that this method is overridden in both `TooDee` and `TooDeeOpsMut`.
+    /// This implementation remains in place for other types that may wish to implement the trait.
     /// 
     /// # Panics
     /// 
@@ -223,7 +224,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
     /// toodee[0].iter_mut().for_each(|v| *v = 1);
     /// assert_eq!(toodee[(0, 2)], 42);
-    /// toodee.swap_rows(0, 2);
+    /// toodee.view_mut((0, 0), (10, 5)).swap_rows(0, 2);
     /// assert_eq!(toodee[(0, 2)], 1);
     /// ```
     fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {

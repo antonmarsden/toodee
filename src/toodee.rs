@@ -6,6 +6,7 @@ use core::iter::IntoIterator;
 use core::ptr::{self, NonNull};
 use core::mem;
 use core::slice;
+use core::cmp::Ordering;
 
 extern crate alloc;
 
@@ -278,6 +279,48 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         let value = fill.borrow();
         for v in self.data.iter_mut() {
             v.clone_from(value);
+        }
+    }
+
+    /// Swap/exchange the data between two rows.
+    /// 
+    /// # Panics
+    /// 
+    /// Panics if either row index is out of bounds.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// toodee[0].iter_mut().for_each(|v| *v = 1);
+    /// assert_eq!(toodee[(0, 2)], 42);
+    /// toodee.swap_rows(0, 2);
+    /// assert_eq!(toodee[(0, 2)], 1);
+    /// ```
+    fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
+        match r1.cmp(&r2) {
+            Ordering::Less => {},
+            Ordering::Greater => {
+                // force r1 < r2
+                core::mem::swap(&mut r1, &mut r2);
+            },
+            Ordering::Equal => {
+                // swapping a row with itself
+                return;
+            }
+        }
+        assert!(r2 < self.num_rows);
+        let num_cols = self.num_cols;
+        let (first, rest) = self.data[r1 * num_cols..].split_at_mut(num_cols);
+        let snd_idx = (r2 - r1 - 1) * num_cols;
+        let second = &mut rest[snd_idx..snd_idx + num_cols];
+        // Both slices are guaranteed to have the same length
+        debug_assert!(first.len() == num_cols);
+        debug_assert!(second.len() == num_cols);
+        unsafe {
+            // We know that the two slices will not overlap because r1 != r2, and we used split_at_mut()
+            ptr::swap_nonoverlapping(first.as_mut_ptr(), second.as_mut_ptr(), num_cols);
         }
     }
     
