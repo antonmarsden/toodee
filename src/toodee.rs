@@ -70,7 +70,10 @@ impl<T> Index<usize> for TooDee<T> {
     fn index(&self, row: usize) -> &Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.num_cols;
-        &self.data[start..start + self.num_cols]
+        // can access the element unchecked because the above assertion holds
+        unsafe {
+            self.data.get_unchecked(start..start + self.num_cols)
+        }
     }
 }
 
@@ -107,7 +110,10 @@ impl<T> IndexMut<usize> for TooDee<T> {
     fn index_mut(&mut self, row: usize) -> &mut Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.num_cols;
-        &mut self.data[start..start + self.num_cols]
+        // can access the element unchecked because the above assertion holds
+        unsafe {
+            self.data.get_unchecked_mut(start..start + self.num_cols)
+        }
     }
 }
 
@@ -206,9 +212,11 @@ impl<T> TooDeeOps<T> for TooDee<T> {
     /// ```
     fn col(&self, col: usize) -> Col<'_, T> {
         assert!(col < self.num_cols);
-        Col {
-            v : &self.data[col..self.data.len() - self.num_cols + col + 1],
-            skip : self.num_cols - 1,
+        unsafe {
+            Col {
+                v : self.data.get_unchecked(col..self.data.len() - self.num_cols + col + 1),
+                skip : self.num_cols - 1,
+            }
         }
     }
 
@@ -258,9 +266,11 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
         assert!(col < self.num_cols);
         let dlen = self.data.len();
-        ColMut {
-            v : &mut self.data[col..dlen - self.num_cols + col + 1],
-            skip : self.num_cols - 1,
+        unsafe {
+            ColMut {
+                v : self.data.get_unchecked_mut(col..dlen - self.num_cols + col + 1),
+                skip : self.num_cols - 1,
+            }
         }
     }
     
@@ -312,13 +322,13 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         }
         assert!(r2 < self.num_rows);
         let num_cols = self.num_cols;
-        let (first, rest) = self.data[r1 * num_cols..].split_at_mut(num_cols);
-        let snd_idx = (r2 - r1 - 1) * num_cols;
-        let second = &mut rest[snd_idx..snd_idx + num_cols];
-        // Both slices are guaranteed to have the same length
-        debug_assert_eq!(first.len(), num_cols);
-        debug_assert_eq!(second.len(), num_cols);
         unsafe {
+            let (first, rest) = self.data.get_unchecked_mut(r1 * num_cols..).split_at_mut(num_cols);
+            let snd_idx = (r2 - r1 - 1) * num_cols;
+            let second = rest.get_unchecked_mut(snd_idx..snd_idx + num_cols);
+            // Both slices are guaranteed to have the same length
+            debug_assert_eq!(first.len(), num_cols);
+            debug_assert_eq!(second.len(), num_cols);
             // We know that the two slices will not overlap because r1 != r2, and we used split_at_mut()
             ptr::swap_nonoverlapping(first.as_mut_ptr(), second.as_mut_ptr(), num_cols);
         }

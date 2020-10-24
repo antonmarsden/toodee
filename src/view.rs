@@ -80,12 +80,14 @@ impl<'a, T> TooDeeView<'a, T> {
                 (num_rows - 1) * main_cols + num_cols
             }
         };
-        TooDeeView {
-            data: &toodee.data()[data_start..data_start + data_len],
-            start,
-            num_cols,
-            num_rows,
-            main_cols,
+        unsafe {
+            TooDeeView {
+                data: toodee.data().get_unchecked(data_start..data_start + data_len),
+                start,
+                num_cols,
+                num_rows,
+                main_cols,
+            }
         }
     }
 
@@ -119,12 +121,14 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
             }
         };
 
-        TooDeeView {
-            data: &self.data[data_start..data_start + data_len],
-            start: (self.start.0 + start.0, self.start.1 + start.1),
-            num_cols,
-            num_rows,
-            main_cols : self.main_cols,
+        unsafe {
+            TooDeeView {
+                data: self.data.get_unchecked(data_start..data_start + data_len),
+                start: (self.start.0 + start.0, self.start.1 + start.1),
+                num_cols,
+                num_rows,
+                main_cols : self.main_cols,
+            }
         }
     }
 
@@ -146,9 +150,11 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
                 start + (self.num_rows - 1) * self.main_cols + 1
             }
         };
-        Col {
-            v : &self.data[start..end],
-            skip : self.main_cols - 1,
+        unsafe {
+            Col {
+                v : self.data.get_unchecked(start..end),
+                skip : self.main_cols - 1,
+            }
         }
     }
 
@@ -161,7 +167,9 @@ impl<'a, T> Index<usize> for TooDeeView<'a, T> {
     fn index(&self, row: usize) -> &Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.main_cols;
-        &self.data[start..start + self.num_cols]
+        unsafe {
+            self.data.get_unchecked(start..start + self.num_cols)
+        }
     }
 }
 
@@ -216,12 +224,14 @@ impl<'a, T> TooDeeViewMut<'a, T> {
         }
         let size = num_cols * num_rows;
         assert!(size <= data.len());
-        TooDeeViewMut {
-            data : &mut data[..size],
-            start: (0, 0),
-            num_cols,
-            num_rows,
-            main_cols : num_cols,
+        unsafe {
+            TooDeeViewMut {
+                data : data.get_unchecked_mut(..size),
+                start: (0, 0),
+                num_cols,
+                num_rows,
+                main_cols : num_cols,
+            }
         }
     }
 
@@ -237,12 +247,14 @@ impl<'a, T> TooDeeViewMut<'a, T> {
                 (num_rows - 1) * main_cols + num_cols
             }
         };
-        TooDeeViewMut {
-            data: &mut toodee.data_mut()[data_start..data_start + data_len],
-            start,
-            num_cols,
-            num_rows,
-            main_cols,
+        unsafe {
+            TooDeeViewMut {
+                data: toodee.data_mut().get_unchecked_mut(data_start..data_start + data_len),
+                start,
+                num_cols,
+                num_rows,
+                main_cols,
+            }
         }
     }
 
@@ -304,9 +316,11 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
                 start + (self.num_rows - 1) * self.main_cols + 1
             }
         };
-        Col {
-            v : &self.data[start..end],
-            skip : self.main_cols - 1,
+        unsafe {
+            Col {
+                v : self.data.get_unchecked(start..end),
+                skip : self.main_cols - 1,
+            }
         }
     }
 
@@ -326,12 +340,14 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
             }
         };
 
-        TooDeeViewMut {
-            data: &mut self.data[data_start..data_start + data_len],
-            start: (self.start.0 + start.0, self.start.1 + start.1),
-            num_cols,
-            num_rows,
-            main_cols : self.main_cols,
+        unsafe {
+            TooDeeViewMut {
+                data: self.data.get_unchecked_mut(data_start..data_start + data_len),
+                start: (self.start.0 + start.0, self.start.1 + start.1),
+                num_cols,
+                num_rows,
+                main_cols : self.main_cols,
+            }
         }
     }
     
@@ -353,9 +369,11 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
                 start + (self.num_rows - 1) * self.main_cols + 1
             }
         };
-        ColMut {
-            v : &mut self.data[start..end],
-            skip : self.main_cols - 1,
+        unsafe {
+            ColMut {
+                v : self.data.get_unchecked_mut(start..end),
+                skip : self.main_cols - 1,
+            }
         }
     }
 
@@ -389,13 +407,13 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
         }
         assert!(r2 < self.num_rows);
         let num_cols = self.num_cols;
-        let (first, rest) = self.data[r1 * self.main_cols..].split_at_mut(num_cols);
-        let snd_idx = (r2 - r1) * self.main_cols - num_cols;
-        let second = &mut rest[snd_idx..snd_idx + num_cols];
-        // Both slices are guaranteed to have the same length
-        debug_assert_eq!(first.len(), num_cols);
-        debug_assert_eq!(second.len(), num_cols);
         unsafe {
+            let (first, rest) = self.data.get_unchecked_mut(r1 * self.main_cols..).split_at_mut(num_cols);
+            let snd_idx = (r2 - r1) * self.main_cols - num_cols;
+            let second = rest.get_unchecked_mut(snd_idx..snd_idx + num_cols);
+            // Both slices are guaranteed to have the same length
+            debug_assert_eq!(first.len(), num_cols);
+            debug_assert_eq!(second.len(), num_cols);
             // We know that the two slices will not overlap because r1 != r2, and we used split_at_mut()
             ptr::swap_nonoverlapping(first.as_mut_ptr(), second.as_mut_ptr(), num_cols);
         }
@@ -407,7 +425,9 @@ impl<'a, T> Index<usize> for TooDeeViewMut<'a, T> {
     fn index(&self, row: usize) -> &Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.main_cols;
-        &self.data[start..start + self.num_cols]
+        unsafe {
+            &self.data.get_unchecked(start..start + self.num_cols)
+        }
     }
 }
 
@@ -427,7 +447,9 @@ impl<'a, T> IndexMut<usize> for TooDeeViewMut<'a, T> {
     fn index_mut(&mut self, row: usize) -> &mut Self::Output {
         assert!(row < self.num_rows);
         let start = row * self.main_cols;
-        &mut self.data[start..start + self.num_cols]
+        unsafe {
+            self.data.get_unchecked_mut(start..start + self.num_cols)
+        }
     }
 }
 

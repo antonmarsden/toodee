@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use crate::ops::*;
 use crate::toodee::*;
 use crate::view::*;
@@ -103,11 +101,13 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
                         // The following logic performs a rotate while swapping, and
                         // is more efficient than doing a swap then rotate.
                         let (base_ref, next_ref) = self.row_pair_mut(base_row, next_row);
-                        if mid > 0 {
-                            base_ref[..mid].swap_with_slice(&mut next_ref[num_cols-mid..num_cols]);
-                        }
-                        if mid < num_cols {
-                            base_ref[mid..num_cols].swap_with_slice(&mut next_ref[..num_cols-mid]);
+                        unsafe {
+                            if mid > 0 {
+                                base_ref.get_unchecked_mut(..mid).swap_with_slice(next_ref.get_unchecked_mut(num_cols-mid..num_cols));
+                            }
+                            if mid < num_cols {
+                                base_ref.get_unchecked_mut(mid..num_cols).swap_with_slice(next_ref.get_unchecked_mut(..num_cols-mid));
+                            }
                         }
                         
                         mid += col_mid;

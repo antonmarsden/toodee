@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-
 use core::mem;
 
 /// An `Iterator` that knows how many columns it emits per row.
@@ -32,7 +30,10 @@ impl<'a, T> Iterator for Rows<'a, T> {
             if snd.is_empty() {
                 self.v = &[];
             } else {
-                self.v = &snd[self.skip_cols..];
+                // snd must contain at least one row, so no check required
+                unsafe {
+                    self.v = snd.get_unchecked(self.skip_cols..);
+                }
             }
             Some(fst)
         }
@@ -83,7 +84,10 @@ impl<'a, T> DoubleEndedIterator for Rows<'a, T> {
             if fst.is_empty() {
                 self.v = &[];
             } else {
-                self.v = &fst[..fst.len() - self.skip_cols];
+                // skip_cols will be <= fst.len(), so no check required
+                unsafe {
+                    self.v = fst.get_unchecked(..fst.len() - self.skip_cols);
+                }
             }
             Some(&snd)
         }
@@ -95,7 +99,10 @@ impl<'a, T> DoubleEndedIterator for Rows<'a, T> {
         if adj >= self.v.len() || overflow {
             self.v = &[];
         } else {
-            self.v = &self.v[..self.v.len() - adj];
+            // adj < fst.len(), so no check required
+            unsafe {
+                self.v = self.v.get_unchecked(..self.v.len() - adj);
+            }
         }
         self.next_back()
     }
@@ -134,7 +141,10 @@ impl<'a, T> Iterator for RowsMut<'a, T> {
             if tail.is_empty() {
                 self.v = &mut [];
             } else {
-                self.v = &mut tail[self.skip_cols..];
+                // tail must contain at least one row, so no check required
+                unsafe {
+                    self.v = tail.get_unchecked_mut(self.skip_cols..);
+                }
             }
             Some(head)
         }
@@ -187,7 +197,10 @@ impl<'a, T> DoubleEndedIterator for RowsMut<'a, T> {
             if fst.is_empty() {
                 self.v = &mut [];
             } else {
-                self.v = &mut fst[..tmp_len - self.cols - self.skip_cols];
+                // fst must contain at least one row, so no check required
+                unsafe {
+                    self.v = fst.get_unchecked_mut(..tmp_len - self.cols - self.skip_cols);
+                }
             }
             Some(snd)
         }
@@ -201,7 +214,10 @@ impl<'a, T> DoubleEndedIterator for RowsMut<'a, T> {
             self.v = &mut [];
         } else {
             let tmp = mem::replace(&mut self.v, &mut []);
-            self.v = &mut tmp[..self.v.len() - adj];
+            // adj < self.v.len(), so no check required
+            unsafe {
+                self.v = tmp.get_unchecked_mut(..self.v.len() - adj);
+            }
         }
         self.next_back()
     }
@@ -232,7 +248,10 @@ impl<'a, T> Iterator for Col<'a, T> {
             if snd.is_empty() {
                 self.v = &[];
             } else {
-                self.v = &snd[self.skip..];
+                // snd must contain at least one row, so we don't need a bounds check
+                unsafe {
+                    self.v = &snd.get_unchecked(self.skip..);
+                }
             }
             Some(fst)
         } else {
@@ -279,7 +298,10 @@ impl<'a, T> DoubleEndedIterator for Col<'a, T> {
             if fst.is_empty() {
                 self.v = &[];
             } else {
-                self.v = &fst[..fst.len() - self.skip];
+                // fst must contain at least one row, so we don't need a bounds check
+                unsafe {
+                    self.v = &fst.get_unchecked(..fst.len() - self.skip);
+                }
             }
             Some(last)
         } else {
@@ -293,7 +315,10 @@ impl<'a, T> DoubleEndedIterator for Col<'a, T> {
         if adj >= self.v.len() || overflow {
             self.v = &[];
         } else {
-            self.v = &self.v[..self.v.len() - adj];
+            // adj < self.v.len(), so no check required
+            unsafe {
+                self.v = self.v.get_unchecked(..self.v.len() - adj);
+            }
         }
         self.next_back()
     }
@@ -320,7 +345,10 @@ impl<'a, T> Iterator for ColMut<'a, T> {
             if snd.is_empty() {
                 self.v = &mut [];
             } else {
-                self.v = &mut snd[self.skip..];
+                // snd must contain at least one row, so no check required
+                unsafe {
+                    self.v = snd.get_unchecked_mut(self.skip..);
+                }
             }
             Some(fst)
         } else {
@@ -369,7 +397,10 @@ impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
                 self.v = &mut [];
             } else {
                 let new_len = fst.len() - self.skip;
-                self.v = &mut fst[..new_len];
+                // skip <= fst.len(), so no check required
+                unsafe {
+                    self.v = fst.get_unchecked_mut(..new_len);
+                }
             }
             Some(last)
         } else {
@@ -385,7 +416,10 @@ impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
             self.v = &mut [];
         } else {
             let tmp = mem::replace(&mut self.v, &mut []);
-            self.v = &mut tmp[..self.v.len() - adj];
+            // adj <= self.v.len(), so no check required
+            unsafe {
+                self.v = tmp.get_unchecked_mut(..self.v.len() - adj);
+            }
         }
         self.next_back()
     }
