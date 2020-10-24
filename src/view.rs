@@ -393,8 +393,8 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
         let snd_idx = (r2 - r1) * self.main_cols - num_cols;
         let second = &mut rest[snd_idx..snd_idx + num_cols];
         // Both slices are guaranteed to have the same length
-        debug_assert!(first.len() == num_cols);
-        debug_assert!(second.len() == num_cols);
+        debug_assert_eq!(first.len(), num_cols);
+        debug_assert_eq!(second.len(), num_cols);
         unsafe {
             // We know that the two slices will not overlap because r1 != r2, and we used split_at_mut()
             ptr::swap_nonoverlapping(first.as_mut_ptr(), second.as_mut_ptr(), num_cols);
