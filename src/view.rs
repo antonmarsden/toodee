@@ -174,6 +174,20 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
         self.data.get_unchecked(start..start + self.num_cols)
     }
 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let view = toodee.view((0,0), (10,5));
+    /// unsafe {
+    ///     assert_eq!(*view.get_unchecked((1,3)), 0);
+    /// }
+    /// ```
+    unsafe fn get_unchecked(&self, coord: Coordinate) -> &T {
+        self.data.get_unchecked(coord.1 * self.main_cols + coord.0)
+    }
+
 }
 
 impl<'a, T> Index<usize> for TooDeeView<'a, T> {
@@ -355,6 +369,21 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
         let start = row * self.main_cols;
         self.data.get_unchecked(start..start + self.num_cols)
     }
+    
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut view = toodee.view_mut((0,0), (10,5));
+    /// unsafe {
+    ///     assert_eq!(*view.get_unchecked((1,3)), 0);
+    /// }
+    /// ```
+    unsafe fn get_unchecked(&self, coord: Coordinate) -> &T {
+        self.data.get_unchecked(coord.1 * self.main_cols + coord.0)
+    }
+
 }
 
 impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
@@ -464,6 +493,21 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
     unsafe fn get_unchecked_row_mut(&mut self, row: usize) -> &mut [T] {
         let start = row * self.main_cols;
         self.data.get_unchecked_mut(start..start + self.num_cols)
+    }
+
+    
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut view = toodee.view_mut((0,0), (10,5));
+    /// unsafe {
+    ///     assert_eq!(*view.get_unchecked_mut((1,3)), 0);
+    /// }
+    /// ```
+    unsafe fn get_unchecked_mut(&mut self, coord: Coordinate) -> &mut T {
+        self.data.get_unchecked_mut(coord.1 * self.main_cols + coord.0)
     }
 
 }
