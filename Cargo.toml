@@ -24,7 +24,7 @@ copy = []
 [dependencies]
 
 [dev-dependencies]
-criterion = "0.3.2"
+criterion = "0.3.3"
 rand = "0.7.3"
 
 [[bench]]
