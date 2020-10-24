@@ -904,9 +904,7 @@ impl<T> Drop for DrainCol<'_, T> {
 
                     let vec = &mut toodee.data;
 
-                    let p = vec.as_mut_ptr();
-                    
-                    let mut dest = p.add(col);
+                    let mut dest = vec.as_mut_ptr().add(col);
                     let mut src = dest.add(1);
                     let orig_cols = toodee.num_cols;
                     let new_cols = orig_cols - 1;
