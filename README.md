@@ -5,12 +5,15 @@
 
 # toodee
 
-TooDee is a lightweight and high performance two-dimensional wrapper around a `Vec`.
+`TooDee` is a lightweight and high performance two-dimensional wrapper around a growable `Vec`.
+
+`TooDeeView` and `TooDeeViewMut` allow you create two-dimensional wrappers around a **slice**.
 
 ## Core features
 
 - Raw access to the underlying vector's slice via `data()` and `data_mut()`.
 - Creation of performant two-dimensional subsets using `view()` and `view_mut()`.
+- `get_unchecked(Coordinate)` and `get_unchecked_row(usize)` for faster (unsafe) access to cells or rows.
 - Most operations are implemented for both `TooDee` and `TooDeeViewMut` structs - see below for how this pattern can be extended.
 - Get/set specific cells using indexing, e.g., `let my_row = toodee[row]; my_row[col] = val;`.
 - Index with a `Coordinate` if you prefer, e.g., `toodee[(col, row)] = val`.
