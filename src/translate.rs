@@ -1,6 +1,4 @@
 use crate::ops::*;
-use crate::toodee::*;
-use crate::view::*;
 
 /// Provides implementations for translate (also known as scroll) operations, and other internal data
 /// movement operations such as flipping.
@@ -173,7 +171,4 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
     
 }
 
-
-impl<T> TranslateOps<T> for TooDeeViewMut<'_, T> {}
-
-impl<T> TranslateOps<T> for TooDee<T> {}
+impl<T, O> TranslateOps<T> for O where O : TooDeeOpsMut<T> {}

@@ -5,8 +5,6 @@ use core::slice;
 use core::ptr;
 
 use crate::ops::*;
-use crate::toodee::*;
-use crate::view::*;
 
 /// Common re-indexing logic used internally by the `SortOps` trait.
 fn build_swap_trace(ordering : &mut [(usize,usize)]) ->  &mut [(usize,usize)]
@@ -235,6 +233,4 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
     }
 }
 
-impl<T> SortOps<T> for TooDeeViewMut<'_, T> {}
-
-impl<T> SortOps<T> for TooDee<T> {}
+impl<T, O> SortOps<T> for O where O : TooDeeOpsMut<T> {}
