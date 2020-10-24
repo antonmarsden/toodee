@@ -94,6 +94,14 @@ pub trait TooDeeOps<T> : Index<usize, Output=[T]> + Index<Coordinate, Output=T> 
     fn cells(&self) -> Cells<'_, T> {
         FlattenExact::new(self.rows())
     }
+    
+    /// Returns a row without checking that the row is valid. Generally it's best to use indexing instead, e.g., toodee[row]
+    /// 
+    /// # Safety
+    /// 
+    /// This is generally not recommended, use with caution!
+    /// Calling this method with an invalid row is *[undefined behavior]* even if the resulting reference is not used.
+    unsafe fn get_unchecked_row(&self, row: usize) -> &[T];
 
 }
 
@@ -280,5 +288,13 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         }
     }
     
+    /// Returns a mutable row without checking that the row is valid. Generally it's best to use indexing instead, e.g., toodee[row]
+    /// 
+    /// # Safety
+    /// 
+    /// This is generally not recommended, use with caution!
+    /// Calling this method with an invalid row is *[undefined behavior]* even if the resulting reference is not used.
+    unsafe fn get_unchecked_row_mut(&mut self, row: usize) -> &mut [T];
+
 }
 

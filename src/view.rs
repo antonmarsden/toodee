@@ -158,6 +158,22 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
         }
     }
 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// unsafe {
+    ///     let toodee : TooDee<u32> = TooDee::new(10, 5);
+    ///     let view = toodee.view((0,0), (10,5));
+    ///     let row = view.get_unchecked_row(3);
+    ///     assert_eq!(row.len(), 10);
+    /// }
+    /// ```
+    unsafe fn get_unchecked_row(&self, row: usize) -> &[T] {
+        let start = row * self.main_cols;
+        self.data.get_unchecked(start..start + self.num_cols)
+    }
+
 }
 
 impl<'a, T> Index<usize> for TooDeeView<'a, T> {
@@ -324,6 +340,21 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
         }
     }
 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// unsafe {
+    ///     let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    ///     let mut view = toodee.view_mut((0,0), (10,5));
+    ///     let row = view.get_unchecked_row(3);
+    ///     assert_eq!(row.len(), 10);
+    /// }
+    /// ```
+    unsafe fn get_unchecked_row(&self, row: usize) -> &[T] {
+        let start = row * self.main_cols;
+        self.data.get_unchecked(start..start + self.num_cols)
+    }
 }
 
 impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
@@ -418,6 +449,23 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
             ptr::swap_nonoverlapping(first.as_mut_ptr(), second.as_mut_ptr(), num_cols);
         }
     }
+
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// unsafe {
+    ///     let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    ///     let mut view = toodee.view_mut((0,0), (10,5));
+    ///     let row = view.get_unchecked_row_mut(3);
+    ///     assert_eq!(row.len(), 10);
+    /// }
+    /// ```
+    unsafe fn get_unchecked_row_mut(&mut self, row: usize) -> &mut [T] {
+        let start = row * self.main_cols;
+        self.data.get_unchecked_mut(start..start + self.num_cols)
+    }
+
 }
 
 impl<'a, T> Index<usize> for TooDeeViewMut<'a, T> {

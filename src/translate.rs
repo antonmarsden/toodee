@@ -93,7 +93,9 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
                     if base_row == next_row {
                         // finish up with a rotate
                         if mid > 0 {
-                            self[base_row].rotate_left(mid);
+                            unsafe {
+                                self.get_unchecked_row_mut(base_row).rotate_left(mid);
+                            }
                         }
                         break;
                     } else {

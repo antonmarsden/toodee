@@ -220,6 +220,21 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         }
     }
 
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// unsafe {
+    ///     let toodee : TooDee<u32> = TooDee::new(10, 5);
+    ///     let row = toodee.get_unchecked_row(3);
+    ///     assert_eq!(row.len(), 10);
+    /// }
+    /// ```
+    unsafe fn get_unchecked_row(&self, row: usize) -> &[T] {
+        let start = row * self.num_cols;
+        self.data.get_unchecked(start..start + self.num_cols)
+    }
+
 }
 
 impl<T> TooDeeOpsMut<T> for TooDee<T> {
@@ -334,6 +349,21 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         }
     }
     
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// unsafe {
+    ///     let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    ///     let row = toodee.get_unchecked_row_mut(3);
+    ///     assert_eq!(row.len(), 10);
+    /// }
+    /// ```
+    unsafe fn get_unchecked_row_mut(&mut self, row: usize) -> &mut [T] {
+        let start = row * self.num_cols;
+        self.data.get_unchecked_mut(start..start + self.num_cols)
+    }
+
 }
 
 impl<T> TooDee<T> {
