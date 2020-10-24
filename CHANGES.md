@@ -2,8 +2,9 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.2.2
 
+- Use of slice.get_unchecked() and slice.get_unchecked_mut() where possible for overall performance improvement
 - Performance improvements to `TooDeeOpsMut.swap_rows()` and the `SortOps`
 - Minor code style improvements
 - Small documentation updates
