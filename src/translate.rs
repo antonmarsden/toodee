@@ -62,74 +62,68 @@ pub trait TranslateOps<T> : TooDeeOpsMut<T> {
             return;
         }
 
-        if row_mid != 0 {
+        let row_adj_abs = num_rows - row_mid;
+
+        // This row swapping algorithm is pretty cool. I came up with it independently,
+        // but it turns out that the concept is fairly well known. See
+        // `core::slice::ptr_rotate()` for various strategies.
             
-            let row_adj_abs = num_rows - row_mid;
-
-            // This row swapping algorithm is pretty cool. I came up with it independently,
-            // but it turns out that the concept is fairly well known. See
-            // `core::slice::ptr_rotate()` for various strategies.
+        let mut swap_count = 0;
+        let mut base_row = 0;
             
-            let mut swap_count = 0;
-            let mut base_row = 0;
-            
-            // TODO: tidy up and possibly create a simpler loop if col_mid == 0
+        while swap_count < num_rows {
 
-            while swap_count < num_rows {
+            let mut mid = col_mid;
 
-                let mut mid = col_mid;
-
-                let mut next_row = base_row + row_adj_abs;
+            let mut next_row = base_row + row_adj_abs;
                 
-                loop {
-                    if next_row >= num_rows {
-                        next_row -= num_rows;
-                    }
-                    
-                    swap_count += 1;
+            loop {
 
-                    if base_row == next_row {
-                        // finish up with a rotate
-                        if mid > 0 {
-                            unsafe {
-                                self.get_unchecked_row_mut(base_row).rotate_left(mid);
-                            }
-                        }
-                        break;
-                    } else {
-                        
-                        // The following logic performs a rotate while swapping, and
-                        // is more efficient than doing a swap then rotate.
-                        let (base_ref, next_ref) = self.row_pair_mut(base_row, next_row);
+                if next_row >= num_rows {
+                    next_row -= num_rows;
+                }
+                
+                swap_count += 1;
+                if base_row == next_row {
+                    // finish up with a rotate
+                    if mid > 0 {
                         unsafe {
-                            if mid > 0 {
-                                base_ref.get_unchecked_mut(..mid).swap_with_slice(next_ref.get_unchecked_mut(num_cols-mid..num_cols));
-                            }
-                            if mid < num_cols {
-                                base_ref.get_unchecked_mut(mid..num_cols).swap_with_slice(next_ref.get_unchecked_mut(..num_cols-mid));
-                            }
+                            self.get_unchecked_row_mut(base_row).rotate_left(mid);
                         }
-                        
-                        mid += col_mid;
-                        if mid >= num_cols {
-                            mid -= num_cols;
+                    }
+                    break;
+                } else {
+            
+                    // The following logic performs a rotate while swapping, and
+                    // is more efficient than doing a swap then rotate.
+                    let (base_ref, next_ref) = self.row_pair_mut(base_row, next_row);
+                    unsafe {
+                        if mid > 0 {
+                            base_ref.get_unchecked_mut(..mid).swap_with_slice(next_ref.get_unchecked_mut(num_cols-mid..num_cols));
+                        }
+                        if mid < num_cols {
+                            base_ref.get_unchecked_mut(mid..num_cols).swap_with_slice(next_ref.get_unchecked_mut(..num_cols-mid));
                         }
                     }
                     
-                    next_row += row_adj_abs;
+                    mid += col_mid;
+                    if mid >= num_cols {
+                        mid -= num_cols;
+                    }
                 }
                 
-                // TODO: We now know that we'll loop a further N = (num_rows / swap_count - 1) times.
-                // This means we could start swapping in chunks of N, i.e.,
-                // ([base_row..base_row+N] -> [base_row+row_adj_abs..base_row+row_adj_abs+N],
-                // which should more cache-friendly.
-                if swap_count >= num_rows {
-                    break;
-                }
-                
-                base_row += 1; // advance the base
-                
+                next_row += row_adj_abs;
             }
+            
+            // TODO: We now know that we'll loop a further N = (num_rows / swap_count - 1) times.
+            // This means we could start swapping in chunks of N, i.e.,
+            // ([base_row..base_row+N] -> [base_row+row_adj_abs..base_row+row_adj_abs+N],
+            // which should more cache-friendly.
+            if swap_count >= num_rows {
+                break;
+            }
+            
+            base_row += 1; // advance the base
         }
         
     }

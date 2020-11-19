@@ -48,9 +48,8 @@ impl<T> Default for TooDee<T> {
     /// let toodee : TooDee<Abc> = TooDee::default();
     /// ```
     fn default() -> Self {
-        let v = Vec::default();
         TooDee {
-            data : v,
+            data : Vec::default(),
             num_rows : 0,
             num_cols : 0,
         }
