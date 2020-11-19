@@ -66,7 +66,7 @@ pub trait TooDeeOps<T> : Index<usize, Output=[T]> + Index<Coordinate, Output=T> 
     /// ```
     fn rows(&self) -> Rows<'_, T>;
     
-    /// Returns an iterator over a single column.
+    /// Returns an iterator over a single column. Note that the `Col` iterator is indexable.
     /// 
     /// # Examples
     /// 
@@ -144,7 +144,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// ```
     fn rows_mut(&mut self) -> RowsMut<'_, T>;
     
-    /// Returns a mutable iterator over a single column.
+    /// Returns a mutable iterator over a single column. Note that the `ColMut` iterator is indexable.
     /// 
     /// # Examples
     /// 

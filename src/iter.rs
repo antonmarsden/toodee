@@ -1,4 +1,5 @@
 use core::mem;
+use core::ops::{Index, IndexMut};
 
 /// An `Iterator` that knows how many columns it emits per row.
 pub trait TooDeeIterator : Iterator {
@@ -238,6 +239,22 @@ pub struct Col<'a, T> {
     pub(super) skip: usize,
 }
 
+impl<'a, T> Index<usize> for Col<'a, T> {
+    type Output = T;
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let col = toodee.col(2);
+    /// assert_eq!(col[3], 0);
+    /// ```
+    fn index(&self, idx: usize) -> &Self::Output {
+        let pos = idx * (1 + self.skip);
+        &self.v[pos]
+    }
+}
+
 impl<'a, T> Iterator for Col<'a, T> {
 
     type Item = &'a T;
@@ -332,6 +349,38 @@ impl<T> ExactSizeIterator for Col<'_, T> {}
 pub struct ColMut<'a, T> {
     pub(super) v: &'a mut [T],
     pub(super) skip: usize,
+}
+
+impl<'a, T> Index<usize> for ColMut<'a, T> {
+    type Output = T;
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let col = toodee.col_mut(2);
+    /// assert_eq!(col[3], 0);
+    /// ```
+    fn index(&self, idx: usize) -> &Self::Output {
+        let pos = idx * (1 + self.skip);
+        &self.v[pos]
+    }
+}
+
+impl<'a, T> IndexMut<usize> for ColMut<'a, T> {
+
+    /// # Examples
+    /// 
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::new(10, 5);
+    /// let mut col = toodee.col_mut(2);
+    /// col[3] = 42;
+    /// ```
+    fn index_mut(&mut self, idx: usize) -> &mut Self::Output {
+        let pos = idx * (1 + self.skip);
+        &mut self.v[pos]
+    }
 }
 
 impl<'a, T> Iterator for ColMut<'a, T> {

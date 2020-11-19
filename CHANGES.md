@@ -2,6 +2,10 @@
 
 ## Changes
 
+### Unreleased
+
+- The `Col` and `ColMut` iterators are now indexable.
+
 ### Version 0.2.3
 
 - Introduced `get_unchecked()` and `get_unchecked_mut()` functions for faster (unsafe) access
