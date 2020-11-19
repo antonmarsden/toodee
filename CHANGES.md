@@ -2,7 +2,7 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.2.4
 
 - The `Col` and `ColMut` iterators are now indexable.
 

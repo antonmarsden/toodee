@@ -84,9 +84,8 @@ Happy coding :)
 
 ## TODO
 
-- More documentation, with examples.
-- `tiles(..)` and `tiles_mut()`?
 - Pathfinding algorithms?
+- Image/bitmap algorithms?!
 
 ## Motivation
 
