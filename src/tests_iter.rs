@@ -77,6 +77,7 @@ mod toodee_tests_iter {
         let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut col = toodee.col(2);
         assert_eq!(col.len(), 10);
+        assert_eq!(col[0], 2);
         assert_eq!(col.next().unwrap(), &2);
         let expected_sum = 2+12+22+32+42+52+62+72+82+92;
         assert_eq!(col.copied().sum::<u32>(), expected_sum-2);
@@ -91,6 +92,7 @@ mod toodee_tests_iter {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         let mut col = toodee.col_mut(2);
         assert_eq!(col.len(), 10);
+        assert_eq!(col[0], 2);
         assert_eq!(col.next().unwrap(), &2);
         let expected_sum = 2+12+22+32+42+52+62+72+82+92;
         assert_eq!(col.map(|v| *v).sum::<u32>(), expected_sum-2);
