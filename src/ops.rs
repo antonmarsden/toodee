@@ -1,6 +1,5 @@
 use core::ops::{Index, IndexMut};
 use core::cmp::Ordering;
-use core::borrow::Borrow;
 use core::ptr;
 
 use crate::iter::*;
@@ -185,15 +184,10 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// view.fill(0);
     /// assert_eq!(toodee.cells().sum::<u32>(), 42*(50 - 8*3));
     /// ```
-    fn fill<V>(&mut self, fill: V)
-    where
-        V: Borrow<T>,
-        T: Clone {
-        let value = fill.borrow();
+    fn fill(&mut self, fill: T)
+    where T: Clone {
         for r in self.rows_mut() {
-            for v in r {
-                v.clone_from(value);
-            }
+            r.fill(fill.clone());
         }
     }
     

@@ -1,7 +1,6 @@
 use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
-use core::borrow::Borrow;
 use core::iter::IntoIterator;
 use core::ptr::{self, NonNull};
 use core::mem;
@@ -309,14 +308,9 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     /// toodee.fill(42);
     /// assert_eq!(toodee[1][1], 42);
     /// ```
-    fn fill<V>(&mut self, fill: V)
-    where
-        V: Borrow<T>,
-        T: Clone {
-        let value = fill.borrow();
-        for v in self.data.iter_mut() {
-            v.clone_from(value);
-        }
+    fn fill(&mut self, fill: T)
+    where T: Clone {
+        self.data.fill(fill);
     }
 
     /// Swap/exchange the data between two rows.
@@ -643,11 +637,7 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee.num_rows(), 2);
     /// ```
     pub fn pop_row(&mut self) -> Option<DrainRow<'_, T>> {
-        if self.num_rows == 0 {
-            None
-        } else {
-            Some(self.remove_row(self.num_rows - 1))
-        }
+        (self.num_rows != 0).then(move || self.remove_row(self.num_rows - 1))
     }
     
     /// Appends a new row to the array.
@@ -744,11 +734,7 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee.num_rows(), 3);
     /// ```
     pub fn pop_col(&mut self) -> Option<DrainCol<'_, T>> {
-        if self.num_cols == 0 {
-            None
-        } else {
-            Some(self.remove_col(self.num_cols - 1))
-        }
+        (self.num_cols != 0).then(move || self.remove_col(self.num_cols - 1))
     }
     
     /// Appends a new column to the array.

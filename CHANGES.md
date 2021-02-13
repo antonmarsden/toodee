@@ -2,6 +2,12 @@
 
 ## Changes
 
+### Unreleased
+
+- Now requires rustc >= 1.50 to build
+- Uses the stabilised `slice_fill` feature
+- Uses the stabilised `bool::then` in some scenarios
+
 ### Version 0.2.4
 
 - The `Col` and `ColMut` iterators are now indexable.
