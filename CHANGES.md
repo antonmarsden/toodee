@@ -7,6 +7,8 @@
 - Now requires rustc >= 1.50 to build
 - Uses the stabilised `slice_fill` feature
 - Uses the stabilised `bool::then` in some scenarios
+- Replaced some `Into` implementations with `From` implementations
+- Minor test case tidy up
 
 ### Version 0.2.4
 

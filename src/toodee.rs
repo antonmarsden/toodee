@@ -866,16 +866,16 @@ impl<'a, T> IntoIterator for &'a mut TooDee<T> {
 }
 
 /// Support conversion into a `Vec`.
-impl<T> Into<Vec<T>> for TooDee<T> {
-    fn into(self) -> Vec<T> {
-        self.data
+impl<T> From<TooDee<T>> for Vec<T> {
+    fn from(toodee: TooDee<T>) -> Vec<T> {
+        toodee.data
     }
 }
 
 /// Support conversion into a boxed slice.
-impl<T> Into<Box<[T]>> for TooDee<T> {
-    fn into(self) -> Box<[T]> {
-        self.data.into_boxed_slice()
+impl<T> From<TooDee<T>> for Box<[T]> {
+    fn from(toodee: TooDee<T>) -> Box<[T]> {
+        toodee.data.into_boxed_slice()
     }
 }
 

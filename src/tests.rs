@@ -394,9 +394,7 @@ mod toodee_tests {
     #[test]
     fn insert_row() {
         let mut toodee : TooDee<u32> = TooDee::init(2, 1, 0u32);
-        let mut tmp = Vec::new();
-        tmp.push(1);
-        tmp.push(6);
+        let tmp = vec![1,6];
         toodee.insert_row(0, tmp);
         assert_eq!(toodee.size(), (2, 2));
         assert_eq!(toodee.data().iter().copied().sum::<u32>(), 7);
@@ -410,9 +408,7 @@ mod toodee_tests {
     fn push_row() {
         let mut toodee : TooDee<u32> = TooDee::init(2, 1, 0u32);
         // test push_row
-        let mut tmp2 = Vec::new();
-        tmp2.push(11);
-        tmp2.push(16);
+        let tmp2 = vec![11,16];
         toodee.push_row(tmp2);
         assert_eq!(toodee.data().iter().copied().sum::<u32>(), 27);
         assert_eq!(toodee.size(), (2, 2));
@@ -427,9 +423,7 @@ mod toodee_tests {
     #[should_panic(expected = "assertion failed")]
     fn insert_row_bad_idx() {
         let mut toodee : TooDee<u32> = TooDee::default();
-        let mut tmp = Vec::new();
-        tmp.push(1);
-        tmp.push(6);
+        let tmp = vec![1,6];
         toodee.insert_row(1, tmp);
     }
 
@@ -437,9 +431,7 @@ mod toodee_tests {
     #[should_panic(expected = "assertion failed")]
     fn insert_row_bad_row_len() {
         let mut toodee : TooDee<u32> = TooDee::init(1, 1, 0u32);
-        let mut tmp = Vec::new();
-        tmp.push(1);
-        tmp.push(6);
+        let tmp = vec![1,6];
         toodee.insert_row(1, tmp);
     }
 

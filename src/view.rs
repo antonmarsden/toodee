@@ -556,14 +556,14 @@ impl<'a, T> IndexMut<Coordinate> for TooDeeViewMut<'a, T> {
     }
 }
 
-impl<'a, T> Into<TooDeeView<'a, T>> for TooDeeViewMut<'a, T> {
-    fn into(self) -> TooDeeView<'a, T> {
+impl<'a, T> From<TooDeeViewMut<'a, T>> for TooDeeView<'a, T> {
+    fn from(v: TooDeeViewMut<'a, T>) -> TooDeeView<'a, T> {
         TooDeeView {
-            data:      self.data,
-            start:     self.start,
-            num_cols:  self.num_cols,
-            num_rows:  self.num_rows,
-            main_cols: self.main_cols,
+            data:      v.data,
+            start:     v.start,
+            num_cols:  v.num_cols,
+            num_rows:  v.num_rows,
+            main_cols: v.main_cols,
         }
     }
 }
