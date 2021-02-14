@@ -60,7 +60,7 @@ fn sorted_box_to_ordering<T>(sorted: Box<[(usize, &T)]>) -> Box<[(usize,usize)]>
 /// Provides sorting capabilities to two-dimensional arrays. Sorting of the rows and columns
 /// is performed in-place, and care is taken to minimise row/col swaps. This is achieved by
 /// sorting the row/col and original index pair, then repositioning the rows/columns once the
-/// new sort order has been determined.
+/// new ordering has been determined.
 pub trait SortOps<T> : TooDeeOpsMut<T> {
 
     /// Sort the entire two-dimensional array by comparing elements on a specific row, using the natural ordering.
