@@ -2,11 +2,13 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.3.0
 
-- Now requires rustc >= 1.50 to build
+- Now requires **rustc >= 1.50** to build
+- Fix for issue #13 (Panic Safety and soundness issue in `insert_row`)
+- Fixed panic safety and soundness issues in `insert_col`, and reduced the number of times it calls `ptr::copy`
 - Uses the stabilised `slice_fill` feature
-- Uses the stabilised `bool::then` in some scenarios
+- Uses the stabilised `bool::then` function in some scenarios
 - Replaced some `Into` implementations with `From` implementations
 - Minor test case tidy up
 
