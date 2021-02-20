@@ -686,7 +686,6 @@ impl<T> TooDee<T> {
             let suffix = p.add(self.num_cols);
             ptr::copy(p, suffix, len - start);
             
-            
             // Only iterates a maximum of `self.num_cols` times.
             while p < suffix {
                 if let Some(e) = iter.next() {
@@ -698,6 +697,8 @@ impl<T> TooDee<T> {
                 }
             }
             
+            debug_assert!(iter.next().is_none(), "iterator not exhausted");
+
             self.data.set_len(len + self.num_cols);
         }
 
@@ -816,11 +817,12 @@ impl<T> TooDee<T> {
     where I : Iterator<Item=T> + ExactSizeIterator + DoubleEndedIterator
     {
         assert!(index <= self.num_cols);
-        let iter = data.into_iter();
+        // Use the reverse iterator
+        let mut rev_iter = data.into_iter().rev();
         if self.num_cols == 0 {
-            self.num_rows = iter.len();
+            self.num_rows = rev_iter.len();
         } else {
-            assert_eq!(self.num_rows, iter.len());
+            assert_eq!(self.num_rows, rev_iter.len());
         }
         
         self.reserve(self.num_rows);
@@ -828,10 +830,11 @@ impl<T> TooDee<T> {
         let old_len = self.data.len();
         let new_len = old_len + self.num_rows;
         let suffix_len = self.num_cols - index;
+        
         unsafe {
             
             // Prevent duplicate (or any) drops on the array we are modifying.
-            // This is to safe-guard against a panic potentially caused by `iter.rev()`.
+            // This is to safe-guard against a panic potentially caused by `rev_iter.next()`.
             // Alternative (less performant) approaches would be:
             // - append the new column to the array and use swapping to shuffle everything into place.
             // - store the new column data in a temporary location before shifting the memory and inserting values.
@@ -840,31 +843,37 @@ impl<T> TooDee<T> {
             let p = self.data.as_mut_ptr();
             let mut read_p = p.add(old_len);
             let mut write_p = p.add(new_len);
-
-            let mut elem_count = 0usize;
             
-            // Use `take()` to cap the number of elements processed because we cannot rely on
-            // then `len()` value of `ExactSizeIterator` in unsafe code.
-            // TODO (performance): avoid the use of take() if possible.
-            for e in iter.take(self.num_rows).rev() {
-                // shift suffix
+            let next_or_panic = |iter : &mut core::iter::Rev<I>| -> T {
+                if let Some(e) = iter.next() {
+                    e
+                } else {
+                    panic!("unexpected iterator length");
+                }
+            };
+
+            if self.num_rows > 0 {
+                // start with suffix copy
                 read_p = read_p.sub(suffix_len);
                 write_p = write_p.sub(suffix_len);
                 ptr::copy(read_p, write_p, suffix_len);
                 write_p = write_p.sub(1);
-                // place new col element
-                ptr::write(write_p, e);
-                // shift prefix
+                ptr::write(write_p, next_or_panic(&mut rev_iter));
+                for _ in 0..(self.num_rows - 1) {
+                    // copy suffix and prefix as a single block until we are on the final element
+                    read_p = read_p.sub(self.num_cols);
+                    write_p = write_p.sub(self.num_cols);
+                    ptr::copy(read_p, write_p, self.num_cols);
+                    write_p = write_p.sub(1);
+                    ptr::write(write_p, next_or_panic(&mut rev_iter));
+                }
                 read_p = read_p.sub(index);
                 write_p = write_p.sub(index);
                 ptr::copy(read_p, write_p, index);
-                // TODO (performance): Could combine prefix/suffix memory copies into a single copy
-                elem_count += 1;
             }
             
-            // panic if the iterator length was less than expected
-            assert_eq!(self.num_rows, elem_count, "unexpected iterator length");
-            
+            debug_assert!(rev_iter.next().is_none(), "iterator not exhausted");
+
             self.data.set_len(new_len);
         }
 
