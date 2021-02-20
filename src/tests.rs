@@ -5,8 +5,59 @@ mod toodee_tests {
     use alloc::boxed::Box;
     use alloc::vec;
     use alloc::vec::Vec;
+    use core::marker::PhantomData;
+    use core::fmt::Display;
 
     use crate::*;
+    
+    struct DropDetector<V : Display> {
+        value : V,
+    }
+    
+    impl<V : Display> DropDetector<V> {
+        fn new(value : V) -> Self {
+            DropDetector { value : value }
+        }
+    }
+    
+    impl<V : Display> Drop for DropDetector<V> {
+        fn drop(&mut self) {
+            println!("Dropping {}", self.value);
+        }
+    }
+    
+    // An iterator that panics.
+    // -----
+    struct PanickingIterator<V> {
+        phantom: PhantomData<V>
+    }
+    
+    impl<V> PanickingIterator<V> {
+        fn new() -> Self {
+            PanickingIterator { phantom : PhantomData }
+        }
+    }
+    
+    impl<V> Iterator for PanickingIterator<V> {
+        type Item = V;
+        fn next(&mut self) -> Option<Self::Item> { panic!("Iterator panicked"); }
+    }
+    
+    impl<V> ExactSizeIterator for PanickingIterator<V> {
+        fn len(&self) -> usize { 1 }
+    }
+
+    struct IteratorWithWrongLength();
+    
+    impl Iterator for IteratorWithWrongLength {
+        type Item = Box<u8>;
+    
+        fn next(&mut self) -> Option<Self::Item> { None }
+    }
+    
+    impl ExactSizeIterator for IteratorWithWrongLength {
+        fn len(&self) -> usize { 1 }
+    }
 
     #[test]
     fn default() {
@@ -433,6 +484,23 @@ mod toodee_tests {
         let mut toodee : TooDee<u32> = TooDee::init(1, 1, 0u32);
         let tmp = vec![1,6];
         toodee.insert_row(1, tmp);
+    }
+
+    #[test]
+    #[should_panic(expected = "Iterator panicked")]
+    fn insert_row_iterator_panic() {
+        let vec = vec![DropDetector::new(1), DropDetector::new(2), DropDetector::new(3)];
+        let mut toodee : TooDee<_> = TooDee::from_vec(1, 3, vec);
+        toodee.insert_row(0, PanickingIterator::new());
+    }
+    
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn insert_row_bad_exact_size_iterator() {
+        let vec = vec![Box::<u8>::new(1)];
+        let mut toodee : TooDee<_> = TooDee::from_vec(1, 1, vec);
+        toodee.insert_row(1, IteratorWithWrongLength());
+        println!("{}", toodee[1][0]);
     }
 
     #[test]
