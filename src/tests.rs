@@ -16,7 +16,7 @@ mod toodee_tests {
     
     impl<V : Display> DropDetector<V> {
         fn new(value : V) -> Self {
-            DropDetector { value : value }
+            DropDetector { value }
         }
     }
     
@@ -565,6 +565,42 @@ mod toodee_tests {
         assert_eq!(toodee.data()[2], 2);
         assert_eq!(toodee.data()[3], 7);
         assert_eq!(toodee.data()[4], 3);
+    }
+
+    #[test]
+    fn insert_row_into_empty() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(0, 0, (0u32..0).collect());
+        toodee.insert_row(0, 7..9);
+        assert_eq!(toodee.data().len(), 2);
+        assert_eq!(toodee.size(), (2, 1));
+        assert_eq!(toodee[0][0], 7);
+        assert_eq!(toodee[0][1], 8);
+    }
+
+    #[test]
+    fn insert_col_into_empty() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(0, 0, (0u32..0).collect());
+        toodee.insert_col(0, 7..9);
+        assert_eq!(toodee.data().len(), 2);
+        assert_eq!(toodee.size(), (1, 2));
+        assert_eq!(toodee[0][0], 7);
+        assert_eq!(toodee[1][0], 8);
+    }
+
+    #[test]
+    fn insert_empty_col_into_empty() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(0, 0, (0u32..0).collect());
+        toodee.insert_col(0, 0..0);
+        assert_eq!(toodee.data().len(), 0);
+        assert_eq!(toodee.size(), (0, 0));
+    }
+
+    #[test]
+    fn insert_empty_row_into_empty() {
+        let mut toodee : TooDee<u32> = TooDee::from_vec(0, 0, (0u32..0).collect());
+        toodee.insert_row(0, 0..0);
+        assert_eq!(toodee.data().len(), 0);
+        assert_eq!(toodee.size(), (0, 0));
     }
 
     #[test]

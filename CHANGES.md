@@ -2,6 +2,10 @@
 
 ## Changes
 
+### Unreleased
+
+- Consistency improvement: only increment rows (for `insert_row`) and cols (for `insert_col`) if data was actually inserted.
+
 ### Version 0.3.0
 
 - Now requires **rustc >= 1.50** to build

@@ -703,7 +703,9 @@ impl<T> TooDee<T> {
         }
 
         // update the number of rows
-        self.num_rows += 1;
+        if self.num_cols > 0 {
+            self.num_rows += 1;
+        }
 
     }
 
@@ -878,8 +880,9 @@ impl<T> TooDee<T> {
         }
 
         // update the number of columns
-        self.num_cols += 1;
-
+        if self.num_rows > 0 {
+            self.num_cols += 1;
+        }
     }
 
 }
