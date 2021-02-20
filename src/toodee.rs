@@ -660,7 +660,7 @@ impl<T> TooDee<T> {
     where I : Iterator<Item=T> + ExactSizeIterator
     {
         assert!(index <= self.num_rows);
-        let iter = data.into_iter();
+        let mut iter = data.into_iter();
         if self.num_rows == 0 {
             self.num_cols = iter.len();
         } else {
@@ -683,19 +683,20 @@ impl<T> TooDee<T> {
             
             let mut p = self.data.as_mut_ptr().add(start);
             // shift everything to make space for the new row
-            ptr::copy(p, p.add(self.num_cols), len - start);
-
-            let mut elem_count = 0usize;
-            // Use `take()` to cap the number of elements processed because we cannot rely on
-            // then `len()` value of `ExactSizeIterator` in unsafe code.
-            for e in iter.take(self.num_cols) {
-                ptr::write(p, e);
-                p = p.add(1);
-                elem_count += 1;
-            }
+            let suffix = p.add(self.num_cols);
+            ptr::copy(p, suffix, len - start);
             
-            // abort if the iterator length was less than expected
-            assert_eq!(self.num_cols, elem_count, "unexpected iterator length");
+            
+            // Only iterates a maximum of `self.num_cols` times.
+            while p < suffix {
+                if let Some(e) = iter.next() {
+                    ptr::write(p, e);
+                    p = p.add(1);
+                } else {
+                    // panic if the iterator length is less than expected
+                    assert_eq!(p, suffix, "unexpected iterator length");
+                }
+            }
             
             self.data.set_len(len + self.num_cols);
         }
@@ -841,9 +842,10 @@ impl<T> TooDee<T> {
             let mut write_p = p.add(new_len);
 
             let mut elem_count = 0usize;
-
+            
             // Use `take()` to cap the number of elements processed because we cannot rely on
             // then `len()` value of `ExactSizeIterator` in unsafe code.
+            // TODO (performance): avoid the use of take() if possible.
             for e in iter.take(self.num_rows).rev() {
                 // shift suffix
                 read_p = read_p.sub(suffix_len);
@@ -856,10 +858,11 @@ impl<T> TooDee<T> {
                 read_p = read_p.sub(index);
                 write_p = write_p.sub(index);
                 ptr::copy(read_p, write_p, index);
+                // TODO (performance): Could combine prefix/suffix memory copies into a single copy
                 elem_count += 1;
             }
             
-            // abort if the iterator length was less than expected
+            // panic if the iterator length was less than expected
             assert_eq!(self.num_rows, elem_count, "unexpected iterator length");
             
             self.data.set_len(new_len);
