@@ -406,16 +406,7 @@ impl<T> TooDee<T> {
     /// ```
     pub fn new(num_cols: usize, num_rows: usize) -> TooDee<T>
     where T: Default + Clone {
-        if num_cols == 0 || num_rows == 0 {
-            assert_eq!(num_rows, num_cols);
-        }
-        let len = num_rows * num_cols;
-        let v = vec![T::default(); len];
-        TooDee {
-            data : v,
-            num_cols,
-            num_rows,
-        }
+        Self::init(num_cols, num_rows, T::default())
     }
 
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
@@ -975,17 +966,7 @@ impl<T> From<TooDeeView<'_, T>> for TooDee<T> where T : Clone {
 
 impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
     fn from(view: TooDeeViewMut<'_, T>) -> Self {
-        let num_cols = view.num_cols();
-        let num_rows = view.num_rows();
-        let mut v = Vec::with_capacity(num_cols * num_rows);
-        for r in view.rows() {
-            v.extend_from_slice(r);
-        }
-        TooDee {
-            data : v,
-            num_cols,
-            num_rows,
-        }
+        Self::from(view)
     }
 }
 
