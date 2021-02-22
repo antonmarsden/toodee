@@ -966,7 +966,17 @@ impl<T> From<TooDeeView<'_, T>> for TooDee<T> where T : Clone {
 
 impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
     fn from(view: TooDeeViewMut<'_, T>) -> Self {
-        Self::from(view)
+        let num_cols = view.num_cols();
+        let num_rows = view.num_rows();
+        let mut v = Vec::with_capacity(num_cols * num_rows);
+        for r in view.rows() {
+            v.extend_from_slice(r);
+        }
+        TooDee {
+            data : v,
+            num_cols,
+            num_rows,
+        }
     }
 }
 
