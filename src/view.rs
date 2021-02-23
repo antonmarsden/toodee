@@ -5,6 +5,7 @@ use core::cmp::Ordering;
 use core::ptr;
 
 use crate::toodee::*;
+use crate::matrix::*;
 use crate::ops::*;
 use crate::iter::*;
 
@@ -91,6 +92,27 @@ impl<'a, T> TooDeeView<'a, T> {
         }
     }
 
+    /// Used internally by `Matrix` to create a `TooDeeView`.
+    pub(super) fn from_matrix<const C : usize, const R : usize>(start: Coordinate, end: Coordinate, matrix: &'a Matrix<T, C, R>) -> TooDeeView<'a, T> {
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, matrix);
+        let data_start = start.1 * C + start.0;
+        let data_len = {
+            if num_rows == 0 {
+                0
+            } else {
+                (num_rows - 1) * C + num_cols
+            }
+        };
+        unsafe {
+            TooDeeView {
+                data: matrix.data().get_unchecked(data_start..data_start + data_len),
+                start,
+                num_cols,
+                num_rows,
+                main_cols : C,
+            }
+        }
+    }
 }
 
 impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
@@ -284,6 +306,28 @@ impl<'a, T> TooDeeViewMut<'a, T> {
                 num_cols,
                 num_rows,
                 main_cols,
+            }
+        }
+    }
+
+    /// Used internally by `Matrix` to create a `TooDeeViewMut`.
+    pub(super) fn from_matrix<const C : usize, const R : usize>(start: Coordinate, end: Coordinate, matrix: &'a mut Matrix<T, C, R>) -> TooDeeViewMut<'a, T> {
+        let (num_cols, num_rows) = calculate_view_dimensions(start, end, matrix);
+        let data_start = start.1 * C + start.0;
+        let data_len = {
+            if num_rows == 0 {
+                0
+            } else {
+                (num_rows - 1) * C + num_cols
+            }
+        };
+        unsafe {
+            TooDeeViewMut {
+                data: matrix.data_mut().get_unchecked_mut(data_start..data_start + data_len),
+                start,
+                num_cols,
+                num_rows,
+                main_cols : C,
             }
         }
     }

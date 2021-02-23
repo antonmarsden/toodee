@@ -14,6 +14,7 @@ mod iter;
 mod view;
 mod ops;
 mod toodee;
+mod matrix;
 mod flattenexact;
 
 #[cfg(feature = "sort")] mod sort;
@@ -35,5 +36,6 @@ pub use crate::iter::*;
 pub use crate::view::*;
 pub use crate::ops::*;
 pub use crate::toodee::*;
+pub use crate::matrix::*;
 pub use crate::flattenexact::*;
 
