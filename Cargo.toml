@@ -2,7 +2,7 @@
 name = "toodee"
 version = "0.3.0"
 authors = ["Anton Marsden <anton.marsden@ninetyten.co.nz>"]
-edition = "2018"
+edition = "2021"
 description = "A lightweight 2D wrapper around a Vec."
 documentation = "https://docs.rs/toodee/"
 repository = "https://github.com/antonmarsden/toodee"
