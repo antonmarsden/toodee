@@ -7,7 +7,7 @@ description = "A lightweight 2D wrapper around a Vec."
 documentation = "https://docs.rs/toodee/"
 repository = "https://github.com/antonmarsden/toodee"
 readme = "README.md"
-keywords = ["2d", "array", "matrix"]
+keywords = ["array", "matrix", "sort"]
 license = "MIT OR Apache-2.0"
 categories = ["data-structures", "no-std"]
 exclude = [ ".github/*", ]
@@ -24,7 +24,7 @@ copy = []
 [dependencies]
 
 [dev-dependencies]
-rand = "0.8.3"
+rand = "0.8.5"
 
 [dev-dependencies.criterion]
 version = "0.3.4"
