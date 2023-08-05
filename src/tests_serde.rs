@@ -11,7 +11,7 @@ mod toodee_tests_serde {
     #[test]
     fn serialize() {
         let tmp = new_5_by_10();
-        let serialized: String = serde_json::to_string(&tmp).unwrap();
+        let serialized = serde_json::to_string(&tmp).unwrap();
         assert!(serialized.contains("data"));
     }
 
@@ -23,13 +23,6 @@ mod toodee_tests_serde {
 }
 "#;
 
-    const JSON_BAD_ARRAY: &str = r#"
-{
-  "num_rows": 2,
-  "num_cols": 3,
-  "data": [1, 2, 3, 4]
-}
-"#;
 
     #[test]
     fn serde() {
@@ -49,10 +42,33 @@ mod toodee_tests_serde {
         assert_eq!(deser.data().len(), 6);
     }
 
+
+    const JSON_BAD_ARRAY: &str = r#"
+{
+  "num_rows": 2,
+  "num_cols": 3,
+  "data": [1, 2, 3, 4]
+}
+"#;
+
     #[test]
     #[should_panic(expected = "invalid length 6, expected dimensions to match array length")]
     fn deserialize_bad_array() {
-        let deser: TooDee<u32> = serde_json::from_str(&JSON_BAD_ARRAY).unwrap();
+        let _: TooDee<u32> = serde_json::from_str(&JSON_BAD_ARRAY).unwrap();
+    }
+
+    const JSON_NEGATIVE_DIMENSIONS: &str = r#"
+{
+  "num_rows": -1,
+  "num_cols": -2,
+  "data": [1, 2, 3, 4]
+}
+"#;
+
+    #[test]
+    #[should_panic(expected = "invalid value: integer `-1`, expected usize")]
+    fn deserialize_negative_dimensions() {
+        let deser: TooDee<u32> = serde_json::from_str(&JSON_NEGATIVE_DIMENSIONS).unwrap();
         assert_eq!(deser.num_cols(), 3);
         assert_eq!(deser.num_rows(), 2);
         assert_eq!(deser.data().len(), 6);
