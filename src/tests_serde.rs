@@ -57,20 +57,48 @@ mod toodee_tests_serde {
         let _: TooDee<u32> = serde_json::from_str(&JSON_BAD_ARRAY).unwrap();
     }
 
+
+    const JSON_OVERFLOW_ARRAY: &str = r#"
+{
+  "num_rows": 100000000000000,
+  "num_cols": 100000000000000,
+  "data": []
+}
+"#;
+
+    #[test]
+    #[should_panic(expected = "invalid value: product, expected dimensions too big")]
+    fn deserialize_overflow_dimensions() {
+        let _: TooDee<u32> = serde_json::from_str(&JSON_OVERFLOW_ARRAY).unwrap();
+    }
+
     const JSON_NEGATIVE_DIMENSIONS: &str = r#"
 {
   "num_rows": -1,
   "num_cols": -2,
-  "data": [1, 2, 3, 4]
+  "data": []
 }
 "#;
 
     #[test]
     #[should_panic(expected = "invalid value: integer `-1`, expected usize")]
     fn deserialize_negative_dimensions() {
-        let deser: TooDee<u32> = serde_json::from_str(&JSON_NEGATIVE_DIMENSIONS).unwrap();
-        assert_eq!(deser.num_cols(), 3);
-        assert_eq!(deser.num_rows(), 2);
-        assert_eq!(deser.data().len(), 6);
+        let _: TooDee<u32> = serde_json::from_str(&JSON_NEGATIVE_DIMENSIONS).unwrap();
     }
+
+    const JSON_EMPTY_ARRAY: &str = r#"
+{
+  "num_rows": 0,
+  "num_cols": 0,
+  "data": []
+}
+"#;
+    #[test]
+    fn deserialize_empty() {
+        let deser: TooDee<u32> = serde_json::from_str(&JSON_EMPTY_ARRAY).unwrap();
+        assert_eq!(deser.num_cols(), 0);
+        assert_eq!(deser.num_rows(), 0);
+        assert_eq!(deser.data().len(), 0);
+    }
+
 }

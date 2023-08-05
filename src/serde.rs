@@ -59,7 +59,7 @@ impl<'de, T> Visitor<'de> for TooDeeVisitor<T>
         let data = data.ok_or_else(|| de::Error::missing_field("data"))?;
         let (product, overflow) = num_cols.overflowing_mul(num_rows);
         if overflow {
-            return Err(de::Error::invalid_value(Unexpected::Unsigned(product.try_into().unwrap()),&"dimensions too big"))
+            return Err(de::Error::invalid_value(Unexpected::Other("product"),&"dimensions too big"))
         }
         if product != data.len() {
             return Err(de::Error::invalid_length(product, &"dimensions to match array length"))
