@@ -8,6 +8,11 @@ A lightweight two-dimensional wrapper around a `Vec`.
 
 #![warn(missing_docs)]
 #![warn(rust_2018_idioms)]
+#![warn(rust_2021_compatibility)]
+#![warn(rust_2021_incompatible_closure_captures)]
+#![warn(rust_2021_prelude_collisions)]
+#![warn(rust_2021_incompatible_or_patterns)]
+#![warn(rust_2021_prefixes_incompatible_syntax)]
 #![warn(missing_debug_implementations)]
 
 mod iter;

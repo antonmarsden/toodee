@@ -52,6 +52,19 @@ where
     }
 
     #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let mut len = self.num_cols() * self.iter.len();
+        len += self.frontiter.as_ref().map_or(0, |i| i.len());
+        len += self.backiter.as_ref().map_or(0, |i| i.len());
+        (len, Some(len))
+    }
+
+    #[inline]
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
+    }
+
+    #[inline]
     fn nth(&mut self, mut n: usize) -> Option<<I::Item as IntoIterator>::Item> {
 
         let num_cols = self.num_cols();
@@ -82,19 +95,6 @@ where
             self.backiter.as_mut()?.nth(n)
         }
 
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let mut len = self.num_cols() * self.iter.len();
-        len += self.frontiter.as_ref().map_or(0, |i| i.len());
-        len += self.backiter.as_ref().map_or(0, |i| i.len());
-        (len, Some(len))
-    }
-
-    #[inline]
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
     }
     
     #[inline]
