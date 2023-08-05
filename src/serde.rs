@@ -1,9 +1,13 @@
 use serde::de::{self, Unexpected, Deserialize, Deserializer, Visitor, MapAccess};
+use serde::{Serializer,Serialize};
 use crate::toodee::TooDee;
+use crate::view::{TooDeeView,TooDeeViewMut};
 use core::fmt;
 extern crate alloc;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use serde::ser::SerializeStruct;
+use crate::TooDeeOps;
 
 struct TooDeeVisitor<T> {
     marker: PhantomData<fn() -> TooDee<T>>
@@ -77,5 +81,31 @@ impl<'de, T> Deserialize<'de> for TooDee<T>
             D: Deserializer<'de>
     {
         deserializer.deserialize_map(TooDeeVisitor::new())
+    }
+}
+
+impl Serialize for TooDeeView<'_, u32>
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        let mut storage = serializer.serialize_struct("TooDee", 3)?;
+        storage.serialize_field("num_cols", &self.num_cols())?;
+        storage.serialize_field("num_rows", &self.num_rows())?;
+        storage.serialize_field("data", &self.cells().collect::<Vec<_>>())?;
+        storage.end()
+    }
+}
+
+impl Serialize for TooDeeViewMut<'_, u32>
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        let mut storage = serializer.serialize_struct("TooDee", 3)?;
+        storage.serialize_field("num_cols", &self.num_cols())?;
+        storage.serialize_field("num_rows", &self.num_rows())?;
+        storage.serialize_field("data", &self.cells().collect::<Vec<_>>())?;
+        storage.end()
     }
 }

@@ -101,4 +101,28 @@ mod toodee_tests_serde {
         assert_eq!(deser.data().len(), 0);
     }
 
+
+    #[test]
+    fn serde_view() {
+        let tmp = new_5_by_10();
+        let view: TooDeeView<'_, u32> = tmp.view((1, 1), (3, 5));
+        let serialized = serde_json::to_string(&view).unwrap();
+        let deser: TooDee<u32> = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deser.num_cols(), 2);
+        assert_eq!(deser.num_rows(), 4);
+        assert_eq!(deser.data().len(), 8);
+        assert_eq!(deser.data(), &[6, 7, 11, 12, 16, 17, 21, 22]);
+    }
+
+    #[test]
+    fn serde_view_mut() {
+        let mut tmp = new_5_by_10();
+        let view: TooDeeViewMut<'_, u32> = tmp.view_mut((1, 1), (3, 5));
+        let serialized = serde_json::to_string(&view).unwrap();
+        let deser: TooDee<u32> = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(deser.num_cols(), 2);
+        assert_eq!(deser.num_rows(), 4);
+        assert_eq!(deser.data().len(), 8);
+        assert_eq!(deser.data(), &[6, 7, 11, 12, 16, 17, 21, 22]);
+    }
 }
