@@ -2,8 +2,14 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.4.1
 
+- Check for multiply overflow when creating `TooDee` or `TooDeeView` objects.
+- Clippy fixes
+
+### Version 0.4.0
+
+- Now using the 2021 Rust edition
 - Consistency improvement: only increment rows (for `insert_row`) and cols (for `insert_col`) if data was actually inserted.
 
 ### Version 0.3.0
