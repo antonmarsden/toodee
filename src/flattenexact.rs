@@ -50,16 +50,16 @@ where
             }
         }
     }
-    
+
     #[inline]
     fn nth(&mut self, mut n: usize) -> Option<<I::Item as IntoIterator>::Item> {
-        
+
         let num_cols = self.num_cols();
-        
+
         if num_cols == 0 {
             return None;
         }
-        
+
         if let Some(ref mut inner) = self.frontiter {
             if n < inner.len() {
                 return inner.nth(n);
@@ -68,7 +68,7 @@ where
                 self.frontiter = None;
             }
         }
-        
+
         let iter_skip = self.iter.len().min(n / num_cols);
         if let Some(inner) = self.iter.nth(iter_skip) {
             let mut tmp = inner.into_iter();
@@ -81,7 +81,7 @@ where
             n -= iter_skip * num_cols;
             self.backiter.as_mut()?.nth(n)
         }
-        
+
     }
 
     #[inline]

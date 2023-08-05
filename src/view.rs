@@ -136,7 +136,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
 
     fn rows(&self) -> Rows<'_, T> {
         Rows {
-            v : &self.data,
+            v : self.data,
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
         }
@@ -334,7 +334,7 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
 
     fn rows(&self) -> Rows<'_, T> {
         Rows {
-            v : &self.data,
+            v : self.data,
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
         }
@@ -417,7 +417,7 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
     
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
         RowsMut {
-            v : &mut self.data,
+            v : self.data,
             cols : self.num_cols,
             skip_cols : self.main_cols - self.num_cols,
         }
@@ -522,7 +522,7 @@ impl<'a, T> Index<usize> for TooDeeViewMut<'a, T> {
         assert!(row < self.num_rows);
         let start = row * self.main_cols;
         unsafe {
-            &self.data.get_unchecked(start..start + self.num_cols)
+            self.data.get_unchecked(start..start + self.num_cols)
         }
     }
 }

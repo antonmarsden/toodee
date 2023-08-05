@@ -90,7 +90,7 @@ impl<'a, T> DoubleEndedIterator for Rows<'a, T> {
                     self.v = fst.get_unchecked(..fst.len() - self.skip_cols);
                 }
             }
-            Some(&snd)
+            Some(snd)
         }
     }
 
@@ -137,7 +137,7 @@ impl<'a, T> Iterator for RowsMut<'a, T> {
         if self.v.is_empty() {
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (head, tail) = tmp.split_at_mut(self.cols);
             if tail.is_empty() {
                 self.v = &mut [];
@@ -173,7 +173,7 @@ impl<'a, T> Iterator for RowsMut<'a, T> {
         if start >= self.v.len() || overflow {
             self.v = &mut [];
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (_, snd) = tmp.split_at_mut(start);
             self.v = snd;
         }
@@ -192,7 +192,7 @@ impl<'a, T> DoubleEndedIterator for RowsMut<'a, T> {
         if self.v.is_empty() {
             None
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let tmp_len = tmp.len();
             let (fst, snd) = tmp.split_at_mut(tmp_len - self.cols);
             if fst.is_empty() {
@@ -214,7 +214,7 @@ impl<'a, T> DoubleEndedIterator for RowsMut<'a, T> {
         if adj >= self.v.len() || overflow {
             self.v = &mut [];
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             // adj < self.v.len(), so no check required
             unsafe {
                 self.v = tmp.get_unchecked_mut(..self.v.len() - adj);
@@ -267,7 +267,7 @@ impl<'a, T> Iterator for Col<'a, T> {
             } else {
                 // snd must contain at least one row, so we don't need a bounds check
                 unsafe {
-                    self.v = &snd.get_unchecked(self.skip..);
+                    self.v = snd.get_unchecked(self.skip..);
                 }
             }
             Some(fst)
@@ -317,7 +317,7 @@ impl<'a, T> DoubleEndedIterator for Col<'a, T> {
             } else {
                 // fst must contain at least one row, so we don't need a bounds check
                 unsafe {
-                    self.v = &fst.get_unchecked(..fst.len() - self.skip);
+                    self.v = fst.get_unchecked(..fst.len() - self.skip);
                 }
             }
             Some(last)
@@ -389,7 +389,7 @@ impl<'a, T> Iterator for ColMut<'a, T> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let tmp = mem::replace(&mut self.v, &mut []);
+        let tmp = mem::take(&mut self.v);
         if let Some((fst, snd)) = tmp.split_first_mut() {
             if snd.is_empty() {
                 self.v = &mut [];
@@ -424,7 +424,7 @@ impl<'a, T> Iterator for ColMut<'a, T> {
         if start >= self.v.len() || overflow {
             self.v = &mut [];
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             let (_, snd) = tmp.split_at_mut(start);
             self.v = snd;
         }
@@ -440,7 +440,7 @@ impl<'a, T> Iterator for ColMut<'a, T> {
 impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        let tmp = mem::replace(&mut self.v, &mut []);
+        let tmp = mem::take(&mut self.v);
         if let Some((last, fst)) = tmp.split_last_mut() {
             if fst.is_empty() {
                 self.v = &mut [];
@@ -464,7 +464,7 @@ impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
         if adj >= self.v.len() || overflow {
             self.v = &mut [];
         } else {
-            let tmp = mem::replace(&mut self.v, &mut []);
+            let tmp = mem::take(&mut self.v);
             // adj <= self.v.len(), so no check required
             unsafe {
                 self.v = tmp.get_unchecked_mut(..self.v.len() - adj);
