@@ -16,7 +16,7 @@ impl<T> TooDeeVisitor<T> {
         }
     }
 }
-const FIELDS: &'static [&'static str] = &["num_cols", "num_rows", "data"];
+const FIELDS: &[&str] = &["num_cols", "num_rows", "data"];
 
 impl<'de, T> Visitor<'de> for TooDeeVisitor<T>
     where T: Deserialize<'de>
@@ -51,7 +51,7 @@ impl<'de, T> Visitor<'de> for TooDeeVisitor<T>
                 "data" => {
                     data = Some(visitor.next_value::<Vec<T>>()?)
                 },
-                &_ => return Err(de::Error::unknown_field(&key, FIELDS)),
+                &_ => return Err(de::Error::unknown_field(key, FIELDS)),
             }
         }
         let num_cols = num_cols.ok_or_else(|| de::Error::missing_field("num_cols"))?;

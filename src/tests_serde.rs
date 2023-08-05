@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod toodee_tests_serde {
     use crate::*;
-    use serde_json;
+    
 
     fn new_5_by_10() -> TooDee<u32>
     {
@@ -36,7 +36,7 @@ mod toodee_tests_serde {
 
     #[test]
     fn deserialize() {
-        let deser: TooDee<u32> = serde_json::from_str(&JSON_OK).unwrap();
+        let deser: TooDee<u32> = serde_json::from_str(JSON_OK).unwrap();
         assert_eq!(deser.num_cols(), 3);
         assert_eq!(deser.num_rows(), 2);
         assert_eq!(deser.data().len(), 6);
@@ -54,7 +54,7 @@ mod toodee_tests_serde {
     #[test]
     #[should_panic(expected = "invalid length 6, expected dimensions to match array length")]
     fn deserialize_bad_array() {
-        let _: TooDee<u32> = serde_json::from_str(&JSON_BAD_ARRAY).unwrap();
+        let _: TooDee<u32> = serde_json::from_str(JSON_BAD_ARRAY).unwrap();
     }
 
 
@@ -69,7 +69,7 @@ mod toodee_tests_serde {
     #[test]
     #[should_panic(expected = "invalid value: product, expected dimensions too big")]
     fn deserialize_overflow_dimensions() {
-        let _: TooDee<u32> = serde_json::from_str(&JSON_OVERFLOW_ARRAY).unwrap();
+        let _: TooDee<u32> = serde_json::from_str(JSON_OVERFLOW_ARRAY).unwrap();
     }
 
     const JSON_NEGATIVE_DIMENSIONS: &str = r#"
@@ -83,7 +83,7 @@ mod toodee_tests_serde {
     #[test]
     #[should_panic(expected = "invalid value: integer `-1`, expected usize")]
     fn deserialize_negative_dimensions() {
-        let _: TooDee<u32> = serde_json::from_str(&JSON_NEGATIVE_DIMENSIONS).unwrap();
+        let _: TooDee<u32> = serde_json::from_str(JSON_NEGATIVE_DIMENSIONS).unwrap();
     }
 
     const JSON_EMPTY_ARRAY: &str = r#"
@@ -95,7 +95,7 @@ mod toodee_tests_serde {
 "#;
     #[test]
     fn deserialize_empty() {
-        let deser: TooDee<u32> = serde_json::from_str(&JSON_EMPTY_ARRAY).unwrap();
+        let deser: TooDee<u32> = serde_json::from_str(JSON_EMPTY_ARRAY).unwrap();
         assert_eq!(deser.num_cols(), 0);
         assert_eq!(deser.num_rows(), 0);
         assert_eq!(deser.data().len(), 0);
