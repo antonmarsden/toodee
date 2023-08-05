@@ -775,4 +775,37 @@ mod toodee_tests {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         toodee.remove_row(10);
     }
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn toodee_from_vec_overflow() {
+        TooDee::from_vec(usize::MAX, usize::MAX,(0u32..1).collect() );
+    }
+
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn toodee_new_overflow() {
+        TooDee::<u32>::new(usize::MAX, usize::MAX);
+    }
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn toodee_init_overflow() {
+        TooDee::<u32>::init(usize::MAX, usize::MAX, 0u32);
+    }
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn toodee_view_new_overflow() {
+        // const orig: TooDee<u32> = TooDee::new(1, 1);
+        TooDeeView::<u32>::new(usize::MAX, usize::MAX, &[0u32] );
+    }
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn toodee_view_mut_new_overflow() {
+        // const orig: TooDee<u32> = TooDee::new(1, 1);
+        TooDeeViewMut::<u32>::new(usize::MAX, usize::MAX, &mut [0u32]);
+    }
 }

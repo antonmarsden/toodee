@@ -45,6 +45,8 @@ impl<'a, T> TooDeeView<'a, T> {
     /// 
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
+    ///
+    /// Panics if `num_cols * num_rows` overflows.
     /// 
     /// # Examples
     /// 
@@ -57,7 +59,7 @@ impl<'a, T> TooDeeView<'a, T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
         }
-        let size = num_cols * num_rows;
+        let size = num_cols.checked_mul(num_rows).unwrap();
         assert!(size <= data.len());
         TooDeeView {
             data : &data[..size],
@@ -240,6 +242,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// 
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
+    ///
+    /// Panics if `num_cols * num_rows` overflows.
     /// 
     /// # Examples
     /// 
@@ -252,7 +256,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
         }
-        let size = num_cols * num_rows;
+        let size = num_cols.checked_mul(num_rows).unwrap();
         assert!(size <= data.len());
         unsafe {
             TooDeeViewMut {

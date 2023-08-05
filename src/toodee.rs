@@ -334,7 +334,7 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
             Ordering::Less => {},
             Ordering::Greater => {
                 // force r1 < r2
-                core::mem::swap(&mut r1, &mut r2);
+                mem::swap(&mut r1, &mut r2);
             },
             Ordering::Equal => {
                 // swapping a row with itself
@@ -394,6 +394,8 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    ///
+    /// Panics if `num_rows * num_cols` overflows.
     /// 
     /// # Examples
     /// 
@@ -416,6 +418,8 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    ///
+    /// Panics if `num_rows * num_cols` overflows.
     /// 
     /// # Examples
     /// 
@@ -431,7 +435,7 @@ impl<T> TooDee<T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
         }
-        let len = num_rows * num_cols;
+        let len = num_rows.checked_mul(num_cols).unwrap();
         let v = vec![init_value; len];
         TooDee {
             data : v,
@@ -522,6 +526,8 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if one of the dimensions is zero but the other is non-zero. This
     /// is to enforce the rule that empty arrays have no dimensions.
+    ///
+    /// Panics if `num_cols * num_rows` overflows.
     /// 
     /// # Examples
     /// 
@@ -537,7 +543,7 @@ impl<T> TooDee<T> {
         if num_cols == 0 || num_rows == 0 {
             assert_eq!(num_rows, num_cols);
         }
-        assert_eq!(num_cols * num_rows, v.len());
+        assert_eq!(num_cols.checked_mul(num_rows).unwrap(), v.len());
         TooDee {
             data : v,
             num_cols,
