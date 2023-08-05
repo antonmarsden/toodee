@@ -7,7 +7,7 @@ A lightweight two-dimensional wrapper around a `Vec`.
 #![cfg_attr(not(any(test, doctest)), no_std)]
 
 #![warn(missing_docs)]
-#![warn(rust_2021_compatibility)]
+#![warn(rust_2018_idioms)]
 #![warn(missing_debug_implementations)]
 
 mod iter;
@@ -27,10 +27,6 @@ mod flattenexact;
 #[cfg(feature = "copy")] mod copy;
 #[cfg(feature = "copy")] mod tests_copy;
 #[cfg(feature = "copy")] pub use crate::copy::*;
-
-#[cfg(feature = "serde")] mod serde;
-#[cfg(feature = "serde")] mod tests_serde;
-#[cfg(feature = "serde")] pub use crate::serde::*;
 
 mod tests;
 mod tests_iter;
