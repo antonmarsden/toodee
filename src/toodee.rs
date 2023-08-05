@@ -940,7 +940,7 @@ impl<T> AsMut<[T]> for TooDee<T> {
 }
 
 /// We can allow immutable access to the underlying `Vec`,
-/// mut not mutable access because that could lead to changes
+/// but not mutable access because that could lead to changes
 /// in the `Vec`'s length.
 impl<T> AsRef<Vec<T>> for TooDee<T> {
     fn as_ref(&self) -> &Vec<T> {
