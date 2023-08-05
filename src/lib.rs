@@ -33,6 +33,8 @@ mod flattenexact;
 #[cfg(feature = "copy")] mod tests_copy;
 #[cfg(feature = "copy")] pub use crate::copy::*;
 
+#[cfg(feature = "serde")] mod tests_serde;
+
 mod tests;
 mod tests_iter;
 
