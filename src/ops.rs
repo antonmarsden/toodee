@@ -33,10 +33,6 @@ pub trait TooDeeOps<T> : Index<usize, Output=[T]> + Index<Coordinate, Output=T> 
         self.num_cols() == 0 || self.num_rows() == 0
     }
 
-    /// Returns the bounds of the object's area within the original `TooDee` area (views
-    /// are not nested for now).
-    fn bounds(&self) -> (Coordinate, Coordinate);
-    
     /// Returns a view (or subset) of the current area based on the coordinates provided.
     /// 
     /// # Examples

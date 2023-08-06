@@ -82,7 +82,6 @@ mod toodee_tests {
         assert_eq!((100, 50), view.size());
         assert_eq!(view.num_rows(), 50);
         assert_eq!(view.num_cols(), 100);
-        assert_eq!(view.bounds(), ((50, 50), (150, 100)));
     }
 
     #[test]
@@ -92,7 +91,6 @@ mod toodee_tests {
         assert_eq!((4, 8), view.size());
         assert_eq!(view.num_cols(), 4);
         assert_eq!(view.num_rows(), 8);
-        assert_eq!(view.bounds(), ((0, 0), (4, 8)));
         assert_eq!(view.cells().sum::<u32>(), 32);
     }
 
@@ -103,7 +101,6 @@ mod toodee_tests {
         assert_eq!((8, 4), view.size());
         assert_eq!(view.num_cols(), 8);
         assert_eq!(view.num_rows(), 4);
-        assert_eq!(view.bounds(), ((0, 0), (8, 4)));
         assert_eq!(view.cells().sum::<u32>(), 32);
     }
 

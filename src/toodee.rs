@@ -164,17 +164,6 @@ impl<T> TooDeeOps<T> for TooDee<T> {
     /// ```
     /// use toodee::{TooDee,TooDeeOps};
     /// let toodee : TooDee<u32> = TooDee::new(10, 5);
-    /// assert_eq!(toodee.bounds(), ((0, 0), (10, 5)));
-    /// ```
-    fn bounds(&self) -> (Coordinate, Coordinate) {
-        ((0, 0), (self.num_cols, self.num_rows))
-    }
-    
-    /// # Examples
-    /// 
-    /// ```
-    /// use toodee::{TooDee,TooDeeOps};
-    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
     /// let view = toodee.view((1,2), (8,4));
     /// assert_eq!(view.num_cols(), 7);
     /// assert_eq!(view.num_rows(), 2);
