@@ -51,7 +51,7 @@ trait TooDeeViewCommon<T>: TooDeeOps<T> {
                 start + (self.num_rows() - 1) * main_cols + 1
             }
         };
-        return (start..end, main_cols - 1)
+        (start..end, main_cols - 1)
     }
 }
 

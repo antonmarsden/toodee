@@ -1,4 +1,4 @@
-use crate::{CopyOps, TooDee, TooDeeOps};
+use crate::{TooDee, TooDeeOps};
 use alloc::vec::Vec;
 use alloc::vec;
 
@@ -17,7 +17,7 @@ impl<T> TransposeOps<T> for TooDee<T> where T : Default + Copy {
         let num_rows = self.num_rows();
         let mut output: Vec<T> = vec![T::default(); num_cols * num_rows];
         transpose::transpose(self.data(), &mut output, num_cols, num_rows);
-        self.copy_from_slice( &output);
+        self.data_mut().copy_from_slice( &output);
         self.swap_dimensions();
     }
 }
