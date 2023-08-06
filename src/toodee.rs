@@ -29,6 +29,7 @@ pub type IntoIterTooDee<T> = IntoIter<T>;
 /// 
 /// Empty arrays will always have dimensions of zero.
 #[derive(Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct TooDee<T> {
     data: Vec<T>,
     num_rows: usize,

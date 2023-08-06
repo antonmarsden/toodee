@@ -15,6 +15,8 @@ A lightweight two-dimensional wrapper around a `Vec`.
 #![warn(rust_2021_prefixes_incompatible_syntax)]
 #![warn(missing_debug_implementations)]
 
+extern crate alloc;
+
 mod iter;
 mod view;
 mod ops;
@@ -32,6 +34,9 @@ mod flattenexact;
 #[cfg(feature = "copy")] mod copy;
 #[cfg(feature = "copy")] mod tests_copy;
 #[cfg(feature = "copy")] pub use crate::copy::*;
+
+#[cfg(feature = "serde")] mod serde;
+#[cfg(feature = "serde")] mod tests_serde;
 
 mod tests;
 mod tests_iter;

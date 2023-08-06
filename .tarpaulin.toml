@@ -1,0 +1,5 @@
+[all]
+
+[report]
+out = ["Html"]
+output-dir = "./target"

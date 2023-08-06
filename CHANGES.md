@@ -2,6 +2,10 @@
 
 ## Changes
 
+### Version 0.4.2
+
+- `serde` integration
+
 ### Version 0.4.1
 
 - Check for multiply overflow when creating `TooDee` or `TooDeeView` objects.
