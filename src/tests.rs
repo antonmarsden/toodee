@@ -226,6 +226,19 @@ mod toodee_tests {
     }
 
     #[test]
+    fn swap_rows() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee.swap_rows(2,1);
+        assert_eq!(toodee.data(), &[0, 1, 2, 6, 7, 8, 3, 4, 5]);
+        let mut toodee2 = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee2.swap_rows(1,2);
+        assert_eq!(toodee2.data(), &[0, 1, 2, 6, 7, 8, 3, 4, 5]);
+        let mut toodee3 = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee3.swap_rows(2,2);
+        assert_eq!(toodee3.data(), &[0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    }
+
+    #[test]
     fn view() {
         let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
 
@@ -661,4 +674,41 @@ mod toodee_tests {
         TooDee::<u32>::init(usize::MAX, usize::MAX, 0u32);
     }
 
+    #[test]
+    fn get_unchecked() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        unsafe {
+            let v = toodee.get_unchecked((2, 3));
+            assert_eq!(v, &32);
+        }
+        unsafe {
+            let v = toodee.get_unchecked_mut((2, 3));
+            assert_eq!(v, &mut 32);
+        }
+    }
+
+    #[test]
+    fn get_unchecked_row() {
+        let toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        unsafe {
+            let v = toodee.get_unchecked_row(2);
+            assert_eq!(v, &[6,7,8]);
+        }
+    }
+
+    #[test]
+    fn fill_toodee() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee.fill(0);
+        assert_eq!(toodee.data(), &[0,0,0,0,0,0,0,0,0]);
+    }
+
+    #[test]
+    fn clear() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee.clear();
+        assert_eq!(toodee.num_rows(), 0usize);
+        assert_eq!(toodee.num_cols(), 0usize);
+        assert_eq!(toodee.data().len(), 0);
+    }
 }
