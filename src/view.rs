@@ -10,7 +10,8 @@ use crate::iter::*;
 
 
 
-/// Checks the proposed view dimensions, and returns the correct cols and rows for view construction.
+/// Checks the proposed view dimensions, and returns the correct cols, rows and slice data range
+/// for view construction.
 fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &impl TooDeeOps<T>, main_cols: usize) -> (usize, usize, Range<usize>) {
     assert!(end.0 >= start.0);
     assert!(end.1 >= start.1);
