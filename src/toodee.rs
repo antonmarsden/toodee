@@ -883,6 +883,12 @@ impl<T> TooDee<T> {
         }
     }
 
+
+    /// Switches the values for `num_cols` and `num_rows` _without_ transposing the underlying data.
+    pub fn swap_dimensions(&mut self) {
+        mem::swap(&mut self.num_cols, &mut self.num_rows);
+    }
+
 }
 
 /// Use `Vec`'s `IntoIter` for performance reasons.
