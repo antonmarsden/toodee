@@ -7,15 +7,17 @@ description = "A lightweight 2D wrapper around a Vec."
 documentation = "https://docs.rs/toodee/"
 repository = "https://github.com/antonmarsden/toodee"
 readme = "README.md"
-keywords = ["array", "matrix", "sort"]
+keywords = ["array", "matrix", "sort", "transpose", "translate"]
 license = "MIT OR Apache-2.0"
-categories = ["data-structures", "no-std"]
+categories = ["algorithms", "data structures", "no-std"]
 exclude = [ ".github/*", ]
 
 [features]
-default = ["translate", "sort", "copy", "serde"]
+default = ["translate", "sort", "copy", "serde", "transpose"]
 
 translate = []
+
+transpose = ["dep:transpose"]
 
 sort = []
 
@@ -25,6 +27,7 @@ serde = ["dep:serde"]
 
 [dependencies]
 serde = { version = "1.0.181", optional = true, default-features = false, features = ["derive", "alloc"] }
+transpose = { version = "0.2.2", optional = true }
 
 [dev-dependencies]
 rand = "0.8.5"
