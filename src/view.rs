@@ -1,6 +1,6 @@
 use core::fmt;
 use core::fmt::{ Formatter, Debug };
-use core::ops::{Index, IndexMut};
+use core::ops::{Index, IndexMut, Range};
 use core::cmp::Ordering;
 use core::ptr;
 
@@ -8,12 +8,15 @@ use crate::toodee::*;
 use crate::ops::*;
 use crate::iter::*;
 
+
+
 /// Checks the proposed view dimensions, and returns the correct cols and rows for view construction.
-fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &impl TooDeeOps<T>) -> (usize, usize) {
+fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &impl TooDeeOps<T>, main_cols: usize) -> (usize, usize, Range<usize>) {
     assert!(end.0 >= start.0);
     assert!(end.1 >= start.1);
     assert!(end.0 <= toodee.num_cols());
     assert!(end.1 <= toodee.num_rows());
+    assert!(main_cols >= toodee.num_cols());
     let mut num_cols = end.0 - start.0;
     let mut num_rows = end.1 - start.1;
     // zero out dimensions for empty arrays
@@ -21,7 +24,16 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
         num_cols = 0;
         num_rows = 0;
     }
-    (num_cols, num_rows)
+    let main_cols = toodee.num_cols();
+    let data_start = start.1 * main_cols + start.0;
+    let data_len = {
+        if num_rows == 0 {
+            0
+        } else {
+            (num_rows - 1) * main_cols + num_cols
+        }
+    };
+    (num_cols, num_rows, data_start..data_start+data_len)
 }
 
 /// Provides a read-only view (or subset) of a `TooDee` array.
@@ -67,22 +79,14 @@ impl<'a, T> TooDeeView<'a, T> {
             main_cols : num_cols,
         }
     }
-    
-    /// Used internally by `TooDee` to create a `TooDeeView`.
+
+/// Used internally by `TooDee` to create a `TooDeeView`.
     pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a TooDee<T>) -> TooDeeView<'a, T> {
-        let (num_cols, num_rows) = calculate_view_dimensions(start, end, toodee);
         let main_cols = toodee.num_cols();
-        let data_start = start.1 * main_cols + start.0;
-        let data_len = {
-            if num_rows == 0 {
-                0
-            } else {
-                (num_rows - 1) * main_cols + num_cols
-            }
-        };
+        let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, toodee, main_cols);
         unsafe {
             TooDeeView {
-                data: toodee.data().get_unchecked(data_start..data_start + data_len),
+                data: toodee.data().get_unchecked(data_range),
                 num_cols,
                 num_rows,
                 main_cols,
@@ -105,19 +109,10 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
     }
     
     fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
-        let (num_cols, num_rows) = calculate_view_dimensions(start, end, self);
-        let data_start = start.1 * self.main_cols + start.0;
-        let data_len = {
-            if num_rows == 0 {
-                0
-            } else {
-                (num_rows - 1) * self.main_cols + num_cols
-            }
-        };
-
+        let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, self, self.main_cols);
         unsafe {
             TooDeeView {
-                data: self.data.get_unchecked(data_start..data_start + data_len),
+                data: self.data.get_unchecked(data_range),
                 num_cols,
                 num_rows,
                 main_cols : self.main_cols,
@@ -260,19 +255,11 @@ impl<'a, T> TooDeeViewMut<'a, T> {
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
     pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
-        let (num_cols, num_rows) = calculate_view_dimensions(start, end, toodee);
         let main_cols = toodee.num_cols();
-        let data_start = start.1 * main_cols + start.0;
-        let data_len = {
-            if num_rows == 0 {
-                0
-            } else {
-                (num_rows - 1) * main_cols + num_cols
-            }
-        };
+        let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, toodee, main_cols);
         unsafe {
             TooDeeViewMut {
-                data: toodee.data_mut().get_unchecked_mut(data_start..data_start + data_len),
+                data: toodee.data_mut().get_unchecked_mut(data_range),
                 num_cols,
                 num_rows,
                 main_cols,
@@ -296,18 +283,9 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
     }
 
     fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
-        let (num_cols, num_rows) = calculate_view_dimensions(start, end, self);
-        let data_start = start.1 * self.main_cols + start.0;
-        let data_len = {
-            if num_rows == 0 {
-                0
-            } else {
-                (num_rows - 1) * self.main_cols + num_cols
-            }
-        };
-        
+        let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, self, self.main_cols);
         TooDeeView {
-            data: &self.data[data_start..data_start + data_len],
+            data: &self.data[data_range],
             num_cols,
             num_rows,
             main_cols : self.main_cols,
@@ -375,20 +353,10 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a,T> {
 impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a,T> {
 
     fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
-        let (num_cols, num_rows) = calculate_view_dimensions(start, end, self);
-
-        let data_start = start.1 * self.main_cols + start.0;
-        let data_len = {
-            if num_rows == 0 {
-                0
-            } else {
-                (num_rows - 1) * self.main_cols + num_cols
-            }
-        };
-
+        let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, self, self.main_cols);
         unsafe {
             TooDeeViewMut {
-                data: self.data.get_unchecked_mut(data_start..data_start + data_len),
+                data: self.data.get_unchecked_mut(data_range),
                 num_cols,
                 num_rows,
                 main_cols : self.main_cols,
