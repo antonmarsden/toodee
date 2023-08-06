@@ -18,7 +18,6 @@ use alloc::vec::IntoIter;
 use crate::iter::*;
 use crate::view::*;
 use crate::ops::*;
-#[cfg(feature = "serde")] use serde::{Serialize};
 
 /// DrainRow type alias for future-proofing.
 pub type DrainRow<'a, T> = Drain<'a, T>;
@@ -30,7 +29,7 @@ pub type IntoIterTooDee<T> = IntoIter<T>;
 /// 
 /// Empty arrays will always have dimensions of zero.
 #[derive(Clone, Hash, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct TooDee<T> {
     data: Vec<T>,
     num_rows: usize,
