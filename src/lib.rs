@@ -43,6 +43,7 @@ mod flattenexact;
 #[cfg(feature = "serde")] mod tests_serde;
 
 mod tests;
+mod tests_view;
 mod tests_iter;
 
 pub use crate::iter::*;
