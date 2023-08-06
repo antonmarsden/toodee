@@ -2,6 +2,10 @@
 
 ## Changes
 
+### Unreleased
+
+- `transpose` integration
+
 ### Version 0.4.2
 
 - `serde` integration
