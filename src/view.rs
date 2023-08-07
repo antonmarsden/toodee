@@ -34,6 +34,22 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
     (num_cols, num_rows, data_start..data_start + data_len)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec;
+
+    #[test]
+    fn calc_dims_view() {
+        let v = vec![1u32; 32];
+        let view = TooDeeView::new(4, 4, &v);
+        let (num_cols, num_rows, range) = calculate_view_dimensions((0, 1), (2,3), &view, 4);
+        assert_eq!(num_cols, 2);
+        assert_eq!(num_rows, 2);
+        assert_eq!(range, 4..10);
+    }
+}
+
 /// *Internal only* functions for calculating vector ranges.
 trait TooDeeViewCommon<T>: TooDeeOps<T> {
 
