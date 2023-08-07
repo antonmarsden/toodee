@@ -397,8 +397,10 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee[0][0], 0);
     /// ```
     pub fn new(num_cols: usize, num_rows: usize) -> TooDee<T>
-    where T: Default + Clone {
-        Self::init(num_cols, num_rows, T::default())
+    where T: Default {
+        let mut data = Vec::new();
+        data.resize_with(num_cols.checked_mul(num_rows).unwrap(), T::default);
+        TooDee { data, num_cols, num_rows }
     }
 
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
