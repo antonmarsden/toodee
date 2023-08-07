@@ -517,15 +517,13 @@ mod toodee_tests {
 
     #[test]
     fn remove_col_1_0() {
-        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
+        let mut toodee : TooDee<u32> = TooDee::from_vec(4, 2, (0u32..8).collect());
         {
             let mut drain = toodee.remove_col(0);
             assert_eq!(drain.next(), Some(0));
         }
-        assert_eq!(toodee.data().len(), 3);
-        assert_eq!(toodee.data()[0], 1);
-        assert_eq!(toodee.data()[1], 2);
-        assert_eq!(toodee.data()[2], 3);
+        assert_eq!(toodee.data().len(), 6);
+        assert_eq!(toodee.data(), &[1, 2, 3, 5, 6, 7]);
         assert_eq!(toodee.num_cols(), 3);
     }
 
@@ -710,5 +708,19 @@ mod toodee_tests {
         assert_eq!(toodee.num_rows(), 0usize);
         assert_eq!(toodee.num_cols(), 0usize);
         assert_eq!(toodee.data().len(), 0);
+    }
+
+    #[test]
+    fn shrink_to_fit() {
+        let mut toodee : TooDee<u32> = TooDee::with_capacity(10);
+        toodee.shrink_to_fit();
+        assert_eq!(toodee.capacity(), 0)
+    }
+
+    #[test]
+    fn reserve_exact() {
+        let mut toodee : TooDee<u32> = TooDee::with_capacity(10);
+        toodee.reserve_exact(20);
+        assert_eq!(toodee.capacity(), 20)
     }
 }
