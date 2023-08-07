@@ -6,7 +6,7 @@ use crate::iter::*;
 use crate::view::*;
 use crate::flattenexact::*;
 
-/// A (col, row) coordinate in 2D space.
+/// A `(col, row)` coordinate in 2D space.
 pub type Coordinate = (usize, usize);
 
 /// An iterator over each "cell" in a 2D array
