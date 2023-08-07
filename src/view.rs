@@ -46,10 +46,11 @@ trait TooDeeViewCommon<T>: TooDeeOps<T> {
         let stride = self.stride();
         let start = col;
         let end = {
-            if self.num_rows() == 0 {
+            let num_rows = self.num_rows();
+            if num_rows == 0 {
                 start
             } else {
-                start + (self.num_rows() - 1) * stride + 1
+                start + (num_rows - 1) * stride + 1
             }
         };
         (start..end, stride - 1)
@@ -59,14 +60,18 @@ trait TooDeeViewCommon<T>: TooDeeOps<T> {
 }
 
 impl<T> TooDeeViewCommon<T> for TooDeeView<'_, T> {
+    #[inline]
     fn data(&self) -> &[T] { &self.data }
+    #[inline]
     fn stride(&self) -> usize {
         self.stride
     }
 }
 
 impl<T> TooDeeViewCommon<T> for TooDeeViewMut<'_, T> {
+    #[inline]
     fn data(&self) -> &[T] { &self.data }
+    #[inline]
     fn stride(&self) -> usize {
         self.stride
     }
