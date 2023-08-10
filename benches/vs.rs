@@ -288,11 +288,9 @@ fn bench_remove_col(c: &mut Criterion) {
 
 
 
-// criterion_group!(benches, bench_idx, bench_get, bench_set, bench_push_row);
 criterion_group!(benches, bench_idx, bench_get, bench_set,
     bench_push_row, bench_push_col,
     bench_pop_row, bench_pop_col,
     bench_insert_row, bench_insert_col,
     bench_remove_row, bench_remove_col);
-
 criterion_main!(benches);

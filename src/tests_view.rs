@@ -4,6 +4,7 @@ mod toodee_tests_view {
     extern crate alloc;
     use alloc::boxed::Box;
     use alloc::vec;
+    use alloc::vec::Vec;
 
     use crate::*;
 
@@ -162,4 +163,36 @@ mod toodee_tests_view {
         // const orig: TooDee<u32> = TooDee::new(1, 1);
         TooDeeViewMut::<u32>::new(usize::MAX, usize::MAX, &mut [0u32]);
     }
+
+    #[test]
+    fn swap() {
+        let mut toodee = TooDee::from_vec(5, 5, (0u32..25).collect());
+        let mut view = toodee.view_mut((1, 1), (4, 4));
+        assert_eq!(&view.cells().map(|arg| { arg.clone() }).collect::<Vec<u32>>(), &[6, 7, 8, 11, 12, 13, 16, 17, 18]);
+        view.swap((0,0),(2, 2));
+        assert_eq!(&view.cells().map(|arg| { arg.clone() }).collect::<Vec<u32>>(), &[18, 7, 8, 11, 12, 13, 16, 17, 6]);
+        view.swap((2,2),(0, 0));
+        assert_eq!(&view.cells().map(|arg| { arg.clone() }).collect::<Vec<u32>>(), &[6, 7, 8, 11, 12, 13, 16, 17, 18]);
+        view.swap((0,2),(1, 1));
+        assert_eq!(&view.cells().map(|arg| { arg.clone() }).collect::<Vec<u32>>(), &[6, 7, 8, 11, 16, 13, 12, 17, 18]);
+        view.swap((1,1),(1, 1));
+        assert_eq!(&view.cells().map(|arg| { arg.clone() }).collect::<Vec<u32>>(), &[6, 7, 8, 11, 16, 13, 12, 17, 18]);
+    }
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn swap_out_of_bounds() {
+        let mut toodee = TooDee::from_vec(5, 5, (0u32..25).collect());
+        let mut view = toodee.view_mut((1, 1), (4, 4));
+        view.swap((0,0), (1,3));
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn swap_out_of_bounds_2() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        let mut view = toodee.view_mut((1, 1), (4, 4));
+        view.swap((3,0), (1,1));
+    }
+
 }

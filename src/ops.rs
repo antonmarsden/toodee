@@ -215,6 +215,38 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
             }
         }
     }
+
+    /// Swap/exchange two cells in an array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either cell coordinate is out of bounds.
+    ///
+    /// # Examples
+    ///
+    fn swap(&mut self, mut cell1: Coordinate, mut cell2: Coordinate) {
+        if cell1.1 > cell2.1 {
+            core::mem::swap(&mut cell1, &mut cell2);
+        }
+        let num_cols = self.num_cols();
+        assert!(cell1.0 < num_cols && cell2.0 < num_cols);
+        let mut iter = self.rows_mut();
+        let row1 = iter.nth(cell1.1).unwrap();
+        if cell1.1 == cell2.1 {
+            unsafe {
+                let pa: *mut T = row1.get_unchecked_mut(cell1.0);
+                let pb: *mut T = row1.get_unchecked_mut(cell2.0);
+                ptr::swap(pa, pb);
+            }
+        } else {
+            let row2 = iter.nth(cell2.1 - cell1.1 - 1).unwrap();
+            unsafe {
+                let pa: *mut T = row1.get_unchecked_mut(cell1.0);
+                let pb: *mut T = row2.get_unchecked_mut(cell2.0);
+                ptr::swap(pa, pb);
+            }
+        }
+    }
     
     /// Swap/exchange the data between two rows. Note that this method is overridden in both `TooDee` and `TooDeeOpsMut`.
     /// This implementation remains in place for other types that may wish to implement the trait.
@@ -243,7 +275,6 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
                 return;
             }
         }
-        assert!(r2 < self.num_rows());
         let mut iter = self.rows_mut();
         let tmp = iter.nth(r1).unwrap();
         tmp.swap_with_slice(iter.nth(r2-r1-1).unwrap());

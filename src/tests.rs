@@ -239,6 +239,33 @@ mod toodee_tests {
     }
 
     #[test]
+    fn swap() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee.swap((0,0),(2, 2));
+        assert_eq!(toodee.data(), &[8, 1, 2, 3, 4, 5, 6, 7, 0]);
+        toodee.swap((2,2),(0, 0));
+        assert_eq!(toodee.data(), &[0, 1, 2, 3, 4, 5, 6, 7, 8]);
+        toodee.swap((0,2),(1, 1));
+        assert_eq!(toodee.data(), &[0, 1, 2, 3, 6, 5, 4, 7, 8]);
+        toodee.swap((1,1),(1, 1));
+        assert_eq!(toodee.data(), &[0, 1, 2, 3, 6, 5, 4, 7, 8]);
+    }
+
+    #[test]
+    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    fn swap_out_of_bounds() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee.swap((0,0), (1,3));
+    }
+
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn swap_out_of_bounds_2() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        toodee.swap((3,0), (1,1));
+    }
+
+    #[test]
     fn view() {
         let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
 
