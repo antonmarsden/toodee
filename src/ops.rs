@@ -216,7 +216,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         }
     }
 
-    /// Swap/exchange two cells in an array.
+    /// Swap/exchange two cells in the array.
     ///
     /// # Panics
     ///
@@ -224,6 +224,12 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     ///
     /// # Examples
     ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+    /// toodee.swap((0,0),(2, 2));
+    /// assert_eq!(toodee.data(), &[8, 1, 2, 3, 4, 5, 6, 7, 0]);
+    /// ```
     fn swap(&mut self, mut cell1: Coordinate, mut cell2: Coordinate) {
         if cell1.1 > cell2.1 {
             core::mem::swap(&mut cell1, &mut cell2);

@@ -373,6 +373,32 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         self.data.get_unchecked_mut(coord.1 * self.num_cols + coord.0)
     }
 
+
+    /// Swap/exchange two cells in the array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either cell coordinate is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+    /// toodee.swap((0,0),(2, 2));
+    /// assert_eq!(toodee.data(), &[8, 1, 2, 3, 4, 5, 6, 7, 0]);
+    /// ```
+    fn swap(&mut self, (col1, row1): Coordinate, (col2, row2): Coordinate) {
+        let num_cols = self.num_cols;
+        let num_rows = self.num_rows;
+        assert!(col1 < num_cols && col2 < num_cols);
+        assert!(row1 < num_rows && row2 < num_rows);
+        unsafe {
+            let pa: *mut T = self.data.get_unchecked_mut(row1 * num_cols + col1);
+            let pb: *mut T = self.data.get_unchecked_mut(row2 * num_cols + col2);
+            ptr::swap(pa, pb);
+        }
+    }
 }
 
 impl<T> TooDee<T> {
@@ -879,7 +905,6 @@ impl<T> TooDee<T> {
     pub fn swap_dimensions(&mut self) {
         mem::swap(&mut self.num_cols, &mut self.num_rows);
     }
-
 }
 
 /// Use `Vec`'s `IntoIter` for performance reasons.

@@ -252,7 +252,7 @@ mod toodee_tests {
     }
 
     #[test]
-    #[should_panic(expected = "called `Option::unwrap()` on a `None` value")]
+    #[should_panic(expected = "assertion failed")]
     fn swap_out_of_bounds() {
         let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
         toodee.swap((0,0), (1,3));
