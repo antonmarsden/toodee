@@ -1,8 +1,8 @@
 use core::fmt;
 use core::fmt::{Formatter, Debug};
 use core::ops::{Index, IndexMut, Range};
-use core::cmp::Ordering;
 use core::ptr;
+use core::mem;
 
 use crate::toodee::*;
 use crate::ops::*;
@@ -431,16 +431,11 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a, T> {
     /// assert_eq!(toodee[(0, 2)], 1);
     /// ```
     fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
-        match r1.cmp(&r2) {
-            Ordering::Less => {}
-            Ordering::Greater => {
-                // force r1 < r2
-                core::mem::swap(&mut r1, &mut r2);
-            }
-            Ordering::Equal => {
-                // swapping a row with itself
-                return;
-            }
+        if r1 == r2 {
+            return;
+        }
+        if r2 < r1 {
+            mem::swap(&mut r1, &mut r2);
         }
         assert!(r2 < self.num_rows);
         let num_cols = self.num_cols;

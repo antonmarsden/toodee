@@ -1,6 +1,6 @@
 use core::ops::{Index, IndexMut};
-use core::cmp::Ordering;
 use core::ptr;
+use core::mem;
 
 use crate::iter::*;
 use crate::view::*;
@@ -232,7 +232,7 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// ```
     fn swap(&mut self, mut cell1: Coordinate, mut cell2: Coordinate) {
         if cell1.1 > cell2.1 {
-            core::mem::swap(&mut cell1, &mut cell2);
+            mem::swap(&mut cell1, &mut cell2);
         }
         let num_cols = self.num_cols();
         assert!(cell1.0 < num_cols && cell2.0 < num_cols);
@@ -272,14 +272,11 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// assert_eq!(toodee[(0, 2)], 1);
     /// ```
     fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
-        match r1.cmp(&r2) {
-            Ordering::Less => {},
-            Ordering::Greater => {
-                core::mem::swap(&mut r1, &mut r2);
-            },
-            Ordering::Equal => {
-                return;
-            }
+        if r1 == r2 {
+            return;
+        }
+        if r2 < r1 {
+            mem::swap(&mut r1, &mut r2);
         }
         let mut iter = self.rows_mut();
         let tmp = iter.nth(r1).unwrap();
@@ -305,21 +302,15 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         let num_rows = self.num_rows();
         assert!(r1 < num_rows);
         assert!(r2 < num_rows);
-        assert!(r1 != r2);
-        match r1.cmp(&r2) {
-            Ordering::Less => {
-                let mut iter = self.rows_mut();
-                let tmp = iter.nth(r1).unwrap();
-                (tmp, iter.nth(r2-r1-1).unwrap())
-            },
-            Ordering::Greater => {
-                let mut iter = self.rows_mut();
-                let tmp = iter.nth(r2).unwrap();
-                (iter.nth(r1-r2-1).unwrap(), tmp)
-            },
-            Ordering::Equal => {
-                unreachable!("r1 != r2");
-            },
+        assert_ne!(r1, r2);
+        if r1 < r2 {
+            let mut iter = self.rows_mut();
+            let tmp = iter.nth(r1).unwrap();
+            (tmp, iter.nth(r2-r1-1).unwrap())
+        } else {
+            let mut iter = self.rows_mut();
+            let tmp = iter.nth(r2).unwrap();
+            (iter.nth(r1-r2-1).unwrap(), tmp)
         }
     }
     

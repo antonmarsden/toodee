@@ -5,7 +5,6 @@ use core::iter::IntoIterator;
 use core::ptr::{self, NonNull};
 use core::mem;
 use core::slice;
-use core::cmp::Ordering;
 
 extern crate alloc;
 
@@ -320,16 +319,11 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     /// assert_eq!(toodee[(0, 2)], 1);
     /// ```
     fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
-        match r1.cmp(&r2) {
-            Ordering::Less => {},
-            Ordering::Greater => {
-                // force r1 < r2
-                mem::swap(&mut r1, &mut r2);
-            },
-            Ordering::Equal => {
-                // swapping a row with itself
-                return;
-            }
+        if r1 == r2 {
+            return;
+        }
+        if r2 < r1 {
+            mem::swap(&mut r1, &mut r2);
         }
         assert!(r2 < self.num_rows);
         let num_cols = self.num_cols;
