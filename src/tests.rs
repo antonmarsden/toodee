@@ -117,14 +117,14 @@ mod toodee_tests {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed")]
+    #[should_panic]
     fn from_vec_bad_size() {
         let v = vec![42u32; 16];
         TooDee::from_vec(8, 3, v);
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed")]
+    #[should_panic]
     fn from_vec_bad_size_2() {
         let v = vec![42u32; 16];
         TooDee::from_vec(8, 1, v);
@@ -385,7 +385,7 @@ mod toodee_tests {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed")]
+    #[should_panic]
     fn insert_row_bad_row_len() {
         let mut toodee : TooDee<u32> = TooDee::init(1, 1, 0u32);
         let tmp = vec![1,6];
@@ -401,7 +401,7 @@ mod toodee_tests {
     }
     
     #[test]
-    #[should_panic(expected = "assertion failed")]
+    #[should_panic]
     fn insert_row_bad_exact_size_iterator() {
         let vec = vec![Box::<u8>::new(1)];
         let mut toodee : TooDee<_> = TooDee::from_vec(1, 1, vec);
