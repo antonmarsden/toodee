@@ -5,7 +5,7 @@
 ### Unreleased
 
 - `transpose` integration
-- _Breaking change_: Removed the `bounds()` function due to additional complexity and limited value. Crate users can track their own bounds information if required.
+- _Breaking change_: Removed the `bounds()` function due to additional complexity and limited value.
 
 ### Version 0.4.2
 
