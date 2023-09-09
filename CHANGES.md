@@ -2,9 +2,9 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.5.0
 
-- `transpose` integration
+- Comparison (vs) benchmarks added
 - _Breaking change_: Removed the `bounds()` function due to additional complexity and limited value.
 
 ### Version 0.4.2
