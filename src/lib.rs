@@ -31,10 +31,6 @@ mod flattenexact;
 #[cfg(feature = "translate")] mod tests_translate;
 #[cfg(feature = "translate")] pub use crate::translate::*;
 
-#[cfg(feature = "transpose")] mod transpose;
-#[cfg(feature = "transpose")] mod tests_transpose;
-#[cfg(feature = "transpose")] pub use crate::transpose::*;
-
 #[cfg(feature = "copy")] mod copy;
 #[cfg(feature = "copy")] mod tests_copy;
 #[cfg(feature = "copy")] pub use crate::copy::*;
@@ -43,6 +39,7 @@ mod flattenexact;
 #[cfg(feature = "serde")] mod tests_serde;
 
 mod tests;
+mod tests_view;
 mod tests_iter;
 
 pub use crate::iter::*;

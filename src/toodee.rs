@@ -5,7 +5,6 @@ use core::iter::IntoIterator;
 use core::ptr::{self, NonNull};
 use core::mem;
 use core::slice;
-use core::cmp::Ordering;
 
 extern crate alloc;
 
@@ -159,17 +158,6 @@ impl<T> TooDeeOps<T> for TooDee<T> {
         self.num_rows
     }
 
-    /// # Examples
-    /// 
-    /// ```
-    /// use toodee::{TooDee,TooDeeOps};
-    /// let toodee : TooDee<u32> = TooDee::new(10, 5);
-    /// assert_eq!(toodee.bounds(), ((0, 0), (10, 5)));
-    /// ```
-    fn bounds(&self) -> (Coordinate, Coordinate) {
-        ((0, 0), (self.num_cols, self.num_rows))
-    }
-    
     /// # Examples
     /// 
     /// ```
@@ -331,16 +319,11 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
     /// assert_eq!(toodee[(0, 2)], 1);
     /// ```
     fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
-        match r1.cmp(&r2) {
-            Ordering::Less => {},
-            Ordering::Greater => {
-                // force r1 < r2
-                mem::swap(&mut r1, &mut r2);
-            },
-            Ordering::Equal => {
-                // swapping a row with itself
-                return;
-            }
+        if r1 == r2 {
+            return;
+        }
+        if r2 < r1 {
+            mem::swap(&mut r1, &mut r2);
         }
         assert!(r2 < self.num_rows);
         let num_cols = self.num_cols;
@@ -384,6 +367,32 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         self.data.get_unchecked_mut(coord.1 * self.num_cols + coord.0)
     }
 
+
+    /// Swap/exchange two cells in the array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either cell coordinate is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+    /// toodee.swap((0,0),(2, 2));
+    /// assert_eq!(toodee.data(), &[8, 1, 2, 3, 4, 5, 6, 7, 0]);
+    /// ```
+    fn swap(&mut self, (col1, row1): Coordinate, (col2, row2): Coordinate) {
+        let num_cols = self.num_cols;
+        let num_rows = self.num_rows;
+        assert!(col1 < num_cols && col2 < num_cols);
+        assert!(row1 < num_rows && row2 < num_rows);
+        unsafe {
+            let pa: *mut T = self.data.get_unchecked_mut(row1 * num_cols + col1);
+            let pb: *mut T = self.data.get_unchecked_mut(row2 * num_cols + col2);
+            ptr::swap(pa, pb);
+        }
+    }
 }
 
 impl<T> TooDee<T> {
@@ -408,8 +417,10 @@ impl<T> TooDee<T> {
     /// assert_eq!(toodee[0][0], 0);
     /// ```
     pub fn new(num_cols: usize, num_rows: usize) -> TooDee<T>
-    where T: Default + Clone {
-        Self::init(num_cols, num_rows, T::default())
+    where T: Default {
+        let mut data = Vec::new();
+        data.resize_with(num_cols.checked_mul(num_rows).unwrap(), T::default);
+        TooDee { data, num_cols, num_rows }
     }
 
     /// Create a new `TooDee` array of the specified dimensions, and fill it with
@@ -888,7 +899,6 @@ impl<T> TooDee<T> {
     pub fn swap_dimensions(&mut self) {
         mem::swap(&mut self.num_cols, &mut self.num_rows);
     }
-
 }
 
 /// Use `Vec`'s `IntoIter` for performance reasons.

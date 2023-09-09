@@ -117,11 +117,6 @@ Here's a small feature comparison chart:
  
 - GPU integration
 
-## Limitations
-
-- Views are not nested for the time being, The only impact is that the `bounds()` of a view
-  are always relative to the underlying `TooDee` array.
-
 ## License
 
 Licensed under either of

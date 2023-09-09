@@ -1,12 +1,12 @@
 use core::ops::{Index, IndexMut};
-use core::cmp::Ordering;
 use core::ptr;
+use core::mem;
 
 use crate::iter::*;
 use crate::view::*;
 use crate::flattenexact::*;
 
-/// A (col, row) coordinate in 2D space.
+/// A `(col, row)` coordinate in 2D space.
 pub type Coordinate = (usize, usize);
 
 /// An iterator over each "cell" in a 2D array
@@ -33,10 +33,6 @@ pub trait TooDeeOps<T> : Index<usize, Output=[T]> + Index<Coordinate, Output=T> 
         self.num_cols() == 0 || self.num_rows() == 0
     }
 
-    /// Returns the bounds of the object's area within the original `TooDee` area (views
-    /// are not nested for now).
-    fn bounds(&self) -> (Coordinate, Coordinate);
-    
     /// Returns a view (or subset) of the current area based on the coordinates provided.
     /// 
     /// # Examples
@@ -219,6 +215,44 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
             }
         }
     }
+
+    /// Swap/exchange two cells in the array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if either cell coordinate is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut};
+    /// let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+    /// toodee.swap((0,0),(2, 2));
+    /// assert_eq!(toodee.data(), &[8, 1, 2, 3, 4, 5, 6, 7, 0]);
+    /// ```
+    fn swap(&mut self, mut cell1: Coordinate, mut cell2: Coordinate) {
+        if cell1.1 > cell2.1 {
+            mem::swap(&mut cell1, &mut cell2);
+        }
+        let num_cols = self.num_cols();
+        assert!(cell1.0 < num_cols && cell2.0 < num_cols);
+        let mut iter = self.rows_mut();
+        let row1 = iter.nth(cell1.1).unwrap();
+        if cell1.1 == cell2.1 {
+            unsafe {
+                let pa: *mut T = row1.get_unchecked_mut(cell1.0);
+                let pb: *mut T = row1.get_unchecked_mut(cell2.0);
+                ptr::swap(pa, pb);
+            }
+        } else {
+            let row2 = iter.nth(cell2.1 - cell1.1 - 1).unwrap();
+            unsafe {
+                let pa: *mut T = row1.get_unchecked_mut(cell1.0);
+                let pb: *mut T = row2.get_unchecked_mut(cell2.0);
+                ptr::swap(pa, pb);
+            }
+        }
+    }
     
     /// Swap/exchange the data between two rows. Note that this method is overridden in both `TooDee` and `TooDeeOpsMut`.
     /// This implementation remains in place for other types that may wish to implement the trait.
@@ -238,16 +272,12 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
     /// assert_eq!(toodee[(0, 2)], 1);
     /// ```
     fn swap_rows(&mut self, mut r1: usize, mut r2: usize) {
-        match r1.cmp(&r2) {
-            Ordering::Less => {},
-            Ordering::Greater => {
-                core::mem::swap(&mut r1, &mut r2);
-            },
-            Ordering::Equal => {
-                return;
-            }
+        if r1 == r2 {
+            return;
         }
-        assert!(r2 < self.num_rows());
+        if r2 < r1 {
+            mem::swap(&mut r1, &mut r2);
+        }
         let mut iter = self.rows_mut();
         let tmp = iter.nth(r1).unwrap();
         tmp.swap_with_slice(iter.nth(r2-r1-1).unwrap());
@@ -272,21 +302,15 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         let num_rows = self.num_rows();
         assert!(r1 < num_rows);
         assert!(r2 < num_rows);
-        assert!(r1 != r2);
-        match r1.cmp(&r2) {
-            Ordering::Less => {
-                let mut iter = self.rows_mut();
-                let tmp = iter.nth(r1).unwrap();
-                (tmp, iter.nth(r2-r1-1).unwrap())
-            },
-            Ordering::Greater => {
-                let mut iter = self.rows_mut();
-                let tmp = iter.nth(r2).unwrap();
-                (iter.nth(r1-r2-1).unwrap(), tmp)
-            },
-            Ordering::Equal => {
-                unreachable!("r1 != r2");
-            },
+        assert_ne!(r1, r2);
+        if r1 < r2 {
+            let mut iter = self.rows_mut();
+            let tmp = iter.nth(r1).unwrap();
+            (tmp, iter.nth(r2-r1-1).unwrap())
+        } else {
+            let mut iter = self.rows_mut();
+            let tmp = iter.nth(r2).unwrap();
+            (iter.nth(r1-r2-1).unwrap(), tmp)
         }
     }
     
