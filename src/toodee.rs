@@ -579,7 +579,7 @@ impl<T> TooDee<T> {
     pub fn from_box(num_cols: usize, num_rows: usize, b: Box<[T]>) -> TooDee<T> {
         TooDee::from_vec(num_cols, num_rows, b.into_vec())
     }
-    
+
     /// Returns a reference to the raw array data
     /// 
     /// # Examples

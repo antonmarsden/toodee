@@ -44,7 +44,7 @@ fn bench_idx(c: &mut Criterion) {
         b.iter_batched(
             || create_rand_tuple(),
             |(x, y)| {
-                let _v = grid[x][y];
+                let _v = grid[(x,y)];
             },
             criterion::BatchSize::SmallInput,
         )
@@ -111,7 +111,7 @@ fn bench_set(c: &mut Criterion) {
         let mut g = init_grid();
         b.iter_batched(
             || create_rand_tuple(),
-            |(x, y)| g[x][y] = 42,
+            |(x, y)| g[(x,y)] = 42,
             criterion::BatchSize::SmallInput,
         )
     });
