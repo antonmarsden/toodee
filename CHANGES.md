@@ -2,6 +2,9 @@
 
 ## Changes
 
+### Version 0.6.0
+- Fixed heap buffer overflow in DrainCol destructor - thanks George Androutsopoulos.
+
 ### Version 0.5.0
 
 - Comparison (vs) benchmarks added
