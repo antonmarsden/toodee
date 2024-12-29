@@ -750,4 +750,10 @@ mod toodee_tests {
         toodee.reserve_exact(20);
         assert_eq!(toodee.capacity(), 20)
     }
+
+    #[test]
+    fn remove_col_zero() {
+        let mut toodee: TooDee<u32> = TooDee::init(2, 2, 0);
+        toodee.remove_col(0);
+    }
 }

@@ -1073,7 +1073,7 @@ impl<T> Drop for DrainCol<'_, T> {
                         dest = dest.add(new_cols);
                     }
                     
-                    ptr::copy(src, dest, orig_cols - col);
+                    ptr::copy(src, dest, orig_cols - col - 1);
                     
                     toodee.num_cols -= 1;
                     if toodee.num_cols == 0 {
