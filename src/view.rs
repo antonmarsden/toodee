@@ -225,6 +225,26 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
     }
 }
 
+impl<'a, T> TooDeeIntoOps<'a, T> for TooDeeView<'a, T> {
+    fn into_rows(self) -> Rows<'a, T> {
+        Rows {
+            v: self.data,
+            cols: self.num_cols,
+            skip_cols: self.stride - self.num_cols,
+        }
+    }
+
+    fn into_col(self, col: usize) -> Col<'a, T> {
+        let (data_range, skip) = self.get_col_params(col);
+        unsafe {
+            Col {
+                v: self.data.get_unchecked(data_range),
+                skip,
+            }
+        }
+    }
+}
+
 impl<'a, T> Index<usize> for TooDeeView<'a, T> {
     type Output = [T];
 
@@ -383,6 +403,26 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a, T> {
     }
 }
 
+impl<'a, T> TooDeeIntoOps<'a, T> for TooDeeViewMut<'a, T> {
+    fn into_rows(self) -> Rows<'a, T> {
+        Rows {
+            v: self.data,
+            cols: self.num_cols,
+            skip_cols: self.stride - self.num_cols,
+        }
+    }
+
+    fn into_col(self, col: usize) -> Col<'a, T> {
+        let (data_range, skip) = self.get_col_params(col);
+        unsafe {
+            Col {
+                v: self.data.get_unchecked(data_range),
+                skip,
+            }
+        }
+    }
+}
+
 impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a, T> {
     fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
         let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, self, self.stride);
@@ -480,6 +520,26 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a, T> {
     /// ```
     unsafe fn get_unchecked_mut(&mut self, coord: Coordinate) -> &mut T {
         self.data.get_unchecked_mut(coord.1 * self.stride + coord.0)
+    }
+}
+
+impl<'a, T> TooDeeIntoOpsMut<'a, T> for TooDeeViewMut<'a, T> {
+    fn into_rows_mut(self) -> RowsMut<'a, T> {
+        RowsMut {
+            v: self.data,
+            cols: self.num_cols,
+            skip_cols: self.stride - self.num_cols,
+        }
+    }
+
+    fn into_col_mut(self, col: usize) -> ColMut<'a, T> {
+        let (data_range, skip) = self.get_col_params(col);
+        unsafe {
+            ColMut {
+                v: self.data.get_unchecked_mut(data_range),
+                skip,
+            }
+        }
     }
 }
 
