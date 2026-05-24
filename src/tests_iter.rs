@@ -201,4 +201,23 @@ mod toodee_tests_iter {
         assert_eq!(iter.len(), 130);
         assert_eq!(iter.num_cols(), 10);
     }
+
+    #[test]
+    fn nth_back_rows() {
+        let mut grid = toodee::TooDee::init(4,4, 0u8);
+        {
+            let mut rows_mut = grid.rows_mut();
+            let _ = rows_mut.nth_back(1);
+        }
+    }
+
+    #[test]
+    fn nth_back_cols() {
+        let mut grid = toodee::TooDee::init(4,4, 0u8);
+        {
+            let mut rows_mut = grid.col_mut(0);
+            let _ = rows_mut.nth_back(1);
+        }
+    }
+
 }

@@ -215,9 +215,9 @@ impl<'a, T> DoubleEndedIterator for RowsMut<'a, T> {
             self.v = &mut [];
         } else {
             let tmp = mem::take(&mut self.v);
-            // adj < self.v.len(), so no check required
+            // adj < tmp.len(), so no check required
             unsafe {
-                self.v = tmp.get_unchecked_mut(..self.v.len() - adj);
+                self.v = tmp.get_unchecked_mut(..tmp.len() - adj);
             }
         }
         self.next_back()
@@ -465,9 +465,9 @@ impl<'a, T> DoubleEndedIterator for ColMut<'a, T> {
             self.v = &mut [];
         } else {
             let tmp = mem::take(&mut self.v);
-            // adj <= self.v.len(), so no check required
+            // adj <= tmp.len(), so no check required
             unsafe {
-                self.v = tmp.get_unchecked_mut(..self.v.len() - adj);
+                self.v = tmp.get_unchecked_mut(..tmp.len() - adj);
             }
         }
         self.next_back()

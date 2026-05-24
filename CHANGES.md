@@ -2,6 +2,9 @@
 
 ## Changes
 
+### Version 0.6.1
+- Fixed integer overflow in `nth_back()` - thanks Ruihan Gong.
+
 ### Version 0.6.0
 - Fixed heap buffer overflow in DrainCol destructor - thanks George Androutsopoulos.
 
