@@ -76,6 +76,18 @@ mod toodee_tests {
     }
 
     #[test]
+    #[should_panic]
+    fn new_bad_dimensions() {
+        let _ : TooDee<u32> = TooDee::new(0, 1);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_bad_dimensions_2() {
+        let _ : TooDee<u32> = TooDee::new(1, 0);
+    }
+
+    #[test]
     fn new_view() {
         let toodee : TooDee<u32> = TooDee::new(200, 150);
         let view = toodee.view((50, 50), (150, 100));

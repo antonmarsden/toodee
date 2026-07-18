@@ -418,6 +418,9 @@ impl<T> TooDee<T> {
     /// ```
     pub fn new(num_cols: usize, num_rows: usize) -> TooDee<T>
     where T: Default {
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
+        }
         let mut data = Vec::new();
         data.resize_with(num_cols.checked_mul(num_rows).unwrap(), T::default);
         TooDee { data, num_cols, num_rows }
