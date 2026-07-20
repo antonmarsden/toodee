@@ -671,12 +671,18 @@ impl<T> TooDee<T> {
     pub fn insert_row<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
     where I : Iterator<Item=T> + ExactSizeIterator
     {
+        let iter = data.into_iter();
+        let row_len = iter.len();
+        // Validate arguments before consuming the iterator, so an invalid
+        // index or length does not destructively drain the caller's data.
         assert!(index <= self.num_rows);
-        let mut iter = data.into_iter();
+        if self.num_rows != 0 {
+            assert_eq!(self.num_cols, row_len);
+        }
+        let mut row: Vec<T> = iter.collect();
+        assert_eq!(row.len(), row_len, "unexpected iterator length");
         if self.num_rows == 0 {
-            self.num_cols = iter.len();
-        } else {
-            assert_eq!(self.num_cols, iter.len());
+            self.num_cols = row_len;
         }
         
         self.reserve(self.num_cols);
@@ -686,30 +692,16 @@ impl<T> TooDee<T> {
 
         unsafe {
 
-            // Prevent duplicate (or any) drops on the portion of the array we are modifying.
-            // This is to safe-guard against a panic potentially caused by `iter.next()`.
-            // Alternative (less performant) approaches would be:
-            // - append the new row to the array and use `slice.rotate...()` to shuffle everything into place.
-            // - store the new row data in a temporary location before shifting the memory and inserting the row.
+            // `row` has already consumed the iterator, so no user code can panic below.
             self.data.set_len(start);
             
-            let mut p = self.data.as_mut_ptr().add(start);
+            let p = self.data.as_mut_ptr().add(start);
             // shift everything to make space for the new row
             let suffix = p.add(self.num_cols);
             ptr::copy(p, suffix, len - start);
             
-            // Only iterates a maximum of `self.num_cols` times.
-            while p < suffix {
-                if let Some(e) = iter.next() {
-                    ptr::write(p, e);
-                    p = p.add(1);
-                } else {
-                    // panic if the iterator length is less than expected
-                    assert_eq!(p, suffix, "unexpected iterator length");
-                }
-            }
-            
-            debug_assert!(iter.next().is_none(), "iterator not exhausted");
+            ptr::copy_nonoverlapping(row.as_ptr(), p, self.num_cols);
+            row.set_len(0);
 
             self.data.set_len(len + self.num_cols);
         }
@@ -830,13 +822,18 @@ impl<T> TooDee<T> {
     pub fn insert_col<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
     where I : Iterator<Item=T> + ExactSizeIterator + DoubleEndedIterator
     {
+        let iter = data.into_iter();
+        let col_len = iter.len();
+        // Validate arguments before consuming the iterator, so an invalid
+        // index or length does not destructively drain the caller's data.
         assert!(index <= self.num_cols);
-        // Use the reverse iterator
-        let mut rev_iter = data.into_iter().rev();
+        if self.num_cols != 0 {
+            assert_eq!(self.num_rows, col_len);
+        }
+        let mut col: Vec<T> = iter.collect();
+        assert_eq!(col.len(), col_len, "unexpected iterator length");
         if self.num_cols == 0 {
-            self.num_rows = rev_iter.len();
-        } else {
-            assert_eq!(self.num_rows, rev_iter.len());
+            self.num_rows = col_len;
         }
         
         self.reserve(self.num_rows);
@@ -847,24 +844,13 @@ impl<T> TooDee<T> {
         
         unsafe {
             
-            // Prevent duplicate (or any) drops on the array we are modifying.
-            // This is to safe-guard against a panic potentially caused by `rev_iter.next()`.
-            // Alternative (less performant) approaches would be:
-            // - append the new column to the array and use swapping to shuffle everything into place.
-            // - store the new column data in a temporary location before shifting the memory and inserting values.
+            // `col` has already consumed the iterator, so no user code can panic below.
             self.data.set_len(0);
             
             let p = self.data.as_mut_ptr();
             let mut read_p = p.add(old_len);
             let mut write_p = p.add(new_len);
-            
-            let next_or_panic = |iter : &mut core::iter::Rev<I>| -> T {
-                if let Some(e) = iter.next() {
-                    e
-                } else {
-                    panic!("unexpected iterator length");
-                }
-            };
+            let mut col_p = col.as_ptr().add(self.num_rows);
 
             if self.num_rows > 0 {
                 // start with suffix copy
@@ -872,21 +858,23 @@ impl<T> TooDee<T> {
                 write_p = write_p.sub(suffix_len);
                 ptr::copy(read_p, write_p, suffix_len);
                 write_p = write_p.sub(1);
-                ptr::write(write_p, next_or_panic(&mut rev_iter));
+                col_p = col_p.sub(1);
+                ptr::write(write_p, ptr::read(col_p));
                 for _ in 0..(self.num_rows - 1) {
                     // copy suffix and prefix as a single block until we are on the final element
                     read_p = read_p.sub(self.num_cols);
                     write_p = write_p.sub(self.num_cols);
                     ptr::copy(read_p, write_p, self.num_cols);
                     write_p = write_p.sub(1);
-                    ptr::write(write_p, next_or_panic(&mut rev_iter));
+                    col_p = col_p.sub(1);
+                    ptr::write(write_p, ptr::read(col_p));
                 }
                 read_p = read_p.sub(index);
                 write_p = write_p.sub(index);
                 ptr::copy(read_p, write_p, index);
             }
             
-            debug_assert!(rev_iter.next().is_none(), "iterator not exhausted");
+            col.set_len(0);
 
             self.data.set_len(new_len);
         }

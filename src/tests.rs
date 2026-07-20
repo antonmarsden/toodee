@@ -3,26 +3,36 @@ mod toodee_tests {
     
     extern crate alloc;
     use alloc::boxed::Box;
+    use alloc::sync::Arc;
     use alloc::vec;
     use alloc::vec::Vec;
     use core::marker::PhantomData;
     use core::fmt::Display;
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
     use crate::*;
     
     struct DropDetector<V : Display> {
         value : V,
+        drops : Option<Arc<AtomicUsize>>,
     }
     
     impl<V : Display> DropDetector<V> {
         fn new(value : V) -> Self {
-            DropDetector { value }
+            DropDetector { value, drops : None }
+        }
+
+        fn with_drop_counter(value : V, drops : Arc<AtomicUsize>) -> Self {
+            DropDetector { value, drops : Some(drops) }
         }
     }
     
     impl<V : Display> Drop for DropDetector<V> {
         fn drop(&mut self) {
             println!("Dropping {}", self.value);
+            if let Some(drops) = &self.drops {
+                drops.fetch_add(1, Ordering::SeqCst);
+            }
         }
     }
     
@@ -45,6 +55,10 @@ mod toodee_tests {
     
     impl<V> ExactSizeIterator for PanickingIterator<V> {
         fn len(&self) -> usize { 1 }
+    }
+
+    impl<V> DoubleEndedIterator for PanickingIterator<V> {
+        fn next_back(&mut self) -> Option<Self::Item> { panic!("Iterator panicked"); }
     }
 
     struct IteratorWithWrongLength();
@@ -411,6 +425,26 @@ mod toodee_tests {
         let mut toodee : TooDee<_> = TooDee::from_vec(1, 3, vec);
         toodee.insert_row(0, PanickingIterator::new());
     }
+
+    #[test]
+    fn insert_row_iterator_panic_leaves_toodee_valid() {
+        let drops = Arc::new(AtomicUsize::new(0));
+        {
+            let vec = (0..4)
+                .map(|value| DropDetector::with_drop_counter(value, Arc::clone(&drops)))
+                .collect();
+            let mut toodee = TooDee::from_vec(4, 1, vec);
+
+            // len()==num_cols so validation passes and the panic happens while
+            // collecting the iterator, exercising the panic-safety path.
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                toodee.insert_row(0, PanickingIterator::new());
+            })).is_err());
+            assert_eq!(toodee.num_rows() * toodee.num_cols(), toodee.data().len());
+            drop(toodee.remove_row(0));
+        }
+        assert_eq!(drops.load(Ordering::SeqCst), 4);
+    }
     
     #[test]
     #[should_panic]
@@ -431,6 +465,26 @@ mod toodee_tests {
         assert_eq!(toodee.data()[2], 1);
         assert_eq!(toodee.data()[3], 2);
         assert_eq!(toodee.data()[4], 3);
+    }
+
+    #[test]
+    fn insert_col_iterator_panic_leaves_toodee_valid() {
+        let drops = Arc::new(AtomicUsize::new(0));
+        {
+            let vec = (0..4)
+                .map(|value| DropDetector::with_drop_counter(value, Arc::clone(&drops)))
+                .collect();
+            let mut toodee = TooDee::from_vec(1, 4, vec);
+
+            // len()==num_rows so validation passes and the panic happens while
+            // collecting the iterator, exercising the panic-safety path.
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                toodee.insert_col(0, PanickingIterator::new());
+            })).is_err());
+            assert_eq!(toodee.num_rows() * toodee.num_cols(), toodee.data().len());
+            drop(toodee.remove_col(0));
+        }
+        assert_eq!(drops.load(Ordering::SeqCst), 4);
     }
     
     #[test]
