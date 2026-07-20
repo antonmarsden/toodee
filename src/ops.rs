@@ -332,3 +332,112 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
 
 }
 
+/// Defines consuming operations specific to `TooDeeView`. Default implementations are provided
+/// where possible/practical.
+pub trait TooDeeIntoOps<'a, T>: Index<usize, Output = [T]> + Index<Coordinate, Output = T> {
+    /// Consumes the view, returning an iterator of slices, where each slice represents an entire row.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeIntoOps};
+    /// let toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// let view = toodee.view((0, 0), (10, 2));
+    /// let mut sum = 0u32;
+    /// for r in view.into_rows() {
+    ///     sum += r.iter().sum::<u32>();
+    /// }
+    /// assert_eq!(sum, 42*20);
+    /// ```
+    fn into_rows(self) -> Rows<'a, T>;
+
+    /// Consumes the view, returning an iterator over a single column. Note that the `Col` iterator is indexable.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeIntoOps};
+    /// let toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// let view = toodee.view((0, 0), (10, 2));
+    /// let mut sum = 0u32;
+    /// for c in view.into_col(1) {
+    ///     sum += c;
+    /// }
+    /// assert_eq!(sum, 42*2);
+    /// ```
+    fn into_col(self, col: usize) -> Col<'a, T>;
+
+    /// Consumes the view, returning an iterator that traverses all cells within the area.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps, TooDeeIntoOps};
+    /// let toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// let view = toodee.view((0, 0), (10, 2));
+    /// let mut sum = view.into_cells().sum::<u32>();
+    /// assert_eq!(sum, 42*20);
+    /// ```
+    fn into_cells(self) -> Cells<'a, T>
+    where
+        Self: Sized,
+    {
+        FlattenExact::new(self.into_rows())
+    }
+}
+
+/// Defines consuming operations specific to `TooDeeView`. Default implementations are provided
+/// where possible/practical.
+pub trait TooDeeIntoOpsMut<'a, T>:
+    TooDeeOps<T> + IndexMut<usize, Output = [T]> + IndexMut<Coordinate, Output = T>
+{
+    /// Consumed the view, returning a mutable iterator of slices, where each slice represents an entire row.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,TooDeeIntoOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// let mut view = toodee.view_mut((0, 0), (5, 5));
+    /// for r in view.into_rows_mut() {
+    ///    r.iter_mut().for_each(|c| *c = 0);
+    /// }
+    /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 42*25);
+    /// ```
+    fn into_rows_mut(self) -> RowsMut<'a, T>;
+
+    /// Consumes the view, returning a mutable iterator over a single column. Note that the `ColMut` iterator is indexable.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,TooDeeIntoOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// let mut view = toodee.view_mut((0, 0), (5, 5));
+    /// for c in view.into_col_mut(1) {
+    ///     *c = 0;
+    /// }
+    /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 42*5);
+    /// ```
+    fn into_col_mut(self, col: usize) -> ColMut<'a, T>;
+
+    /// Consumed the view, returning an iterator that traverses all cells within the area.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee,TooDeeOps,TooDeeOpsMut,TooDeeIntoOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// let mut view = toodee.view_mut((0, 0), (5, 5));
+    /// for c in view.into_cells_mut() {
+    ///     *c -= 1;
+    /// }
+    /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 25);
+    /// ```
+    fn into_cells_mut(self) -> CellsMut<'a, T>
+    where
+        Self: Sized,
+    {
+        FlattenExact::new(self.into_rows_mut())
+    }
+}
