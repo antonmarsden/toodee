@@ -117,6 +117,19 @@ where
             .fold(init, flatten(fold))
     }
     
+    #[inline]
+    fn try_fold<B, F>(self, init: B, f: F) -> Result<B, <F as TryFold<Self::Item>>::Error>
+    where
+        F: TryFold<Self::Item>,
+    {
+        let f = &mut f;
+        self.frontiter
+            .into_iter()
+            .chain(self.iter.map(IntoIterator::into_iter))
+            .chain(self.backiter)
+            .try_fold(init, |acc, iter| iter.try_fold(acc, f))
+    }
+
 }
 
 impl<I> DoubleEndedIterator for FlattenExact<I>
@@ -193,6 +206,19 @@ where
             .rfold(init, flatten(fold))
     }
     
+    #[inline]
+    fn try_rfold<B, F>(self, init: B, f: F) -> Result<B, <F as TryFold<Self::Item>>::Error>
+    where
+        F: TryFold<Self::Item>,
+    {
+        let f = &mut f;
+        self.frontiter
+            .into_iter()
+            .chain(self.iter.map(IntoIterator::into_iter))
+            .chain(self.backiter)
+            .try_rfold(init, |acc, iter| iter.try_rfold(acc, f))
+    }
+
 }
 
 impl<I> ExactSizeIterator for FlattenExact<I>
