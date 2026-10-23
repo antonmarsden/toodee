@@ -768,4 +768,21 @@ mod toodee_tests {
         let mut toodee: TooDee<u32> = TooDee::init(2, 2, 0);
         toodee.remove_col(0);
     }
+
+    #[test]
+    fn from_2d_array() {
+        let toodee: TooDee<u32> = TooDee::from([
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9],
+        ]);
+        assert_eq!(toodee.num_cols(), 3);
+        assert_eq!(toodee.num_rows(), 3);
+
+        for y in 0..3 {
+            for x in 0..3 {
+                assert_eq!(toodee[(x, y)], x as u32 + (y as u32  * 3) + 1);
+            }
+        }
+    }
 }
