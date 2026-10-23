@@ -1102,3 +1102,14 @@ impl<T> Drop for DrainCol<'_, T> {
     }
 }
 
+impl<const N: usize, const O: usize, T> From<[[T; N]; O]> for TooDee<T> {
+    fn from(value: [[T; N]; O]) -> Self {
+        let mut out = TooDee::with_capacity(N * O);
+
+        for row in value {
+            out.push_row(row);
+        }
+
+        out
+    }
+}
