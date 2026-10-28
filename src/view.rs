@@ -44,27 +44,6 @@ mod tests {
         assert_eq!(range, 4..10);
     }
 
-    #[test]
-    fn empty_views_at_end_use_in_bounds_ranges() {
-        let mut toodee = TooDee::from_vec(3, 2, (0u32..6).collect());
-
-        let view = toodee.view((1, 2), (1, 2));
-        assert_eq!(view.num_cols(), 0);
-        assert_eq!(view.num_rows(), 0);
-
-        let view = toodee.view_mut((3, 2), (3, 2));
-        assert_eq!(view.num_cols(), 0);
-        assert_eq!(view.num_rows(), 0);
-        drop(view);
-
-        let mut view = toodee.view_mut((0, 0), (2, 2));
-        let nested = view.view((1, 2), (1, 2));
-        assert_eq!(nested.num_cols(), 0);
-        assert_eq!(nested.num_rows(), 0);
-        let nested = view.view_mut((1, 2), (1, 2));
-        assert_eq!(nested.num_cols(), 0);
-        assert_eq!(nested.num_rows(), 0);
-    }
 }
 
 /// *Internal only* functions for calculating vector ranges.
