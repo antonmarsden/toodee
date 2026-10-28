@@ -35,30 +35,31 @@ pub struct TooDee<T> {
     num_cols: usize,
 }
 
-/// Restores the original row layout if inserting a row unwinds.
-struct InsertRowRollback<'a, T> {
+/// Restores the original matrix layout if inserting a column unwinds.
+struct InsertColRollback<'a, T> {
     vec: &'a mut Vec<T>,
     original_len: usize,
-    start: usize,
-    row_len: usize,
-    suffix_len: usize,
+    original_cols: usize,
+    rows: usize,
+    index: usize,
     initialized: usize,
     armed: bool,
 }
 
-impl<'a, T> InsertRowRollback<'a, T> {
+impl<'a, T> InsertColRollback<'a, T> {
     fn new(
         vec: &'a mut Vec<T>,
         original_len: usize,
-        start: usize,
-        row_len: usize,
+        original_cols: usize,
+        rows: usize,
+        index: usize,
     ) -> Self {
         Self {
             vec,
             original_len,
-            start,
-            row_len,
-            suffix_len: original_len - start,
+            original_cols,
+            rows,
+            index,
             initialized: 0,
             armed: true,
         }
@@ -69,27 +70,33 @@ impl<'a, T> InsertRowRollback<'a, T> {
     }
 }
 
-impl<T> Drop for InsertRowRollback<'_, T> {
+impl<T> Drop for InsertColRollback<'_, T> {
     fn drop(&mut self) {
         if !self.armed {
             return;
         }
 
+        let new_cols = self.original_cols + 1;
+        let prefix_len = self.index;
+        let suffix_len = self.original_cols - self.index;
+
         unsafe {
             let p = self.vec.as_mut_ptr();
 
-            // Drop the portion of the inserted row that was already written.
-            for i in 0..self.initialized {
-                ptr::drop_in_place(p.add(self.start + i));
+            // Drop inserted values that were successfully written.
+            for row in 0..self.initialized {
+                ptr::drop_in_place(p.add(row * new_cols + self.index));
             }
 
-            // Move the shifted suffix back over the insertion gap and restore
-            // the vector's original length.
-            ptr::copy(
-                p.add(self.start + self.row_len),
-                p.add(self.start),
-                self.suffix_len,
-            );
+            // Move each row back to its original stride. Top-down restoration
+            // avoids overwriting source elements from rows not yet restored.
+            for row in 0..self.rows {
+                let src = p.add(row * new_cols);
+                let dst = p.add(row * self.original_cols);
+                ptr::copy(src.add(self.index + 1), dst.add(self.index), suffix_len);
+                ptr::copy(src, dst, prefix_len);
+            }
+
             self.vec.set_len(self.original_len);
         }
     }
@@ -901,67 +908,85 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if the data's length doesn't match the length of existing columns (if any).
     pub fn insert_col<I>(&mut self, index: usize, data: impl IntoIterator<Item=T, IntoIter=I>)
-    where I : Iterator<Item=T> + ExactSizeIterator + DoubleEndedIterator
+    where I : Iterator<Item=T> + ExactSizeIterator
     {
         let iter = data.into_iter();
         let col_len = iter.len();
-        // Validate arguments before consuming the iterator, so an invalid
-        // index or length does not destructively drain the caller's data.
+
+        // Validate arguments before consuming the iterator.
         assert!(index <= self.num_cols);
         if self.num_cols != 0 {
             assert_eq!(self.num_rows, col_len);
         }
-        let mut col: Vec<T> = iter.collect();
-        assert_eq!(col.len(), col_len, "unexpected iterator length");
-        if self.num_cols == 0 {
-            self.num_rows = col_len;
-        }
-        
-        self.reserve(self.num_rows);
-        
-        let old_len = self.data.len();
-        let new_len = old_len + self.num_rows;
-        let suffix_len = self.num_cols - index;
-        
+
+        let original_cols = self.num_cols;
+        let rows = if original_cols == 0 { col_len } else { self.num_rows };
+        let original_len = self.data.len();
+        let new_len = original_len.checked_add(rows).expect("capacity overflow");
+        let new_cols = original_cols + 1;
+        let prefix_len = index;
+        let suffix_len = original_cols - index;
+
+        // Reserve before moving anything, so the existing elements cannot be
+        // reallocated after shifting starts.
+        self.data.reserve(rows);
+
+        // Move rows from the end backwards into their expanded stride. Move
+        // each suffix before its prefix because the destination row can overlap
+        // the source row.
         unsafe {
-            
-            // `col` has already consumed the iterator, so no user code can panic below.
-            self.data.set_len(0);
-            
             let p = self.data.as_mut_ptr();
-            let mut read_p = p.add(old_len);
-            let mut write_p = p.add(new_len);
-            let mut col_p = col.as_ptr().add(self.num_rows);
-
-            if self.num_rows > 0 {
-                // start with suffix copy
-                read_p = read_p.sub(suffix_len);
-                write_p = write_p.sub(suffix_len);
-                ptr::copy(read_p, write_p, suffix_len);
-                write_p = write_p.sub(1);
-                col_p = col_p.sub(1);
-                ptr::write(write_p, ptr::read(col_p));
-                for _ in 0..(self.num_rows - 1) {
-                    // copy suffix and prefix as a single block until we are on the final element
-                    read_p = read_p.sub(self.num_cols);
-                    write_p = write_p.sub(self.num_cols);
-                    ptr::copy(read_p, write_p, self.num_cols);
-                    write_p = write_p.sub(1);
-                    col_p = col_p.sub(1);
-                    ptr::write(write_p, ptr::read(col_p));
-                }
-                read_p = read_p.sub(index);
-                write_p = write_p.sub(index);
-                ptr::copy(read_p, write_p, index);
+            for row in (0..self.num_rows).rev() {
+                let src = p.add(row * original_cols);
+                let dst = p.add(row * new_cols);
+                ptr::copy(
+                    src.add(index),
+                    dst.add(index + 1),
+                    suffix_len,
+                );
+                ptr::copy(src, dst, prefix_len);
             }
-            
-            col.set_len(0);
 
-            self.data.set_len(new_len);
+            // The vector now contains gaps and stale duplicate bytes. The guard
+            // owns the layout until all inserted values have been initialized.
+            self.data.set_len(0);
         }
 
-        // update the number of columns
-        if self.num_rows > 0 {
+        let mut guard = InsertColRollback::new(
+            &mut self.data,
+            original_len,
+            original_cols,
+            rows,
+            index,
+        );
+
+        for item in iter {
+            if guard.initialized == rows {
+                drop(item);
+                panic!("unexpected iterator length");
+            }
+
+            let offset = guard.initialized * new_cols + index;
+            unsafe {
+                guard.vec.as_mut_ptr().add(offset).write(item);
+            }
+            guard.initialized += 1;
+        }
+
+        assert_eq!(guard.initialized, rows, "unexpected iterator length");
+
+        unsafe {
+            guard.vec.set_len(new_len);
+        }
+        guard.disarm();
+        drop(guard);
+
+        if original_cols == 0 {
+            if rows > 0 {
+                self.num_rows = rows;
+                self.num_cols = 1;
+            }
+        } else if rows > 0 {
             self.num_cols += 1;
         }
     }
