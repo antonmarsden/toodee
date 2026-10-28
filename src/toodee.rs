@@ -541,7 +541,18 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         let num_rows = self.num_rows;
         assert!(col1 < num_cols && col2 < num_cols);
         assert!(row1 < num_rows && row2 < num_rows);
-        self.data.swap(row1 * num_cols + col1, row2 * num_cols + col2);
+        let i = row1 * num_cols + col1;
+        let j = row2 * num_cols + col2;
+
+        // SAFETY:
+        // - The coordinate assertions establish that both indices are in bounds.
+        // - The backing vector contains num_rows * num_cols elements.
+        // - Both pointers are derived from the same allocation pointer.
+        // - ptr::swap supports identical pointers when i == j.
+        unsafe {
+            let ptr = self.data.as_mut_ptr();
+            ptr::swap(ptr.add(i), ptr.add(j));
+        }
     }
 }
 
