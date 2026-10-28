@@ -637,6 +637,45 @@ mod toodee_tests {
     }
 
     #[test]
+    fn remove_col_drops_each_element_exactly_once() {
+        use alloc::rc::Rc;
+        use core::cell::Cell;
+
+        struct DropCount(Rc<Cell<usize>>);
+
+        impl Drop for DropCount {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+
+        let drops = Rc::new(Cell::new(0));
+
+        {
+            let mut toodee = TooDee::from_vec(
+                3,
+                3,
+                (0..9).map(|_| DropCount(Rc::clone(&drops))).collect(),
+            );
+
+            {
+                let mut drain = toodee.remove_col(1);
+                let first = drain.next().unwrap();
+                assert_eq!(drops.get(), 0);
+                drop(first);
+                assert_eq!(drops.get(), 1);
+            }
+
+            // The other two removed elements are dropped with the drain.
+            assert_eq!(drops.get(), 3);
+            assert_eq!(toodee.size(), (2, 3));
+        }
+
+        // The six retained elements are dropped with the array.
+        assert_eq!(drops.get(), 9);
+    }
+
+    #[test]
     fn remove_col_5_2() {
         let mut toodee : TooDee<u32> = TooDee::from_vec(4, 5, (0u32..20).collect());
         {
