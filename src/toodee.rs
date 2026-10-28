@@ -430,6 +430,10 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         }
 
         let num_rows = self.num_rows;
+        if num_rows == 0 {
+            return;
+        }
+
         let data = self.data.as_mut_ptr();
 
         // SAFETY:
@@ -442,14 +446,12 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
             let mut p1 = data.add(c1);
             let mut p2 = data.add(c2);
 
-            if num_rows > 0 {
-                ptr::swap(p1, p2);
+            ptr::swap(p1, p2);
 
-                for _ in 1..num_rows {
-                    p1 = p1.add(num_cols);
-                    p2 = p2.add(num_cols);
-                    ptr::swap(p1, p2);
-                }
+            for _ in 1..num_rows {
+                p1 = p1.add(num_cols);
+                p2 = p2.add(num_cols);
+                ptr::swap(p1, p2);
             }
         }
     }
