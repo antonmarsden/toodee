@@ -205,8 +205,18 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         let num_cols = self.num_cols();
         assert!(c1 < num_cols);
         assert!(c2 < num_cols);
+
+        if c1 == c2 {
+            return;
+        }
+
         for r in self.rows_mut() {
-            r.swap(c1, c2);
+            // SAFETY: c1 and c2 are in bounds for every row returned by
+            // rows_mut(), and both pointers originate from the same row.
+            unsafe {
+                let ptr = r.as_mut_ptr();
+                ptr::swap(ptr.add(c1), ptr.add(c2));
+            }
         }
     }
 
