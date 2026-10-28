@@ -595,6 +595,87 @@ mod toodee_tests {
     }
     
     #[test]
+    fn remove_col_forgotten_drain_keeps_toodee_valid() {
+        for col in 0..3 {
+            let mut toodee = TooDee::from_vec(3, 2, (0u32..6).collect());
+            let drain = toodee.remove_col(col);
+            core::mem::forget(drain);
+
+            assert_eq!(toodee.size(), (2, 2));
+            assert_eq!(toodee.data().len(), toodee.num_cols() * toodee.num_rows());
+            match col {
+                0 => assert_eq!(toodee.data(), &[1, 2, 4, 5]),
+                1 => assert_eq!(toodee.data(), &[0, 2, 3, 5]),
+                2 => assert_eq!(toodee.data(), &[0, 1, 3, 4]),
+                _ => unreachable!(),
+            }
+            assert_eq!(toodee[(0, 0)], toodee.data()[0]);
+            assert_eq!(toodee[1][1], toodee.data()[3]);
+        }
+    }
+
+    #[test]
+    fn remove_only_col_forgotten_drain_leaves_empty_toodee() {
+        let mut toodee = TooDee::from_vec(1, 2, vec![10u32, 20]);
+        let drain = toodee.remove_col(0);
+        core::mem::forget(drain);
+
+        assert_eq!(toodee.size(), (0, 0));
+        assert!(toodee.data().is_empty());
+        assert!(toodee.is_empty());
+    }
+
+    #[test]
+    fn remove_col_drain_preserves_iteration_order_and_remaining_data() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+        {
+            let mut drain = toodee.remove_col(1);
+            assert_eq!(drain.by_ref().collect::<Vec<_>>(), vec![1, 4, 7]);
+        }
+        assert_eq!(toodee.size(), (2, 3));
+        assert_eq!(toodee.data(), &[0, 2, 3, 5, 6, 8]);
+    }
+
+    #[test]
+    fn remove_col_drops_each_element_exactly_once() {
+        use alloc::rc::Rc;
+        use core::cell::Cell;
+
+        struct DropCount(Rc<Cell<usize>>);
+
+        impl Drop for DropCount {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+
+        let drops = Rc::new(Cell::new(0));
+
+        {
+            let mut toodee = TooDee::from_vec(
+                3,
+                3,
+                (0..9).map(|_| DropCount(Rc::clone(&drops))).collect(),
+            );
+
+            {
+                let mut drain = toodee.remove_col(1);
+                let first = drain.next().unwrap();
+                assert_eq!(drops.get(), 0);
+                drop(first);
+                assert_eq!(drops.get(), 1);
+            }
+
+            // The other two removed elements are dropped with the drain.
+            assert_eq!(drops.get(), 3);
+            assert_eq!(toodee.size(), (2, 3));
+        }
+
+        // The six retained elements are dropped with the array.
+        assert_eq!(drops.get(), 9);
+    }
+
+    #[test]
     fn remove_col_5_2() {
         let mut toodee : TooDee<u32> = TooDee::from_vec(4, 5, (0u32..20).collect());
         {
