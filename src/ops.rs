@@ -205,17 +205,8 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         let num_cols = self.num_cols();
         assert!(c1 < num_cols);
         assert!(c2 < num_cols);
-        if c1 == c2 {
-            return;
-        }
         for r in self.rows_mut() {
-            // The column indices have been checked with asserts (see above), so we can
-            // safely access and swap the elements using `get_unchecked_mut`.
-            unsafe {
-                let pa: *mut T = r.get_unchecked_mut(c1);
-                let pb: *mut T = r.get_unchecked_mut(c2);
-                ptr::swap(pa, pb);
-            }
+            r.swap(c1, c2);
         }
     }
 
