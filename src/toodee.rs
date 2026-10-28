@@ -35,6 +35,56 @@ pub struct TooDee<T> {
     num_cols: usize,
 }
 
+/// Restores the original row layout if inserting a row unwinds.
+struct InsertRowRollback<'a, T> {
+    vec: &'a mut Vec<T>,
+    original_len: usize,
+    start: usize,
+    row_len: usize,
+    suffix_len: usize,
+    initialized: usize,
+    armed: bool,
+}
+
+impl<'a, T> InsertRowRollback<'a, T> {
+    fn new(vec: &'a mut Vec<T>, original_len: usize, start: usize, row_len: usize) -> Self {
+        Self {
+            vec,
+            original_len,
+            start,
+            row_len,
+            suffix_len: original_len - start,
+            initialized: 0,
+            armed: true,
+        }
+    }
+
+    fn disarm(&mut self) {
+        self.armed = false;
+    }
+}
+
+impl<T> Drop for InsertRowRollback<'_, T> {
+    fn drop(&mut self) {
+        if !self.armed {
+            return;
+        }
+
+        unsafe {
+            let p = self.vec.as_mut_ptr();
+            for i in 0..self.initialized {
+                ptr::drop_in_place(p.add(self.start + i));
+            }
+            ptr::copy(
+                p.add(self.start + self.row_len),
+                p.add(self.start),
+                self.suffix_len,
+            );
+            self.vec.set_len(self.original_len);
+        }
+    }
+}
+
 /// Restores the original matrix layout if inserting a column unwinds.
 struct InsertColRollback<'a, T> {
     vec: &'a mut Vec<T>,
