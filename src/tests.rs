@@ -104,6 +104,41 @@ mod toodee_tests {
         fn len(&self) -> usize { self.remaining }
     }
 
+    // Yields several items, then panics when the iterator is polled again.
+    struct YieldSeveralThenPanic<V> {
+        items: alloc::vec::IntoIter<V>,
+        remaining: usize,
+    }
+
+    impl<V> YieldSeveralThenPanic<V> {
+        fn new(items: Vec<V>, expected_len: usize) -> Self {
+            Self {
+                items: items.into_iter(),
+                remaining: expected_len,
+            }
+        }
+    }
+
+    impl<V> Iterator for YieldSeveralThenPanic<V> {
+        type Item = V;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            match self.items.next() {
+                Some(item) => {
+                    self.remaining -= 1;
+                    Some(item)
+                }
+                None => panic!("Iterator panicked after yielding several items"),
+            }
+        }
+    }
+
+    impl<V> ExactSizeIterator for YieldSeveralThenPanic<V> {
+        fn len(&self) -> usize {
+            self.remaining
+        }
+    }
+
     struct IteratorWithWrongLength();
     
     impl Iterator for IteratorWithWrongLength {
@@ -540,6 +575,47 @@ mod toodee_tests {
             assert_eq!(toodee.data().iter().map(|item| item.value).collect::<Vec<_>>(), vec![0, 1, 2, 3]);
         }
         assert_eq!(drops.load(Ordering::SeqCst), 5);
+    }
+
+    #[test]
+    fn insert_col_middle_preserves_full_layout() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+
+        toodee.insert_col(1, vec![10, 11, 12]);
+
+        assert_eq!(
+            toodee.data(),
+            &[0, 10, 1, 2, 3, 11, 4, 5, 6, 12, 7, 8]
+        );
+        assert_eq!(toodee.size(), (4, 3));
+    }
+
+    #[test]
+    fn insert_col_multi_yield_panic_drops_inserted_items_and_restores_layout() {
+        let drops = Arc::new(AtomicUsize::new(0));
+        {
+            let values = (0..9)
+                .map(|value| DropDetector::with_drop_counter(value, Arc::clone(&drops)))
+                .collect();
+            let mut toodee = TooDee::from_vec(3, 3, values);
+            let inserted = vec![
+                DropDetector::with_drop_counter(90, Arc::clone(&drops)),
+                DropDetector::with_drop_counter(91, Arc::clone(&drops)),
+            ];
+
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                toodee.insert_col(1, YieldSeveralThenPanic::new(inserted, 3));
+            })).is_err());
+
+            assert_eq!(drops.load(Ordering::SeqCst), 2);
+            assert_eq!(toodee.size(), (3, 3));
+            assert_eq!(toodee.data().len(), 9);
+            assert_eq!(
+                toodee.data().iter().map(|item| item.value).collect::<Vec<_>>(),
+                (0..9).collect::<Vec<_>>()
+            );
+        }
+        assert_eq!(drops.load(Ordering::SeqCst), 11);
     }
 
     #[test]
