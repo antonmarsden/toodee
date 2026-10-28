@@ -18,19 +18,14 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
     assert!(stride >= toodee.num_cols());
     let mut num_cols = end.0 - start.0;
     let mut num_rows = end.1 - start.1;
-    // zero out dimensions for empty arrays
+    // Empty views must use a valid range even when their coordinates would
+    // otherwise produce an offset beyond the backing slice (for example, a
+    // zero-sized view at the end of the final row).
     if num_cols == 0 || num_rows == 0 {
-        num_cols = 0;
-        num_rows = 0;
+        return (0, 0, 0..0);
     }
     let data_start = start.1 * stride + start.0;
-    let data_len = {
-        if num_rows == 0 {
-            0
-        } else {
-            (num_rows - 1) * stride + num_cols
-        }
-    };
+    let data_len = (num_rows - 1) * stride + num_cols;
     (num_cols, num_rows, data_start..data_start + data_len)
 }
 
@@ -47,6 +42,28 @@ mod tests {
         assert_eq!(num_cols, 2);
         assert_eq!(num_rows, 2);
         assert_eq!(range, 4..10);
+    }
+
+    #[test]
+    fn empty_views_at_end_use_in_bounds_ranges() {
+        let mut toodee = TooDee::from_vec(3, 2, (0u32..6).collect());
+
+        let view = toodee.view((1, 2), (1, 2));
+        assert_eq!(view.num_cols(), 0);
+        assert_eq!(view.num_rows(), 0);
+
+        let view = toodee.view_mut((3, 2), (3, 2));
+        assert_eq!(view.num_cols(), 0);
+        assert_eq!(view.num_rows(), 0);
+        drop(view);
+
+        let mut view = toodee.view_mut((0, 0), (2, 2));
+        let nested = view.view((1, 2), (1, 2));
+        assert_eq!(nested.num_cols(), 0);
+        assert_eq!(nested.num_rows(), 0);
+        let nested = view.view_mut((1, 2), (1, 2));
+        assert_eq!(nested.num_cols(), 0);
+        assert_eq!(nested.num_rows(), 0);
     }
 }
 
