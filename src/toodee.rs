@@ -419,6 +419,43 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         self.data.fill(fill);
     }
 
+    /// Swap/exchange the data between two columns.
+    fn swap_cols(&mut self, c1: usize, c2: usize) {
+        let num_cols = self.num_cols;
+        assert!(c1 < num_cols);
+        assert!(c2 < num_cols);
+
+        if c1 == c2 {
+            return;
+        }
+
+        let num_rows = self.num_rows;
+        if num_rows == 0 {
+            return;
+        }
+
+        let data = self.data.as_mut_ptr();
+
+        // SAFETY:
+        // - Both column indices are in bounds.
+        // - The backing vector contains num_rows * num_cols elements.
+        // - For each iteration, p1 and p2 point to valid elements in that row.
+        // - Advancing by num_cols keeps each pointer in bounds for the next row.
+        // - ptr::swap safely swaps the elements without creating aliased mutable references.
+        unsafe {
+            let mut p1 = data.add(c1);
+            let mut p2 = data.add(c2);
+
+            ptr::swap(p1, p2);
+
+            for _ in 1..num_rows {
+                p1 = p1.add(num_cols);
+                p2 = p2.add(num_cols);
+                ptr::swap(p1, p2);
+            }
+        }
+    }
+
     /// Swap/exchange the data between two rows.
     /// 
     /// # Panics
@@ -504,10 +541,17 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         let num_rows = self.num_rows;
         assert!(col1 < num_cols && col2 < num_cols);
         assert!(row1 < num_rows && row2 < num_rows);
+        let i = row1 * num_cols + col1;
+        let j = row2 * num_cols + col2;
+
+        // SAFETY:
+        // - The coordinate assertions establish that both indices are in bounds.
+        // - The backing vector contains num_rows * num_cols elements.
+        // - Both pointers are derived from the same allocation pointer.
+        // - ptr::swap supports identical pointers when i == j.
         unsafe {
-            let pa: *mut T = self.data.get_unchecked_mut(row1 * num_cols + col1);
-            let pb: *mut T = self.data.get_unchecked_mut(row2 * num_cols + col2);
-            ptr::swap(pa, pb);
+            let ptr = self.data.as_mut_ptr();
+            ptr::swap(ptr.add(i), ptr.add(j));
         }
     }
 }
