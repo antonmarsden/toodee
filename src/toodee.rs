@@ -12,7 +12,6 @@ use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 use alloc::vec::Drain;
-use alloc::vec::IntoIter;
 
 use crate::iter::*;
 use crate::view::*;
@@ -809,44 +808,48 @@ impl<T> TooDee<T> {
         let num_rows = self.num_rows;
         let new_len = self.data.len() - num_rows;
 
-        // Allocate before mutating `self`, so allocation failure leaves it unchanged.
-        let mut removed = Vec::with_capacity(num_rows);
-
-        // Move the column into its own allocation and compact the remaining elements
-        // in place. No user code runs while the vector length is zero.
+        // Compact in place from the last row backwards. Each removed element is
+        // moved into the unused tail of the same allocation, avoiding a second
+        // allocation. No user code runs while the Vec length is zero.
+        let drain_ptr;
         unsafe {
             let data = &mut self.data;
-            let ptr = data.as_mut_ptr();
+            let data_ptr = data.as_mut_ptr();
             data.set_len(0);
 
             let trailing = num_cols - index - 1;
-            for row in 0..num_rows {
+            for row in (0..num_rows).rev() {
                 let src_start = row * num_cols;
                 let dst_start = row * (num_cols - 1);
 
-                // Compact this row's prefix over the preceding removed elements.
-                if index > 0 {
+                // Copy trailing retained elements first, because their source
+                // positions can overlap the removed element's tail destination.
+                if trailing > 0 {
                     ptr::copy(
-                        ptr.add(src_start),
-                        ptr.add(dst_start),
-                        index,
+                        data_ptr.add(src_start + index + 1),
+                        data_ptr.add(dst_start + index),
+                        trailing,
                     );
                 }
 
-                // Move this row's removed element into the drain.
-                removed.push(ptr::read(ptr.add(src_start + index)));
+                // Moving backwards ensures the tail write cannot overwrite an
+                // unprocessed row. The trailing part of this row was copied above.
+                ptr::write(
+                    data_ptr.add(new_len + row),
+                    ptr::read(data_ptr.add(src_start + index)),
+                );
 
-                // Shift the rest of this row left by one element.
-                if trailing > 0 {
+                if index > 0 {
                     ptr::copy(
-                        ptr.add(src_start + index + 1),
-                        ptr.add(dst_start + index),
-                        trailing,
+                        data_ptr.add(src_start),
+                        data_ptr.add(dst_start),
+                        index,
                     );
                 }
             }
 
             data.set_len(new_len);
+            drain_ptr = data_ptr.add(new_len);
         }
 
         self.num_cols -= 1;
@@ -855,7 +858,9 @@ impl<T> TooDee<T> {
         }
 
         DrainCol {
-            iter: removed.into_iter(),
+            ptr: drain_ptr,
+            front: 0,
+            back: num_rows,
             _marker: PhantomData,
         }
     }
@@ -1049,8 +1054,11 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
 /// Forgetting this iterator may leak the removed elements, but leaves the `TooDee` valid.
 #[derive(Debug)]
 pub struct DrainCol<'a, T> {
-    iter: IntoIter<T>,
-    // Preserve the exclusive borrow semantics of the previous drain API.
+    // The removed column occupies the unused tail of TooDee's allocation.
+    ptr: *mut T,
+    front: usize,
+    back: usize,
+    // Keeps the allocation alive and preserves exclusive borrow semantics.
     _marker: PhantomData<&'a mut TooDee<T>>,
 }
 
@@ -1059,35 +1067,71 @@ impl<T> Iterator for DrainCol<'_, T> {
 
     #[inline]
     fn next(&mut self) -> Option<T> {
-        self.iter.next()
+        if self.front == self.back {
+            return None;
+        }
+        let index = self.front;
+        self.front += 1;
+        // SAFETY: this element is in the unconsumed tail and is yielded once.
+        Some(unsafe { ptr::read(self.ptr.add(index)) })
     }
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
+        let remaining = self.back - self.front;
+        (remaining, Some(remaining))
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth(n)
+        if n >= self.back - self.front {
+            self.front = self.back;
+            return None;
+        }
+        self.front += n;
+        self.next()
     }
 
     #[inline]
-    fn last(self) -> Option<Self::Item> {
-        self.iter.last()
+    fn last(mut self) -> Option<Self::Item> {
+        self.next_back()
     }
 }
 
 impl<T> DoubleEndedIterator for DrainCol<'_, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
-        self.iter.next_back()
+        if self.front == self.back {
+            return None;
+        }
+        self.back -= 1;
+        // SAFETY: this element is in the unconsumed tail and is yielded once.
+        Some(unsafe { ptr::read(self.ptr.add(self.back)) })
     }
 
     #[inline]
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
-        self.iter.nth_back(n)
+        if n >= self.back - self.front {
+            self.front = self.back;
+            return None;
+        }
+        self.back -= n;
+        self.next_back()
     }
 }
 
 impl<T> ExactSizeIterator for DrainCol<'_, T> {}
+
+impl<T> Drop for DrainCol<'_, T> {
+    fn drop(&mut self) {
+        // SAFETY: the drain exclusively owns the remaining initialized elements
+        // in this range. The Vec length ends before this tail, and the lifetime
+        // marker keeps the allocation alive until this drain is dropped.
+        unsafe {
+            ptr::drop_in_place(ptr::slice_from_raw_parts_mut(
+                self.ptr.add(self.front),
+                self.back - self.front,
+            ));
+        }
+    }
+}
