@@ -821,16 +821,26 @@ impl<T> TooDee<T> {
 
             let trailing = num_cols - index - 1;
             for row in 0..num_rows {
-                let row_start = row * num_cols;
+                let src_start = row * num_cols;
+                let dst_start = row * (num_cols - 1);
+
+                // Compact this row's prefix over the preceding removed elements.
+                if index > 0 {
+                    ptr::copy(
+                        ptr.add(src_start),
+                        ptr.add(dst_start),
+                        index,
+                    );
+                }
 
                 // Move this row's removed element into the drain.
-                removed.push(ptr::read(ptr.add(row_start + index)));
+                removed.push(ptr::read(ptr.add(src_start + index)));
 
                 // Shift the rest of this row left by one element.
                 if trailing > 0 {
                     ptr::copy(
-                        ptr.add(row_start + index + 1),
-                        ptr.add(row_start + index),
+                        ptr.add(src_start + index + 1),
+                        ptr.add(dst_start + index),
                         trailing,
                     );
                 }
