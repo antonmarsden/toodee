@@ -18,19 +18,14 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
     assert!(stride >= toodee.num_cols());
     let mut num_cols = end.0 - start.0;
     let mut num_rows = end.1 - start.1;
-    // zero out dimensions for empty arrays
+    // Empty views must use a valid range even when their coordinates would
+    // otherwise produce an offset beyond the backing slice (for example, a
+    // zero-sized view at the end of the final row).
     if num_cols == 0 || num_rows == 0 {
-        num_cols = 0;
-        num_rows = 0;
+        return (0, 0, 0..0);
     }
     let data_start = start.1 * stride + start.0;
-    let data_len = {
-        if num_rows == 0 {
-            0
-        } else {
-            (num_rows - 1) * stride + num_cols
-        }
-    };
+    let data_len = (num_rows - 1) * stride + num_cols;
     (num_cols, num_rows, data_start..data_start + data_len)
 }
 
@@ -48,6 +43,7 @@ mod tests {
         assert_eq!(num_rows, 2);
         assert_eq!(range, 4..10);
     }
+
 }
 
 /// *Internal only* functions for calculating vector ranges.
