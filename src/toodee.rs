@@ -435,13 +435,17 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         // SAFETY:
         // - Both column indices are in bounds.
         // - The backing vector contains num_rows * num_cols elements.
-        // - For each row, both calculated offsets are within the vector.
-        // - The pointers are derived from the same allocation, and ptr::swap
-        //   safely swaps the elements without creating aliased mutable references.
+        // - For each iteration, p1 and p2 point to valid elements in that row.
+        // - Advancing by num_cols keeps each pointer in bounds for the next row.
+        // - ptr::swap safely swaps the elements without creating aliased mutable references.
         unsafe {
-            for row in 0..num_rows {
-                let offset = row * num_cols;
-                ptr::swap(data.add(offset + c1), data.add(offset + c2));
+            let mut p1 = data.add(c1);
+            let mut p2 = data.add(c2);
+
+            for _ in 0..num_rows {
+                ptr::swap(p1, p2);
+                p1 = p1.add(num_cols);
+                p2 = p2.add(num_cols);
             }
         }
     }
