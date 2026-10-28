@@ -442,10 +442,15 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
             let mut p1 = data.add(c1);
             let mut p2 = data.add(c2);
 
-            for _ in 0..num_rows {
+            for row in 0..num_rows {
                 ptr::swap(p1, p2);
-                p1 = p1.add(num_cols);
-                p2 = p2.add(num_cols);
+
+                // Do not advance after the final row: for nonzero columns,
+                // that could move the pointer beyond one-past-the-end.
+                if row + 1 < num_rows {
+                    p1 = p1.add(num_cols);
+                    p2 = p2.add(num_cols);
+                }
             }
         }
     }
