@@ -2,9 +2,9 @@ use core::fmt;
 use core::fmt::{ Formatter, Debug };
 use core::ops::{Index, IndexMut};
 use core::iter::IntoIterator;
-use core::ptr::{self, NonNull};
+use core::ptr;
+use core::marker::PhantomData;
 use core::mem;
-use core::slice;
 
 extern crate alloc;
 
@@ -935,23 +935,60 @@ impl<T> TooDee<T> {
     {
         assert!(index < self.num_cols);
 
-        let v = &mut self.data;
         let num_cols = self.num_cols;
-        let slice_len = v.len() - num_cols + 1;
+        let num_rows = self.num_rows;
+        let new_len = self.data.len() - num_rows;
+
+        // Allocate before mutating `self`, so allocation failure leaves it unchanged.
+        let mut removed = Vec::with_capacity(num_rows);
+
+        // Move the column into its own allocation and compact the remaining elements
+        // in place. No user code runs while the vector length is zero.
         unsafe {
-            // set the vec length to 0 to amplify any leaks
-            v.set_len(0);
-            DrainCol {
-               iter : Col {
-                   skip : num_cols - 1,
-                   v : slice::from_raw_parts_mut(v.as_mut_ptr().add(index), slice_len),
-               },
-               col : index,
-               toodee : NonNull::from(self),
+            let data = &mut self.data;
+            let ptr = data.as_mut_ptr();
+            data.set_len(0);
+
+            let trailing = num_cols - index - 1;
+            for row in 0..num_rows {
+                let src_start = row * num_cols;
+                let dst_start = row * (num_cols - 1);
+
+                // Compact this row's prefix over the preceding removed elements.
+                if index > 0 {
+                    ptr::copy(
+                        ptr.add(src_start),
+                        ptr.add(dst_start),
+                        index,
+                    );
+                }
+
+                // Move this row's removed element into the drain.
+                removed.push(ptr::read(ptr.add(src_start + index)));
+
+                // Shift the rest of this row left by one element.
+                if trailing > 0 {
+                    ptr::copy(
+                        ptr.add(src_start + index + 1),
+                        ptr.add(dst_start + index),
+                        trailing,
+                    );
+                }
             }
+
+            data.set_len(new_len);
+        }
+
+        self.num_cols -= 1;
+        if self.num_cols == 0 {
+            self.num_rows = 0;
+        }
+
+        DrainCol {
+            iter: removed.into_iter(),
+            _marker: PhantomData,
         }
     }
-
     /// Inserts new `data` into the array at the specified `col`.
     /// 
     /// # Panics
@@ -1150,99 +1187,51 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
     }
 }
 
-/// Drains a column.
+/// An iterator over the elements removed from a column.
+///
+/// The column is removed from the `TooDee` before this iterator is returned.
+/// Forgetting this iterator may leak the removed elements, but leaves the `TooDee` valid.
 #[derive(Debug)]
 pub struct DrainCol<'a, T> {
-    /// Current remaining elements to remove
-    iter: Col<'a, T>,
-    col: usize,
-    toodee: NonNull<TooDee<T>>,
+    iter: IntoIter<T>,
+    // Preserve the exclusive borrow semantics of the previous drain API.
+    _marker: PhantomData<&'a mut TooDee<T>>,
 }
-
-// NonNull is !Sync, so we need to implement Sync manually
-unsafe impl<T: Sync> Sync for DrainCol<'_, T> {}
-
-// NonNull is !Send, so we need to implement Send manually
-unsafe impl<T: Send> Send for DrainCol<'_, T> {}
 
 impl<T> Iterator for DrainCol<'_, T> {
     type Item = T;
 
     #[inline]
     fn next(&mut self) -> Option<T> {
-        self.iter.next().map(|elt| unsafe { ptr::read(elt as *const _) })
+        self.iter.next()
     }
 
+    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
+    }
+
+    #[inline]
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth(n)
+    }
+
+    #[inline]
+    fn last(self) -> Option<Self::Item> {
+        self.iter.last()
     }
 }
 
 impl<T> DoubleEndedIterator for DrainCol<'_, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
-        self.iter.next_back().map(|elt| unsafe { ptr::read(elt as *const _) })
+        self.iter.next_back()
+    }
+
+    #[inline]
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter.nth_back(n)
     }
 }
 
-impl<T> ExactSizeIterator for DrainCol<'_, T> { }
-
-impl<T> Drop for DrainCol<'_, T> {
-
-    fn drop(&mut self) {
-        /// Continues dropping the remaining elements in the `DrainCol`, then repositions the
-        /// un-`Drain`ed elements to restore the original `TooDee`.
-        struct DropGuard<'r, 'a, T>(&'r mut DrainCol<'a, T>);
-
-        impl<'r, 'a, T> Drop for DropGuard<'r, 'a, T> {
-            fn drop(&mut self) {
-
-                self.0.for_each(drop);
-                
-                let col = self.0.col;
-
-                unsafe {
-                    
-                    let toodee = self.0.toodee.as_mut();
-
-                    let vec = &mut toodee.data;
-
-                    let mut dest = vec.as_mut_ptr().add(col);
-                    let mut src = dest.add(1);
-                    let orig_cols = toodee.num_cols;
-                    let new_cols = orig_cols - 1;
-                    
-                    let num_rows = toodee.num_rows;
-                    
-                    for _ in 1..num_rows {
-                        ptr::copy(src, dest, new_cols);
-                        src = src.add(orig_cols);
-                        dest = dest.add(new_cols);
-                    }
-                    
-                    ptr::copy(src, dest, orig_cols - col - 1);
-                    
-                    toodee.num_cols -= 1;
-                    if toodee.num_cols == 0 {
-                        toodee.num_rows = 0;
-                    }
-
-                    // Set the new length based on the col/row counts
-                    vec.set_len(toodee.num_cols * toodee.num_rows);
-                }
-                
-            }
-        }
-
-        // exhaust self first
-        while let Some(item) = self.next() {
-            let guard = DropGuard(self);
-            drop(item);
-            mem::forget(guard);
-        }
-
-        // Drop a `DropGuard` to move back the non-drained tail of `self`.
-        DropGuard(self);
-    }
-}
-
+impl<T> ExactSizeIterator for DrainCol<'_, T> {}
