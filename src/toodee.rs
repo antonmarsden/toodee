@@ -143,8 +143,8 @@ impl<T> Drop for InsertColRollback<'_, T> {
             for row in 0..self.rows {
                 let src = p.add(row * new_cols);
                 let dst = p.add(row * self.original_cols);
-                ptr::copy(src.add(self.index + 1), dst.add(self.index), suffix_len);
                 ptr::copy(src, dst, prefix_len);
+                ptr::copy(src.add(self.index + 1), dst.add(self.index), suffix_len);
             }
 
             self.vec.set_len(self.original_len);
