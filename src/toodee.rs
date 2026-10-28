@@ -907,7 +907,7 @@ impl<T> TooDee<T> {
     /// 
     /// Panics if the data's length doesn't match the length of existing rows (if any).
     pub fn push_col<I>(&mut self, data: impl IntoIterator<Item=T, IntoIter=I>)
-    where I : Iterator<Item=T> + ExactSizeIterator + DoubleEndedIterator
+    where I : Iterator<Item=T> + ExactSizeIterator
     {
         self.insert_col(self.num_cols, data);
     }
