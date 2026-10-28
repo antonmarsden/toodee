@@ -817,6 +817,10 @@ impl<T> TooDee<T> {
             self.data[position..end].rotate_left(1);
         }
 
+        // Each rotation appends to the front of the tail, so reverse the tail
+        // once to preserve the column's original top-to-bottom iteration order.
+        self.data[new_len..].reverse();
+
         let drain_ptr;
         unsafe {
             let data = &mut self.data;
