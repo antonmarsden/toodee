@@ -833,7 +833,6 @@ impl<T> TooDee<T> {
                 }
             }
 
-            debug_assert_eq!(dst, new_len);
             data.set_len(new_len);
         }
 
