@@ -420,6 +420,18 @@ mod toodee_tests {
         assert_eq!(toodee[1][1], 16);
     }
 
+    #[test]
+    fn insert_row_middle_and_end_preserves_order() {
+        let mut toodee = TooDee::from_vec(2, 3, (0u32..6).collect());
+
+        toodee.insert_row(1, vec![8, 9]);
+        assert_eq!(toodee.data(), &[0, 1, 8, 9, 2, 3, 4, 5]);
+
+        toodee.push_row(vec![6, 7]);
+        assert_eq!(toodee.data(), &[0, 1, 8, 9, 2, 3, 4, 5, 6, 7]);
+        assert_eq!(toodee.size(), (2, 5));
+    }
+
 
     #[test]
     #[should_panic(expected = "assertion failed")]
