@@ -822,8 +822,10 @@ impl<T> TooDee<T> {
                 let src_start = row * num_cols;
                 let dst_start = row * (num_cols - 1);
 
-                // Copy trailing retained elements first, because their source
-                // positions can overlap the removed element's tail destination.
+                // Read the removed value before compaction, since copying the
+                // trailing elements can overwrite its old slot.
+                let removed_value = ptr::read(data_ptr.add(src_start + index));
+
                 if trailing > 0 {
                     ptr::copy(
                         data_ptr.add(src_start + index + 1),
@@ -833,11 +835,8 @@ impl<T> TooDee<T> {
                 }
 
                 // Moving backwards ensures the tail write cannot overwrite an
-                // unprocessed row. The trailing part of this row was copied above.
-                ptr::write(
-                    data_ptr.add(new_len + row),
-                    ptr::read(data_ptr.add(src_start + index)),
-                );
+                // unprocessed row.
+                ptr::write(data_ptr.add(new_len + row), removed_value);
 
                 if index > 0 {
                     ptr::copy(
