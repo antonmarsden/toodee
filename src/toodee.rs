@@ -35,17 +35,33 @@ pub struct TooDee<T> {
     num_cols: usize,
 }
 
-/// Restores a vector's original length if an operation unwinds.
-struct VecLenRollback<'a, T> {
+/// Restores the original row layout if inserting a row unwinds.
+struct InsertRowRollback<'a, T> {
     vec: &'a mut Vec<T>,
-    len: usize,
+    original_len: usize,
+    start: usize,
+    row_len: usize,
+    suffix_len: usize,
+    initialized: usize,
     armed: bool,
 }
 
-impl<'a, T> VecLenRollback<'a, T> {
-    fn new(vec: &'a mut Vec<T>) -> Self {
-        let len = vec.len();
-        Self { vec, len, armed: true }
+impl<'a, T> InsertRowRollback<'a, T> {
+    fn new(
+        vec: &'a mut Vec<T>,
+        original_len: usize,
+        start: usize,
+        row_len: usize,
+    ) -> Self {
+        Self {
+            vec,
+            original_len,
+            start,
+            row_len,
+            suffix_len: original_len - start,
+            initialized: 0,
+            armed: true,
+        }
     }
 
     fn disarm(&mut self) {
@@ -53,10 +69,28 @@ impl<'a, T> VecLenRollback<'a, T> {
     }
 }
 
-impl<T> Drop for VecLenRollback<'_, T> {
+impl<T> Drop for InsertRowRollback<'_, T> {
     fn drop(&mut self) {
-        if self.armed {
-            self.vec.truncate(self.len);
+        if !self.armed {
+            return;
+        }
+
+        unsafe {
+            let p = self.vec.as_mut_ptr();
+
+            // Drop the portion of the inserted row that was already written.
+            for i in 0..self.initialized {
+                ptr::drop_in_place(p.add(self.start + i));
+            }
+
+            // Move the shifted suffix back over the insertion gap and restore
+            // the vector's original length.
+            ptr::copy(
+                p.add(self.start + self.row_len),
+                p.add(self.start),
+                self.suffix_len,
+            );
+            self.vec.set_len(self.original_len);
         }
     }
 }
@@ -710,21 +744,42 @@ impl<T> TooDee<T> {
         };
         let original_len = self.data.len();
         let new_len = original_len.checked_add(row_len).expect("capacity overflow");
-        let start = index * num_cols;
+        let start = index.checked_mul(num_cols).expect("capacity overflow");
 
-        // Reserve before installing the rollback guard, so allocation failure
-        // cannot leave any partially appended row behind.
+        // Ensure the suffix can be shifted without reallocating partway through.
         self.data.reserve(row_len);
-        let mut guard = VecLenRollback::new(&mut self.data);
 
-        // Vec::extend keeps its length valid if the iterator panics. The guard
-        // then truncates any partially appended row during unwinding.
-        guard.vec.extend(iter);
-        assert_eq!(guard.vec.len(), new_len, "unexpected iterator length");
+        // Shift the suffix right once, then make the insertion gap available for
+        // direct writes from the iterator. The rollback guard restores the
+        // original layout if obtaining or writing an item panics.
+        unsafe {
+            let p = self.data.as_mut_ptr();
+            ptr::copy(p.add(start), p.add(start + row_len), original_len - start);
+            self.data.set_len(start);
+        }
+        let mut guard = InsertRowRollback::new(&mut self.data, original_len, start, row_len);
 
-        // The new row is at the tail. Rotating the suffix right by one row
-        // moves it into place while preserving the order of the other rows.
-        guard.vec[start..].rotate_right(row_len);
+        for item in iter {
+            if guard.initialized == row_len {
+                // ExactSizeIterator is expected to honour its length, but do
+                // not write beyond the reserved insertion gap if it does not.
+                drop(item);
+                panic!("unexpected iterator length");
+            }
+
+            let offset = start + guard.initialized;
+            unsafe {
+                guard.vec.as_mut_ptr().add(offset).write(item);
+            }
+            guard.initialized += 1;
+        }
+
+        assert_eq!(guard.initialized, row_len, "unexpected iterator length");
+
+        // All elements are now initialized in their final positions.
+        unsafe {
+            guard.vec.set_len(new_len);
+        }
         guard.disarm();
         drop(guard);
 
