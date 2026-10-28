@@ -619,6 +619,43 @@ mod toodee_tests {
     }
 
     #[test]
+    fn insert_col_success_drops_each_value_exactly_once() {
+        let drops = Arc::new(AtomicUsize::new(0));
+        {
+            let values = (0..4)
+                .map(|value| DropDetector::with_drop_counter(value, Arc::clone(&drops)))
+                .collect();
+            let mut toodee = TooDee::from_vec(2, 2, values);
+            let inserted = vec![
+                DropDetector::with_drop_counter(10, Arc::clone(&drops)),
+                DropDetector::with_drop_counter(11, Arc::clone(&drops)),
+            ];
+
+            toodee.insert_col(1, inserted);
+
+            assert_eq!(drops.load(Ordering::SeqCst), 0);
+            assert_eq!(toodee.size(), (3, 2));
+            assert_eq!(
+                toodee.data().iter().map(|item| item.value).collect::<Vec<_>>(),
+                vec![0, 10, 1, 2, 11, 3]
+            );
+        }
+        assert_eq!(drops.load(Ordering::SeqCst), 6);
+    }
+
+    #[test]
+    fn insert_col_short_iterator_panics_and_preserves_layout() {
+        let mut toodee = TooDee::from_vec(2, 2, vec![0, 1, 2, 3]);
+
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            toodee.insert_col(1, IteratorWithWrongLength());
+        })).is_err());
+
+        assert_eq!(toodee.size(), (2, 2));
+        assert_eq!(toodee.data(), &[0, 1, 2, 3]);
+    }
+
+    #[test]
     fn insert_col_1_0() {
         let mut toodee : TooDee<u32> = TooDee::from_vec(4, 1, (0u32..4).collect());
         toodee.insert_col(0, 7..8);
