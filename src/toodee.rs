@@ -541,11 +541,7 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         let num_rows = self.num_rows;
         assert!(col1 < num_cols && col2 < num_cols);
         assert!(row1 < num_rows && row2 < num_rows);
-        unsafe {
-            let pa: *mut T = self.data.get_unchecked_mut(row1 * num_cols + col1);
-            let pb: *mut T = self.data.get_unchecked_mut(row2 * num_cols + col2);
-            ptr::swap(pa, pb);
-        }
+        self.data.swap(row1 * num_cols + col1, row2 * num_cols + col2);
     }
 }
 
