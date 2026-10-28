@@ -628,9 +628,11 @@ mod toodee_tests {
     #[test]
     fn remove_col_drain_preserves_iteration_order_and_remaining_data() {
         let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
-        let mut drain = toodee.remove_col(1);
+        {
+            let mut drain = toodee.remove_col(1);
+            assert_eq!(drain.by_ref().collect::<Vec<_>>(), vec![1, 4, 7]);
+        }
         assert_eq!(toodee.size(), (2, 3));
-        assert_eq!(drain.by_ref().collect::<Vec<_>>(), vec![1, 4, 7]);
         assert_eq!(toodee.data(), &[0, 2, 3, 5, 6, 8]);
     }
 
