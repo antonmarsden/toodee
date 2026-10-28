@@ -35,6 +35,32 @@ pub struct TooDee<T> {
     num_cols: usize,
 }
 
+/// Restores a vector's original length if an operation unwinds.
+struct VecLenRollback<'a, T> {
+    vec: &'a mut Vec<T>,
+    len: usize,
+    armed: bool,
+}
+
+impl<'a, T> VecLenRollback<'a, T> {
+    fn new(vec: &'a mut Vec<T>) -> Self {
+        let len = vec.len();
+        Self { vec, len, armed: true }
+    }
+
+    fn disarm(&mut self) {
+        self.armed = false;
+    }
+}
+
+impl<T> Drop for VecLenRollback<'_, T> {
+    fn drop(&mut self) {
+        if self.armed {
+            self.vec.truncate(self.len);
+        }
+    }
+}
+
 /// Custom `Default` implementation because `T` does not need to implement `Default`.
 /// See rust issue [#26925](https://github.com/rust-lang/rust/issues/26925)
 impl<T> Default for TooDee<T> {
@@ -670,44 +696,47 @@ impl<T> TooDee<T> {
     {
         let iter = data.into_iter();
         let row_len = iter.len();
-        // Validate arguments before consuming the iterator, so an invalid
-        // index or length does not destructively drain the caller's data.
+
+        // Validate arguments before consuming the iterator.
         assert!(index <= self.num_rows);
         if self.num_rows != 0 {
             assert_eq!(self.num_cols, row_len);
         }
-        let mut row: Vec<T> = iter.collect();
-        assert_eq!(row.len(), row_len, "unexpected iterator length");
+
+        let num_cols = if self.num_rows == 0 {
+            row_len
+        } else {
+            self.num_cols
+        };
+        let original_len = self.data.len();
+        let new_len = original_len.checked_add(row_len).expect("capacity overflow");
+        let start = index * num_cols;
+
+        // Reserve before installing the rollback guard, so allocation failure
+        // cannot leave any partially appended row behind.
+        self.data.reserve(row_len);
+        let mut guard = VecLenRollback::new(&mut self.data);
+
+        // Vec::extend keeps its length valid if the iterator panics. The guard
+        // then truncates any partially appended row during unwinding.
+        guard.vec.extend(iter);
+        assert_eq!(guard.vec.len(), new_len, "unexpected iterator length");
+
+        // The new row is at the tail. Rotating the suffix right by one row
+        // moves it into place while preserving the order of the other rows.
+        guard.vec[start..].rotate_right(row_len);
+        guard.disarm();
+        drop(guard);
+
         if self.num_rows == 0 {
             self.num_cols = row_len;
         }
-        
-        self.reserve(self.num_cols);
 
-        let start = index * self.num_cols;
-        let len = self.data.len();
-
-        unsafe {
-
-            // `row` has already consumed the iterator, so no user code can panic below.
-            self.data.set_len(start);
-            
-            let p = self.data.as_mut_ptr().add(start);
-            // shift everything to make space for the new row
-            let suffix = p.add(self.num_cols);
-            ptr::copy(p, suffix, len - start);
-            
-            ptr::copy_nonoverlapping(row.as_ptr(), p, self.num_cols);
-            row.set_len(0);
-
-            self.data.set_len(len + self.num_cols);
-        }
-
-        // update the number of rows
+        // Preserve the existing convention that a zero-width row does not
+        // create a non-empty TooDee.
         if self.num_cols > 0 {
             self.num_rows += 1;
         }
-
     }
 
     /// Removes the specified row from the array and returns it as a `Drain`
