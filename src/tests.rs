@@ -312,6 +312,8 @@ mod toodee_tests {
         assert_eq!(toodee[9][9], 95);
         println!("{:?}", toodee);
         toodee.swap_cols(6,6);
+        assert_eq!(toodee[0][6], 6);
+        assert_eq!(toodee[9][6], 96);
         assert_eq!(toodee[6][0], 60);
     }
 
