@@ -819,17 +819,20 @@ impl<T> TooDee<T> {
             let ptr = data.as_mut_ptr();
             data.set_len(0);
 
-            let mut dst = 0;
+            let trailing = num_cols - index - 1;
             for row in 0..num_rows {
-                for col in 0..num_cols {
-                    let src = row * num_cols + col;
-                    let item = ptr::read(ptr.add(src));
-                    if col == index {
-                        removed.push(item);
-                    } else {
-                        ptr::write(ptr.add(dst), item);
-                        dst += 1;
-                    }
+                let row_start = row * num_cols;
+
+                // Move this row's removed element into the drain.
+                removed.push(ptr::read(ptr.add(row_start + index)));
+
+                // Shift the rest of this row left by one element.
+                if trailing > 0 {
+                    ptr::copy(
+                        ptr.add(row_start + index + 1),
+                        ptr.add(row_start + index),
+                        trailing,
+                    );
                 }
             }
 
