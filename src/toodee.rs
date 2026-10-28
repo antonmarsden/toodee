@@ -12,6 +12,7 @@ use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 use alloc::vec::Drain;
+use alloc::vec::IntoIter;
 
 use crate::iter::*;
 use crate::view::*;
@@ -808,25 +809,43 @@ impl<T> TooDee<T> {
         let num_rows = self.num_rows;
         let new_len = self.data.len() - num_rows;
 
-        // Stable in-place partition: repeatedly rotate each removed element to
-        // the end of the not-yet-partitioned prefix. This avoids allocating a
-        // second buffer, at the cost of potentially quadratic element movement.
-        for row in 0..num_rows {
-            let position = index + row * (num_cols - 1);
-            let end = self.data.len() - row;
-            self.data[position..end].rotate_left(1);
-        }
+        // Allocate before mutating `self`, so allocation failure leaves it unchanged.
+        let mut removed = Vec::with_capacity(num_rows);
 
-        // Each rotation appends to the front of the tail, so reverse the tail
-        // once to preserve the column's original top-to-bottom iteration order.
-        self.data[new_len..].reverse();
-
-        let drain_ptr;
+        // Move the column into its own allocation and compact the remaining elements
+        // in place. No user code runs while the vector length is zero.
         unsafe {
             let data = &mut self.data;
-            drain_ptr = data.as_mut_ptr().add(new_len);
-            // The tail now contains the removed column in row order. Exclude it
-            // from Vec ownership; DrainCol will drop any elements not yielded.
+            let ptr = data.as_mut_ptr();
+            data.set_len(0);
+
+            let trailing = num_cols - index - 1;
+            for row in 0..num_rows {
+                let src_start = row * num_cols;
+                let dst_start = row * (num_cols - 1);
+
+                // Compact this row's prefix over the preceding removed elements.
+                if index > 0 {
+                    ptr::copy(
+                        ptr.add(src_start),
+                        ptr.add(dst_start),
+                        index,
+                    );
+                }
+
+                // Move this row's removed element into the drain.
+                removed.push(ptr::read(ptr.add(src_start + index)));
+
+                // Shift the rest of this row left by one element.
+                if trailing > 0 {
+                    ptr::copy(
+                        ptr.add(src_start + index + 1),
+                        ptr.add(dst_start + index),
+                        trailing,
+                    );
+                }
+            }
+
             data.set_len(new_len);
         }
 
@@ -836,9 +855,7 @@ impl<T> TooDee<T> {
         }
 
         DrainCol {
-            ptr: drain_ptr,
-            front: 0,
-            back: num_rows,
+            iter: removed.into_iter(),
             _marker: PhantomData,
         }
     }
@@ -1032,11 +1049,8 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
 /// Forgetting this iterator may leak the removed elements, but leaves the `TooDee` valid.
 #[derive(Debug)]
 pub struct DrainCol<'a, T> {
-    // The removed column occupies the unused tail of TooDee's allocation.
-    ptr: *mut T,
-    front: usize,
-    back: usize,
-    // Keeps the allocation alive and preserves exclusive borrow semantics.
+    iter: IntoIter<T>,
+    // Preserve the exclusive borrow semantics of the previous drain API.
     _marker: PhantomData<&'a mut TooDee<T>>,
 }
 
@@ -1045,71 +1059,35 @@ impl<T> Iterator for DrainCol<'_, T> {
 
     #[inline]
     fn next(&mut self) -> Option<T> {
-        if self.front == self.back {
-            return None;
-        }
-        let index = self.front;
-        self.front += 1;
-        // SAFETY: this element is in the unconsumed tail and is yielded once.
-        Some(unsafe { ptr::read(self.ptr.add(index)) })
+        self.iter.next()
     }
 
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let remaining = self.back - self.front;
-        (remaining, Some(remaining))
+        self.iter.size_hint()
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        if n >= self.back - self.front {
-            self.front = self.back;
-            return None;
-        }
-        self.front += n;
-        self.next()
+        self.iter.nth(n)
     }
 
     #[inline]
-    fn last(mut self) -> Option<Self::Item> {
-        self.next_back()
+    fn last(self) -> Option<Self::Item> {
+        self.iter.last()
     }
 }
 
 impl<T> DoubleEndedIterator for DrainCol<'_, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
-        if self.front == self.back {
-            return None;
-        }
-        self.back -= 1;
-        // SAFETY: this element is in the unconsumed tail and is yielded once.
-        Some(unsafe { ptr::read(self.ptr.add(self.back)) })
+        self.iter.next_back()
     }
 
     #[inline]
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
-        if n >= self.back - self.front {
-            self.front = self.back;
-            return None;
-        }
-        self.back -= n;
-        self.next_back()
+        self.iter.nth_back(n)
     }
 }
 
 impl<T> ExactSizeIterator for DrainCol<'_, T> {}
-
-impl<T> Drop for DrainCol<'_, T> {
-    fn drop(&mut self) {
-        // SAFETY: the drain exclusively owns the remaining initialized elements
-        // in this range. The Vec length ends before this tail, and the lifetime
-        // marker keeps the allocation alive until this drain is dropped.
-        unsafe {
-            ptr::drop_in_place(ptr::slice_from_raw_parts_mut(
-                self.ptr.add(self.front),
-                self.back - self.front,
-            ));
-        }
-    }
-}
