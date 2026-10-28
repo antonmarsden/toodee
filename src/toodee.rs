@@ -425,8 +425,24 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         assert!(c1 < num_cols);
         assert!(c2 < num_cols);
 
-        for row in 0..self.num_rows {
-            self.data.swap(row * num_cols + c1, row * num_cols + c2);
+        if c1 == c2 {
+            return;
+        }
+
+        let num_rows = self.num_rows;
+        let data = self.data.as_mut_ptr();
+
+        // SAFETY:
+        // - Both column indices are in bounds.
+        // - The backing vector contains num_rows * num_cols elements.
+        // - For each row, both calculated offsets are within the vector.
+        // - The pointers are derived from the same allocation, and ptr::swap
+        //   safely swaps the elements without creating aliased mutable references.
+        unsafe {
+            for row in 0..num_rows {
+                let offset = row * num_cols;
+                ptr::swap(data.add(offset + c1), data.add(offset + c2));
+            }
         }
     }
 
