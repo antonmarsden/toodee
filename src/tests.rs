@@ -139,6 +139,18 @@ mod toodee_tests {
         }
     }
 
+    struct ShortU32Iterator();
+
+    impl Iterator for ShortU32Iterator {
+        type Item = u32;
+
+        fn next(&mut self) -> Option<Self::Item> { None }
+    }
+
+    impl ExactSizeIterator for ShortU32Iterator {
+        fn len(&self) -> usize { 1 }
+    }
+
     struct IteratorWithWrongLength();
     
     impl Iterator for IteratorWithWrongLength {
@@ -648,7 +660,7 @@ mod toodee_tests {
         let mut toodee = TooDee::from_vec(2, 2, vec![0, 1, 2, 3]);
 
         assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            toodee.insert_col(1, IteratorWithWrongLength());
+            toodee.insert_col(1, ShortU32Iterator());
         })).is_err());
 
         assert_eq!(toodee.size(), (2, 2));
