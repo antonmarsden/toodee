@@ -808,47 +808,22 @@ impl<T> TooDee<T> {
         let num_rows = self.num_rows;
         let new_len = self.data.len() - num_rows;
 
-        // Compact in place from the last row backwards. Each removed element is
-        // moved into the unused tail of the same allocation, avoiding a second
-        // allocation. No user code runs while the Vec length is zero.
+        // Stable in-place partition: repeatedly rotate each removed element to
+        // the end of the not-yet-partitioned prefix. This avoids allocating a
+        // second buffer, at the cost of potentially quadratic element movement.
+        for row in 0..num_rows {
+            let position = index + row * (num_cols - 1);
+            let end = self.data.len() - row;
+            self.data[position..end].rotate_left(1);
+        }
+
         let drain_ptr;
         unsafe {
             let data = &mut self.data;
-            let data_ptr = data.as_mut_ptr();
-            data.set_len(0);
-
-            let trailing = num_cols - index - 1;
-            for row in (0..num_rows).rev() {
-                let src_start = row * num_cols;
-                let dst_start = row * (num_cols - 1);
-
-                // Read the removed value before compaction, since copying the
-                // trailing elements can overwrite its old slot.
-                let removed_value = ptr::read(data_ptr.add(src_start + index));
-
-                if trailing > 0 {
-                    ptr::copy(
-                        data_ptr.add(src_start + index + 1),
-                        data_ptr.add(dst_start + index),
-                        trailing,
-                    );
-                }
-
-                // Moving backwards ensures the tail write cannot overwrite an
-                // unprocessed row.
-                ptr::write(data_ptr.add(new_len + row), removed_value);
-
-                if index > 0 {
-                    ptr::copy(
-                        data_ptr.add(src_start),
-                        data_ptr.add(dst_start),
-                        index,
-                    );
-                }
-            }
-
+            drain_ptr = data.as_mut_ptr().add(new_len);
+            // The tail now contains the removed column in row order. Exclude it
+            // from Vec ownership; DrainCol will drop any elements not yielded.
             data.set_len(new_len);
-            drain_ptr = data_ptr.add(new_len);
         }
 
         self.num_cols -= 1;
