@@ -88,6 +88,18 @@ mod toodee_tests {
         }
     }
 
+    impl<V> DoubleEndedIterator for YieldThenPanic<V> {
+        fn next_back(&mut self) -> Option<Self::Item> {
+            match self.item.take() {
+                Some(item) => {
+                    self.remaining -= 1;
+                    Some(item)
+                }
+                None => panic!("Iterator panicked after yielding an item"),
+            }
+        }
+    }
+
     impl<V> ExactSizeIterator for YieldThenPanic<V> {
         fn len(&self) -> usize { self.remaining }
     }
