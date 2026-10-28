@@ -419,6 +419,17 @@ impl<T> TooDeeOpsMut<T> for TooDee<T> {
         self.data.fill(fill);
     }
 
+    /// Swap/exchange the data between two columns.
+    fn swap_cols(&mut self, c1: usize, c2: usize) {
+        let num_cols = self.num_cols;
+        assert!(c1 < num_cols);
+        assert!(c2 < num_cols);
+
+        for row in 0..self.num_rows {
+            self.data.swap(row * num_cols + c1, row * num_cols + c2);
+        }
+    }
+
     /// Swap/exchange the data between two rows.
     /// 
     /// # Panics
