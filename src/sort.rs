@@ -95,15 +95,13 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         
         // Apply the swap trace to each row. For larger arrays, this approach is faster than applying swap_cols() directly.
         for r in self.rows_mut() {
+            let ptr = r.as_mut_ptr();
             for i in swap_trace.iter() {
-                // The swap indices will definitely be within the expected range,
-                // so we can use `get_unchecked_mut` here
+                // SAFETY: The swap trace contains valid indices for this row,
+                // and both pointers are derived from the same row pointer.
                 unsafe {
-                    let pa: *mut T = r.get_unchecked_mut(i.0);
-                    let pb: *mut T = r.get_unchecked_mut(i.1);
-                    ptr::swap(pa, pb);
+                    ptr::swap(ptr.add(i.0), ptr.add(i.1));
                 }
-//                r.swap(i.0, i.1);
             }
         }
     }
@@ -128,15 +126,13 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         
         // Apply the swap trace to each row. For larger arrays, this approach is faster than applying swap_cols() directly.
         for r in self.rows_mut() {
+            let ptr = r.as_mut_ptr();
             for i in swap_trace.iter() {
-                // The swap indices will definitely be within the expected range,
-                // so we can use `get_unchecked_mut` here
+                // SAFETY: The swap trace contains valid indices for this row,
+                // and both pointers are derived from the same row pointer.
                 unsafe {
-                    let pa: *mut T = r.get_unchecked_mut(i.0);
-                    let pb: *mut T = r.get_unchecked_mut(i.1);
-                    ptr::swap(pa, pb);
+                    ptr::swap(ptr.add(i.0), ptr.add(i.1));
                 }
-//                r.swap(i.0, i.1);
             }
         }
     }
