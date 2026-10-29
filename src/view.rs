@@ -49,11 +49,6 @@ mod tests {
 /// *Internal only* functions for calculating vector ranges.
 trait TooDeeViewCommon<T>: TooDeeOps<T> {
 
-    // Keep the shared backing-slice accessor as part of this internal
-    // abstraction for consistency across immutable and mutable views.
-    #[allow(dead_code)]
-    fn data(&self) -> &[T];
-
     fn stride(&self) -> usize;
 
     fn get_col_params(&self, col: usize) -> (Range<usize>, usize){
@@ -76,7 +71,6 @@ trait TooDeeViewCommon<T>: TooDeeOps<T> {
 
 impl<T> TooDeeViewCommon<T> for TooDeeView<'_, T> {
     #[inline]
-    fn data(&self) -> &[T] { &self.data }
     #[inline]
     fn stride(&self) -> usize {
         self.stride
@@ -85,7 +79,6 @@ impl<T> TooDeeViewCommon<T> for TooDeeView<'_, T> {
 
 impl<T> TooDeeViewCommon<T> for TooDeeViewMut<'_, T> {
     #[inline]
-    fn data(&self) -> &[T] { &self.data }
     #[inline]
     fn stride(&self) -> usize {
         self.stride
