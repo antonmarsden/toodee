@@ -1117,4 +1117,56 @@ mod toodee_tests {
         let mut toodee: TooDee<u32> = TooDee::init(2, 2, 0);
         toodee.remove_col(0);
     }
+
+    #[test]
+    fn empty_views_at_backing_slice_end_are_valid() {
+        let toodee = TooDee::from_vec(3, 2, (0u32..6).collect());
+
+        // These coordinates calculate an offset beyond the backing slice in
+        // the old implementation, despite describing an empty view.
+        let empty_at_row_end = toodee.view((1, 2), (1, 2));
+        assert_eq!(empty_at_row_end.size(), (0, 0));
+
+        let empty_at_bottom_right = toodee.view((3, 2), (3, 2));
+        assert_eq!(empty_at_bottom_right.size(), (0, 0));
+
+        let empty_rows = toodee.view((2, 2), (3, 2));
+        assert_eq!(empty_rows.size(), (0, 0));
+    }
+
+    #[test]
+    fn empty_mutable_views_at_backing_slice_end_are_valid() {
+        let mut toodee = TooDee::from_vec(3, 2, (0u32..6).collect());
+
+        let empty = toodee.view_mut((1, 2), (1, 2));
+        assert_eq!(empty.size(), (0, 0));
+        drop(empty);
+
+        let empty_at_bottom_right = toodee.view_mut((3, 2), (3, 2));
+        assert_eq!(empty_at_bottom_right.size(), (0, 0));
+        drop(empty_at_bottom_right);
+
+        assert_eq!(toodee.data(), &[0, 1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn remove_col_drain_can_be_consumed_or_dropped_by_value() {
+        let mut toodee = TooDee::from_vec(3, 3, (0u32..9).collect());
+
+        // Exercise the by-value Drop path that previously exposed the aliasing
+        // issue, then check the array remains valid for another removal.
+        drop(toodee.remove_col(1));
+        assert_eq!(toodee.size(), (2, 3));
+        assert_eq!(toodee.data(), &[0, 2, 3, 5, 6, 8]);
+
+        let removed: Vec<_> = toodee.remove_col(0).collect();
+        assert_eq!(removed, vec![0, 3, 6]);
+        assert_eq!(toodee.size(), (1, 3));
+        assert_eq!(toodee.data(), &[2, 5, 8]);
+
+        // Iterator adapters consume the drain by value too.
+        assert_eq!(toodee.remove_col(0).count(), 3);
+        assert!(toodee.is_empty());
+        assert!(toodee.data().is_empty());
+    }
 }
