@@ -15,7 +15,6 @@ A lightweight two-dimensional wrapper around a `Vec`.
 #![warn(rust_2021_prefixes_incompatible_syntax)]
 #![warn(missing_debug_implementations)]
 
-extern crate alloc;
 
 mod iter;
 mod view;
