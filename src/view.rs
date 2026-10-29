@@ -16,8 +16,8 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
     assert!(end.0 <= toodee.num_cols());
     assert!(end.1 <= toodee.num_rows());
     assert!(stride >= toodee.num_cols());
-    let mut num_cols = end.0 - start.0;
-    let mut num_rows = end.1 - start.1;
+    let num_cols = end.0 - start.0;
+    let num_rows = end.1 - start.1;
     // Empty views must use a valid range even when their coordinates would
     // otherwise produce an offset beyond the backing slice (for example, a
     // zero-sized view at the end of the final row).
