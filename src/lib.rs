@@ -18,7 +18,6 @@ A lightweight two-dimensional wrapper around a `Vec`.
 #[cfg(test)]
 extern crate alloc;
 
-
 mod iter;
 mod view;
 mod ops;
