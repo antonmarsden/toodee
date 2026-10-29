@@ -4,6 +4,7 @@
 
 ### Version 0.6.2
 - Fixed aliasing issues in unsafe swap and sorting operations, aliasing in `DrainCol`, and invalid backing-slice ranges for empty views ([#37](https://github.com/antonmarsden/toodee/issues/37), reported by [@zhouxt1](https://github.com/zhouxt1)).
+- Made `insert_row` and `insert_col` panic-safe when input iterators panic ([#31](https://github.com/antonmarsden/toodee/issues/31)); the fix was informed by [@mvanhorn](https://github.com/mvanhorn)'s [PR #32](https://github.com/antonmarsden/toodee/pull/32).
 
 ### Version 0.6.1
 - Fixed integer overflow in `nth_back()` - thanks Ruihan Gong.
