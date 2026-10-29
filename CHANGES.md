@@ -2,6 +2,11 @@
 
 ## Changes
 
+### Version 0.6.2
+- Fixed aliasing issues in unsafe swap and sorting operations.
+- Fixed aliasing in `DrainCol` when a column drain is dropped or consumed by value.
+- Fixed invalid backing-slice ranges for empty views at the end of the data.
+
 ### Version 0.6.1
 - Fixed integer overflow in `nth_back()` - thanks Ruihan Gong.
 
