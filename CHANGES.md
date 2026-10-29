@@ -3,9 +3,7 @@
 ## Changes
 
 ### Version 0.6.2
-- Fixed aliasing issues in unsafe swap and sorting operations.
-- Fixed aliasing in `DrainCol` when a column drain is dropped or consumed by value.
-- Fixed invalid backing-slice ranges for empty views at the end of the data.
+- Fixed aliasing issues in unsafe swap and sorting operations, aliasing in `DrainCol`, and invalid backing-slice ranges for empty views ([#37](https://github.com/antonmarsden/toodee/issues/37), reported by [@zhouxt1](https://github.com/zhouxt1)).
 
 ### Version 0.6.1
 - Fixed integer overflow in `nth_back()` - thanks Ruihan Gong.
