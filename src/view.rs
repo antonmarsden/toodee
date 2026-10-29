@@ -78,7 +78,6 @@ impl<T> TooDeeViewCommon<T> for TooDeeView<'_, T> {
 
 impl<T> TooDeeViewCommon<T> for TooDeeViewMut<'_, T> {
     #[inline]
-    #[inline]
     fn stride(&self) -> usize {
         self.stride
     }
