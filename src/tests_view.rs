@@ -2,23 +2,10 @@
 mod toodee_tests_view {
 
     extern crate alloc;
-    use alloc::boxed::Box;
     use alloc::vec;
     use alloc::vec::Vec;
 
     use crate::*;
-
-    struct IteratorWithWrongLength();
-
-    impl Iterator for IteratorWithWrongLength {
-        type Item = Box<u8>;
-
-        fn next(&mut self) -> Option<Self::Item> { None }
-    }
-
-    impl ExactSizeIterator for IteratorWithWrongLength {
-        fn len(&self) -> usize { 1 }
-    }
 
     #[test]
     fn new_view_direct() {

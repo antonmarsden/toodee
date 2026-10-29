@@ -16,8 +16,8 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
     assert!(end.0 <= toodee.num_cols());
     assert!(end.1 <= toodee.num_rows());
     assert!(stride >= toodee.num_cols());
-    let mut num_cols = end.0 - start.0;
-    let mut num_rows = end.1 - start.1;
+    let num_cols = end.0 - start.0;
+    let num_rows = end.1 - start.1;
     // Empty views must use a valid range even when their coordinates would
     // otherwise produce an offset beyond the backing slice (for example, a
     // zero-sized view at the end of the final row).
@@ -49,8 +49,6 @@ mod tests {
 /// *Internal only* functions for calculating vector ranges.
 trait TooDeeViewCommon<T>: TooDeeOps<T> {
 
-    fn data(&self) -> &[T];
-
     fn stride(&self) -> usize;
 
     fn get_col_params(&self, col: usize) -> (Range<usize>, usize){
@@ -73,16 +71,12 @@ trait TooDeeViewCommon<T>: TooDeeOps<T> {
 
 impl<T> TooDeeViewCommon<T> for TooDeeView<'_, T> {
     #[inline]
-    fn data(&self) -> &[T] { &self.data }
-    #[inline]
     fn stride(&self) -> usize {
         self.stride
     }
 }
 
 impl<T> TooDeeViewCommon<T> for TooDeeViewMut<'_, T> {
-    #[inline]
-    fn data(&self) -> &[T] { &self.data }
     #[inline]
     fn stride(&self) -> usize {
         self.stride
