@@ -3,11 +3,13 @@ mod toodee_tests_sort {
     
     use crate::*;
     use rand::Rng;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
     use rand::distributions::Uniform;
     
     #[test]
     fn sort_by_row() {
-        let rng = rand::thread_rng();
+        let rng = StdRng::seed_from_u64(42);
         let samples = rng.sample_iter(Uniform::new(0,100));
         let mut toodee = TooDee::from_vec(10, 10, samples.take(100).collect());
         println!("{:?}",&toodee[3]);
@@ -21,7 +23,7 @@ mod toodee_tests_sort {
         
     #[test]
     fn sort_by_col() {
-        let rng = rand::thread_rng();
+        let rng = StdRng::seed_from_u64(42);
         let samples = rng.sample_iter(Uniform::new(0,100));
         let mut toodee = TooDee::from_vec(10, 10, samples.take(100).collect());
         println!("{:?}", toodee.col(3).copied().collect::<Vec<u32>>());
@@ -35,7 +37,7 @@ mod toodee_tests_sort {
     
     #[test]
     fn sort_by_row_view() {
-        let rng = rand::thread_rng();
+        let rng = StdRng::seed_from_u64(42);
         let samples = rng.sample_iter(Uniform::new(0,100));
         let mut toodee = TooDee::from_vec(10, 10, samples.take(100).collect());
         println!("{:?}",&toodee[3]);
@@ -49,7 +51,7 @@ mod toodee_tests_sort {
 
     #[test]
     fn sort_by_col_view() {
-        let rng = rand::thread_rng();
+        let rng = StdRng::seed_from_u64(42);
         let samples = rng.sample_iter(Uniform::new(0,100));
         let mut toodee = TooDee::from_vec(10, 10, samples.take(100).collect());
         println!("{:?}", toodee.col(3).copied().collect::<Vec<u32>>());

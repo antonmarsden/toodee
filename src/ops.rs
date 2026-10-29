@@ -243,16 +243,21 @@ pub trait TooDeeOpsMut<T> : TooDeeOps<T> + IndexMut<usize,Output=[T]>  + IndexMu
         let mut iter = self.rows_mut();
         let row1 = iter.nth(cell1.1).unwrap();
         if cell1.1 == cell2.1 {
+            // SAFETY: Both column indices are in bounds for row1. Deriving
+            // both pointers from one row pointer avoids creating overlapping
+            // mutable references to the same row.
             unsafe {
-                let pa: *mut T = row1.get_unchecked_mut(cell1.0);
-                let pb: *mut T = row1.get_unchecked_mut(cell2.0);
-                ptr::swap(pa, pb);
+                let row_ptr = row1.as_mut_ptr();
+                ptr::swap(row_ptr.add(cell1.0), row_ptr.add(cell2.0));
             }
         } else {
             let row2 = iter.nth(cell2.1 - cell1.1 - 1).unwrap();
+            // SAFETY: Both column indices are in bounds. row1 and row2 are
+            // distinct rows, and each element pointer is derived from its
+            // own row's base pointer.
             unsafe {
-                let pa: *mut T = row1.get_unchecked_mut(cell1.0);
-                let pb: *mut T = row2.get_unchecked_mut(cell2.0);
+                let pa = row1.as_mut_ptr().add(cell1.0);
+                let pb = row2.as_mut_ptr().add(cell2.0);
                 ptr::swap(pa, pb);
             }
         }
