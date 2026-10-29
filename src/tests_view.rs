@@ -8,18 +8,6 @@ mod toodee_tests_view {
 
     use crate::*;
 
-    struct IteratorWithWrongLength();
-
-    impl Iterator for IteratorWithWrongLength {
-        type Item = Box<u8>;
-
-        fn next(&mut self) -> Option<Self::Item> { None }
-    }
-
-    impl ExactSizeIterator for IteratorWithWrongLength {
-        fn len(&self) -> usize { 1 }
-    }
-
     #[test]
     fn new_view_direct() {
         let v = vec![1u32; 32];
