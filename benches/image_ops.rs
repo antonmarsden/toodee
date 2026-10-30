@@ -54,7 +54,8 @@ fn tile_toodee(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
     for (y, dst_row) in dst.rows_mut().enumerate() {
         let src_row = &src[y % tile_height];
         for chunk in dst_row.chunks_mut(tile_width) {
-            chunk.copy_from_slice(&src_row[..chunk.len()]);
+            let len = chunk.len();
+            chunk.copy_from_slice(&src_row[..len]);
         }
     }
 }
