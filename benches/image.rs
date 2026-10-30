@@ -12,7 +12,7 @@
 //! that either container is universally faster.
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use image::{ImageBuffer, Luma};
+use image::{GenericImage, GenericImageView, ImageBuffer, Luma};
 use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
 
 type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
