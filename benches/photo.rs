@@ -106,7 +106,7 @@ fn sobel_image(src: &[u8], dst: &mut [u8], w: usize, h: usize) {
 
 fn sobel_toodee(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
     let (w, h) = (src.num_cols(), src.num_rows());
-    for row in dst.iter_rows_mut() { row.fill(0); }
+    for row in dst.rows_mut() { row.fill(0); }
     if w < 3 || h < 3 { return; }
     for y in 1..h - 1 {
         for x in 1..w - 1 {
