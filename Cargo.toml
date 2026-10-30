@@ -55,3 +55,7 @@ harness = false
 [[bench]]
 name = "photo"
 harness = false
+
+[[bench]]
+name = "image_ops"
+harness = false
