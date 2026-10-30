@@ -183,26 +183,37 @@ fn box_blur_3x3(c: &mut Criterion) {
 // ImageBuffer::into_raw and TooDee::from_vec can move the allocation without
 // copying; converting back from a borrowed TooDee slice requires a copy.
 fn representation_conversion(c: &mut Criterion) {
+    use criterion::BatchSize;
+
     let mut group = c.benchmark_group("image/representation_conversion");
     for (width, height) in [(320usize, 240usize), (1920, 1080)] {
         let elements = width * height;
         group.throughput(Throughput::Elements(elements as u64));
 
+        // Setup is deliberately outside the timed routine. Otherwise the first
+        // benchmark also measures make_samples() and ImageBuffer allocation,
+        // while the reverse benchmark starts with an already-created TooDee.
         group.bench_with_input(BenchmarkId::new("ImageBuffer_to_TooDee_move", format!("{width}x{height}")), &elements, |b, _| {
-            b.iter(|| {
-                let img = image_buffer(width, height);
-                let raw = img.into_raw();
-                let td = TooDee::from_vec(width, height, raw);
-                black_box(td);
-            });
+            b.iter_batched(
+                || image_buffer(width, height),
+                |img| {
+                    let raw = img.into_raw();
+                    let td = TooDee::from_vec(width, height, raw);
+                    black_box(td);
+                },
+                BatchSize::SmallInput,
+            );
         });
 
-        let td = toodee(width, height);
         group.bench_with_input(BenchmarkId::new("TooDee_to_ImageBuffer_copy", format!("{width}x{height}")), &elements, |b, _| {
-            b.iter(|| {
-                let img = GrayImage::from_raw(width as u32, height as u32, td.data().to_vec()).unwrap();
-                black_box(img);
-            });
+            b.iter_batched(
+                || toodee(width, height),
+                |td| {
+                    let img = GrayImage::from_raw(width as u32, height as u32, td.data().to_vec()).unwrap();
+                    black_box(img);
+                },
+                BatchSize::SmallInput,
+            );
         });
     }
     group.finish();
