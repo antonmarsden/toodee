@@ -2,7 +2,7 @@ use criterion::{
     black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
 };
 use image::imageops;
-use image::{ImageBuffer, Luma};
+use image::{GenericImageView, ImageBuffer, Luma};
 use toodee::{CopyOps, TooDee, TooDeeOps, TooDeeOpsMut, TranslateOps};
 
 type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
@@ -53,11 +53,8 @@ fn tile_toodee(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
     let tile_height = src.num_rows();
     for (y, dst_row) in dst.rows_mut().enumerate() {
         let src_row = &src[y % tile_height];
-        for (chunk_index, chunk) in dst_row.chunks_mut(tile_width).enumerate() {
-            let start = chunk_index * tile_width;
-            let len = chunk.len();
-            chunk.copy_from_slice(&src_row[..len.min(tile_width)].get(..len).unwrap_or(&src_row[..len]));
-            let _ = start;
+        for chunk in dst_row.chunks_mut(tile_width) {
+            chunk.copy_from_slice(&src_row[..chunk.len()]);
         }
     }
 }
