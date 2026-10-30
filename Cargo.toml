@@ -30,6 +30,7 @@ serde = { version = "1.0.181", optional = true, default-features = false, featur
 rand = "0.8.5"
 serde_json = "1.0.104"
 grid = "0.14.0"
+image = { version = "0.25", default-features = false }
 
 [dev-dependencies.criterion]
 version = "0.5.1"
@@ -49,4 +50,12 @@ harness = false
 
 [[bench]]
 name = "vs"
+harness = false
+
+[[bench]]
+name = "photo"
+harness = false
+
+[[bench]]
+name = "image_ops"
 harness = false
