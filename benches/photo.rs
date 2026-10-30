@@ -247,11 +247,7 @@ fn photo_benchmarks(c: &mut Criterion) {
         });
         group.bench_function(BenchmarkId::new("unsharp_mask/toodee_flat", format!("{w}x{h}")), |b| {
             b.iter_batched(|| (TooDee::init(w, h, 0u8), TooDee::init(w, h, 0u8)), |(mut blur, mut dst)| {
-                unsharp_image(toodee_src.data(), blur.data_mut(), &mut dst.data_mut()[..], w, h);
-                // Apply the sharpen pass over the same flat storage.
-                for ((d, &s), &b) in dst.data_mut().iter_mut().zip(toodee_src.data()).zip(blur.data()) {
-                    *d = (2 * s as i16 - b as i16).clamp(0, 255) as u8;
-                }
+                unsharp_image(toodee_src.data(), blur.data_mut(), dst.data_mut(), w, h);
                 black_box(dst);
             }, BatchSize::LargeInput)
         });
