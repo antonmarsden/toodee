@@ -143,6 +143,7 @@ fn image_ops_benchmarks(c: &mut Criterion) {
         let roi_height = (height / 4).max(32);
         let roi_x = (width - roi_width) / 2;
         let roi_y = (height - roi_height) / 2;
+        group.throughput(Throughput::Elements((roi_width * roi_height) as u64));
         group.bench_function(
             BenchmarkId::new("roi_sum/image_crop_imm", format!("{width}x{height}")),
             |b| {
@@ -171,6 +172,8 @@ fn image_ops_benchmarks(c: &mut Criterion) {
                 })
             },
         );
+
+        group.throughput(Throughput::Elements(count as u64));
 
         // Replace a centred rectangular region with another image.
         let patch_width = (width / 4).max(32);
