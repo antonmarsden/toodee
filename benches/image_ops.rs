@@ -233,7 +233,7 @@ fn image_ops_benchmarks(c: &mut Criterion) {
                 b.iter_batched(
                     || blank_image(width, height),
                     |mut dst| {
-                        tile_rgba_image_copy(&tile_image, &mut dst);
+                        imageops::tile(&mut dst, &tile_image);
                         black_box(dst);
                     },
                     BatchSize::LargeInput,
@@ -425,10 +425,11 @@ fn tile_rgba_image_copy(src: &RgbaImage, dst: &mut RgbaImage) {
     let tile_width = src.width() as usize;
     let tile_height = src.height() as usize;
     let dst_width = dst.width() as usize;
+    let dst_height = dst.height() as usize;
     let dst_data = dst.as_mut();
     let src_data = src.as_raw();
 
-    for y in 0..dst.height() as usize {
+    for y in 0..dst_height {
         let src_row_start = (y % tile_height) * tile_width * 4;
         let src_row = &src_data[src_row_start..src_row_start + tile_width * 4];
         let dst_row_start = y * dst_width * 4;
