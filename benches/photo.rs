@@ -65,6 +65,37 @@ fn gaussian_toodee(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
     }
 }
 
+
+// Same flat-slice kernel as ImageBuffer, but using TooDee's contiguous storage.
+fn gaussian_toodee_flat(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
+    gaussian_image(src.data(), dst.data_mut(), src.num_cols(), src.num_rows());
+}
+
+// Row-slice implementation: obtain each row once, then use ordinary slice indexing.
+fn gaussian_toodee_rows(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
+    let (w, h) = (src.num_cols(), src.num_rows());
+    for row in dst.rows_mut() { row.fill(0); }
+    if w < 3 || h < 3 { return; }
+    for y in 1..h - 1 {
+        let top = &src[y - 1];
+        let mid = &src[y];
+        let bottom = &src[y + 1];
+        let out = &mut dst[y];
+        for x in 1..w - 1 {
+            let sum = top[x - 1] as u32
+                + 2 * top[x] as u32
+                + top[x + 1] as u32
+                + 2 * mid[x - 1] as u32
+                + 4 * mid[x] as u32
+                + 2 * mid[x + 1] as u32
+                + bottom[x - 1] as u32
+                + 2 * bottom[x] as u32
+                + bottom[x + 1] as u32;
+            out[x] = ((sum + 8) / 16) as u8;
+        }
+    }
+}
+
 fn unsharp_image(src: &[u8], blur: &mut [u8], dst: &mut [u8], w: usize, h: usize) {
     gaussian_image(src, blur, w, h);
     for i in 0..src.len() {
@@ -125,7 +156,39 @@ fn sobel_toodee(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
     }
 }
 
-fn equalize_image(src: &[u8], dst: &mut [u8]) {
+
+// Same flat-slice kernel as ImageBuffer, using TooDee's contiguous storage.
+fn sobel_toodee_flat(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
+    sobel_image(src.data(), dst.data_mut(), src.num_cols(), src.num_rows());
+}
+
+// Row-slice implementation: obtain each source and destination row once.
+fn sobel_toodee_rows(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
+    let (w, h) = (src.num_cols(), src.num_rows());
+    for row in dst.rows_mut() { row.fill(0); }
+    if w < 3 || h < 3 { return; }
+    for y in 1..h - 1 {
+        let top = &src[y - 1];
+        let mid = &src[y];
+        let bottom = &src[y + 1];
+        let out = &mut dst[y];
+        for x in 1..w - 1 {
+            let tl = top[x - 1] as i32;
+            let tc = top[x] as i32;
+            let tr = top[x + 1] as i32;
+            let ml = mid[x - 1] as i32;
+            let mr = mid[x + 1] as i32;
+            let bl = bottom[x - 1] as i32;
+            let bc = bottom[x] as i32;
+            let br = bottom[x + 1] as i32;
+            let gx = -tl + tr - 2 * ml + 2 * mr - bl + br;
+            let gy = -tl - 2 * tc - tr + bl + 2 * bc + br;
+            out[x] = (gx.abs() + gy.abs()).min(255) as u8;
+        }
+    }
+}
+
+fn equalize(src: &[u8], dst: &mut [u8]) {
     let mut hist = [0u32; 256];
     for &p in src { hist[p as usize] += 1; }
     let mut cdf = [0u32; 256];
@@ -144,28 +207,6 @@ fn equalize_image(src: &[u8], dst: &mut [u8]) {
     for (d, &s) in dst.iter_mut().zip(src) { *d = lut[s as usize]; }
 }
 
-fn equalize_toodee(src: &TooDee<u8>, dst: &mut TooDee<u8>) {
-    let mut hist = [0u32; 256];
-    for &p in src.data() { hist[p as usize] += 1; }
-    let mut cdf = [0u32; 256];
-    let mut sum = 0u32;
-    for i in 0..256 { sum += hist[i]; cdf[i] = sum; }
-    let first = cdf.iter().copied().find(|&v| v != 0).unwrap_or(0);
-    let total = src.data().len() as u32;
-    if total == first {
-        dst.data_mut().copy_from_slice(src.data());
-        return;
-    }
-    let denom = total - first;
-    let mut lut = [0u8; 256];
-    for i in 0..256 {
-        lut[i] = if cdf[i] <= first { 0 } else {
-            (((cdf[i] - first) as u64 * 255 + (denom / 2) as u64) / denom as u64) as u8
-        };
-    }
-    for (d, &s) in dst.data_mut().iter_mut().zip(src.data()) { *d = lut[s as usize]; }
-}
-
 fn photo_benchmarks(c: &mut Criterion) {
     let mut group = c.benchmark_group("photo_processing");
     for &(w, h) in SIZES {
@@ -176,79 +217,84 @@ fn photo_benchmarks(c: &mut Criterion) {
         let image_src = image_from_pixels(w, h, &pixels);
         let toodee_src = toodee_from_pixels(w, h, &pixels);
 
-        group.bench_function(BenchmarkId::new("gaussian_3x3/imagebuffer", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || image_from_pixels(w, h, &vec![0; n]),
-                |mut dst| {
-                    gaussian_image(image_src.as_raw(), dst.as_mut(), w, h);
-                    black_box(dst);
-                },
-                BatchSize::LargeInput,
-            )
+        // Gaussian: compare the flat-slice baseline, TooDee's flat storage,
+        // row slices, and the ergonomic 2D indexing API.
+        group.bench_function(BenchmarkId::new("gaussian_3x3/imagebuffer_flat", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| vec![0; n], |mut dst| {
+                gaussian_image(image_src.as_raw(), &mut dst, w, h);
+                black_box(dst);
+            }, BatchSize::LargeInput)
         });
-        group.bench_function(BenchmarkId::new("gaussian_3x3/toodee", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || TooDee::init(w, h, 0u8),
-                |mut dst| { gaussian_toodee(&toodee_src, &mut dst); black_box(dst); },
-                BatchSize::LargeInput,
-            )
+        for (name, kernel) in [
+            ("toodee_flat", gaussian_toodee_flat as fn(&TooDee<u8>, &mut TooDee<u8>)),
+            ("toodee_row_slices", gaussian_toodee_rows),
+            ("toodee_2d_index", gaussian_toodee),
+        ] {
+            group.bench_function(BenchmarkId::new(format!("gaussian_3x3/{name}"), format!("{w}x{h}")), |b| {
+                b.iter_batched(|| TooDee::init(w, h, 0u8), |mut dst| {
+                    kernel(&toodee_src, &mut dst);
+                    black_box(dst);
+                }, BatchSize::LargeInput)
+            });
+        }
+
+        // Unsharp: same flat-slice kernel, plus 2D indexing for comparison.
+        group.bench_function(BenchmarkId::new("unsharp_mask/imagebuffer_flat", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| (vec![0; n], vec![0; n]), |(mut blur, mut dst)| {
+                unsharp_image(image_src.as_raw(), &mut blur, &mut dst, w, h);
+                black_box(dst);
+            }, BatchSize::LargeInput)
+        });
+        group.bench_function(BenchmarkId::new("unsharp_mask/toodee_flat", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| (TooDee::init(w, h, 0u8), TooDee::init(w, h, 0u8)), |(mut blur, mut dst)| {
+                unsharp_image(toodee_src.data(), blur.data_mut(), &mut dst.data_mut()[..], w, h);
+                // Apply the sharpen pass over the same flat storage.
+                for ((d, &s), &b) in dst.data_mut().iter_mut().zip(toodee_src.data()).zip(blur.data()) {
+                    *d = (2 * s as i16 - b as i16).clamp(0, 255) as u8;
+                }
+                black_box(dst);
+            }, BatchSize::LargeInput)
+        });
+        group.bench_function(BenchmarkId::new("unsharp_mask/toodee_2d_index", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| (TooDee::init(w, h, 0u8), TooDee::init(w, h, 0u8)), |(mut blur, mut dst)| {
+                unsharp_toodee(&toodee_src, &mut blur, &mut dst);
+                black_box(dst);
+            }, BatchSize::LargeInput)
         });
 
-        group.bench_function(BenchmarkId::new("unsharp_mask/imagebuffer", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || (vec![0; n], vec![0; n]),
-                |(mut blur, mut dst)| {
-                    unsharp_image(image_src.as_raw(), &mut blur, &mut dst, w, h);
-                    black_box(dst);
-                },
-                BatchSize::LargeInput,
-            )
+        // Sobel uses the same four-way comparison as Gaussian.
+        group.bench_function(BenchmarkId::new("sobel/imagebuffer_flat", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| vec![0; n], |mut dst| {
+                sobel_image(image_src.as_raw(), &mut dst, w, h);
+                black_box(dst);
+            }, BatchSize::LargeInput)
         });
-        group.bench_function(BenchmarkId::new("unsharp_mask/toodee", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || (TooDee::init(w, h, 0u8), TooDee::init(w, h, 0u8)),
-                |(mut blur, mut dst)| {
-                    unsharp_toodee(&toodee_src, &mut blur, &mut dst);
+        for (name, kernel) in [
+            ("toodee_flat", sobel_toodee_flat as fn(&TooDee<u8>, &mut TooDee<u8>)),
+            ("toodee_row_slices", sobel_toodee_rows),
+            ("toodee_2d_index", sobel_toodee),
+        ] {
+            group.bench_function(BenchmarkId::new(format!("sobel/{name}"), format!("{w}x{h}")), |b| {
+                b.iter_batched(|| TooDee::init(w, h, 0u8), |mut dst| {
+                    kernel(&toodee_src, &mut dst);
                     black_box(dst);
-                },
-                BatchSize::LargeInput,
-            )
-        });
+                }, BatchSize::LargeInput)
+            });
+        }
 
-        group.bench_function(BenchmarkId::new("sobel/imagebuffer", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || image_from_pixels(w, h, &vec![0; n]),
-                |mut dst| {
-                    sobel_image(image_src.as_raw(), dst.as_mut(), w, h);
-                    black_box(dst);
-                },
-                BatchSize::LargeInput,
-            )
+        // Histogram equalisation deliberately calls the exact same slice kernel
+        // for both containers, isolating storage access from algorithm changes.
+        group.bench_function(BenchmarkId::new("histogram_equalization/imagebuffer_flat", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| vec![0; n], |mut dst| {
+                equalize(image_src.as_raw(), &mut dst);
+                black_box(dst);
+            }, BatchSize::LargeInput)
         });
-        group.bench_function(BenchmarkId::new("sobel/toodee", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || TooDee::init(w, h, 0u8),
-                |mut dst| { sobel_toodee(&toodee_src, &mut dst); black_box(dst); },
-                BatchSize::LargeInput,
-            )
-        });
-
-        group.bench_function(BenchmarkId::new("histogram_equalization/imagebuffer", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || image_from_pixels(w, h, &vec![0; n]),
-                |mut dst| {
-                    equalize_image(image_src.as_raw(), dst.as_mut());
-                    black_box(dst);
-                },
-                BatchSize::LargeInput,
-            )
-        });
-        group.bench_function(BenchmarkId::new("histogram_equalization/toodee", format!("{w}x{h}")), |b| {
-            b.iter_batched(
-                || TooDee::init(w, h, 0u8),
-                |mut dst| { equalize_toodee(&toodee_src, &mut dst); black_box(dst); },
-                BatchSize::LargeInput,
-            )
+        group.bench_function(BenchmarkId::new("histogram_equalization/toodee_flat", format!("{w}x{h}")), |b| {
+            b.iter_batched(|| TooDee::init(w, h, 0u8), |mut dst| {
+                equalize(toodee_src.data(), dst.data_mut());
+                black_box(dst);
+            }, BatchSize::LargeInput)
         });
     }
     group.finish();
