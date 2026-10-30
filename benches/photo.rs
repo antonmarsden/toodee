@@ -2,7 +2,7 @@ use criterion::{
     black_box, criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion, Throughput,
 };
 use image::{ImageBuffer, Luma};
-use toodee::TooDee;
+use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
 
 type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
 
