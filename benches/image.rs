@@ -126,6 +126,33 @@ fn box_blur_3x3(c: &mut Criterion) {
             });
         });
 
+        let src_raw = src.as_raw();
+        let mut raw_dst = GrayImage::new(width as u32, height as u32);
+        group.bench_with_input(BenchmarkId::new("ImageBuffer_raw_slice", format!("{width}x{height}")), &elements, |b, _| {
+            b.iter(|| {
+                let dst_raw = raw_dst.as_mut();
+                for y in 0..height {
+                    for x in 0..width {
+                        let index = y * width + x;
+                        dst_raw[index] = if x == 0 || y == 0 || x + 1 == width || y + 1 == height {
+                            src_raw[index]
+                        } else {
+                            let mut sum = 0u32;
+                            for dy in -1isize..=1 {
+                                for dx in -1isize..=1 {
+                                    let neighbour = ((y as isize + dy) as usize) * width
+                                        + (x as isize + dx) as usize;
+                                    sum += src_raw[neighbour] as u32;
+                                }
+                            }
+                            (sum / 9) as u8
+                        };
+                    }
+                }
+                black_box(raw_dst);
+            });
+        });
+
         let td_src = toodee(width, height);
         let mut td_dst = TooDee::new(width, height);
         group.bench_with_input(BenchmarkId::new("TooDee_index", format!("{width}x{height}")), &elements, |b, _| {
