@@ -228,12 +228,12 @@ fn image_ops_benchmarks(c: &mut Criterion) {
         let tile_image = image_from_pixels(tile_width, tile_height, &tile_data);
         let tile_toodee_src = toodee_from_pixels(tile_width, tile_height, &tile_data);
         group.bench_function(
-            BenchmarkId::new("tile/imageops", format!("{width}x{height}")),
+            BenchmarkId::new("tile/imagebuffer_rows", format!("{width}x{height}")),
             |b| {
                 b.iter_batched(
                     || blank_image(width, height),
                     |mut dst| {
-                        imageops::tile(&mut dst, &tile_image);
+                        tile_rgba_image_copy(&tile_image, &mut dst);
                         black_box(dst);
                     },
                     BatchSize::LargeInput,
@@ -421,6 +421,25 @@ fn rgba_roi_sum_toodee(
         .sum()
 }
 
+fn tile_rgba_image_copy(src: &RgbaImage, dst: &mut RgbaImage) {
+    let tile_width = src.width() as usize;
+    let tile_height = src.height() as usize;
+    let dst_width = dst.width() as usize;
+    let dst_data = dst.as_mut();
+    let src_data = src.as_raw();
+
+    for y in 0..dst.height() as usize {
+        let src_row_start = (y % tile_height) * tile_width * 4;
+        let src_row = &src_data[src_row_start..src_row_start + tile_width * 4];
+        let dst_row_start = y * dst_width * 4;
+        let dst_row = &mut dst_data[dst_row_start..dst_row_start + dst_width * 4];
+        for chunk in dst_row.chunks_mut(tile_width * 4) {
+            let len = chunk.len();
+            chunk.copy_from_slice(&src_row[..len]);
+        }
+    }
+}
+
 fn tile_rgba_toodee(src: &TooDee<[u8; 4]>, dst: &mut TooDee<[u8; 4]>) {
     let tile_width = src.num_cols();
     let tile_height = src.num_rows();
@@ -471,7 +490,7 @@ fn assert_rgba_equivalent_operations() {
     let tile_toodee_src = rgba_toodee_from_pixels(64, 47, &tile_data);
     let mut tiled_image = blank_rgba_image(width, height);
     let mut tiled_toodee = blank_rgba_toodee(width, height);
-    imageops::tile(&mut tiled_image, &tile_image);
+    tile_rgba_image_copy(&tile_image, &mut tiled_image);
     tile_rgba_toodee(&tile_toodee_src, &mut tiled_toodee);
     assert_rgba_equal("tile", &tiled_image, &tiled_toodee);
 
