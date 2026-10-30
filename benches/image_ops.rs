@@ -377,9 +377,22 @@ fn blank_rgba_toodee(width: usize, height: usize) -> TooDee<[u8; 4]> {
     TooDee::init(width, height, [0; 4])
 }
 
-fn assert_rgba_equal(image: &RgbaImage, toodee: &TooDee<[u8; 4]>) {
+fn assert_rgba_equal(label: &str, image: &RgbaImage, toodee: &TooDee<[u8; 4]>) {
     let raw: Vec<u8> = toodee.data().iter().flat_map(|pixel| pixel.iter().copied()).collect();
-    assert_eq!(image.as_raw(), &raw);
+    let image_raw = image.as_raw();
+    if let Some(index) = image_raw.iter().zip(&raw).position(|(a, b)| a != b) {
+        let pixel = index / 4;
+        let channel = index % 4;
+        panic!(
+            "{label}: first mismatch at pixel ({}, {}), channel {}: image={} TooDee={}",
+            pixel % image.width() as usize,
+            pixel / image.width() as usize,
+            channel,
+            image_raw[index],
+            raw[index],
+        );
+    }
+    assert_eq!(image_raw.len(), raw.len(), "{label}: buffer lengths differ");
 }
 
 fn rgba_roi_sum_image(src: &RgbaImage, x: usize, y: usize, width: usize, height: usize) -> u64 {
@@ -451,7 +464,7 @@ fn assert_rgba_equivalent_operations() {
     replaced_toodee
         .view_mut((29, 41), (29 + 73, 41 + 51))
         .copy_from_toodee(&patch_toodee);
-    assert_rgba_equal(&replaced_image, &replaced_toodee);
+    assert_rgba_equal("replace", &replaced_image, &replaced_toodee);
 
     let tile_data = rgba_pixels(64, 47, 29);
     let tile_image = rgba_image_from_pixels(64, 47, &tile_data);
@@ -460,26 +473,26 @@ fn assert_rgba_equivalent_operations() {
     let mut tiled_toodee = blank_rgba_toodee(width, height);
     imageops::tile(&mut tiled_image, &tile_image);
     tile_rgba_toodee(&tile_toodee_src, &mut tiled_toodee);
-    assert_rgba_equal(&tiled_image, &tiled_toodee);
+    assert_rgba_equal("tile", &tiled_image, &tiled_toodee);
 
     let shift = (width / 3, height / 4);
     let mut translated_image = image.clone();
     let mut translated_toodee = toodee.clone();
     translate_rgba_image_with_wrap(&mut translated_image, shift.0, shift.1);
     translated_toodee.translate_with_wrap(shift);
-    assert_rgba_equal(&translated_image, &translated_toodee);
+    assert_rgba_equal("translate_wrap", &translated_image, &translated_toodee);
 
     let mut horizontal_image = image.clone();
     let mut horizontal_toodee = toodee.clone();
     imageops::flip_horizontal_in_place(&mut horizontal_image);
     horizontal_toodee.flip_cols();
-    assert_rgba_equal(&horizontal_image, &horizontal_toodee);
+    assert_rgba_equal("flip_horizontal", &horizontal_image, &horizontal_toodee);
 
     let mut vertical_image = image;
     let mut vertical_toodee = toodee;
     imageops::flip_vertical_in_place(&mut vertical_image);
     vertical_toodee.flip_rows();
-    assert_rgba_equal(&vertical_image, &vertical_toodee);
+    assert_rgba_equal("flip_vertical", &vertical_image, &vertical_toodee);
 }
 
 fn rgba_image_ops_benchmarks(c: &mut Criterion) {
