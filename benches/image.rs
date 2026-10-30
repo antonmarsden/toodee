@@ -12,7 +12,7 @@
 //! that either container is universally faster.
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use image::{GenericImage, GenericImageView, ImageBuffer, Luma};
+use image::{ImageBuffer, Luma};
 use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
 
 type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
@@ -77,7 +77,7 @@ fn row_sum(c: &mut Criterion) {
         let img = image_buffer(width, height);
         group.bench_with_input(BenchmarkId::new("ImageBuffer", format!("{width}x{height}")), &elements, |b, _| {
             b.iter(|| {
-                let sum: u64 = img.rows().flat_map(|row| row.iter()).map(|p| p.0[0] as u64).sum();
+                let sum: u64 = img.rows().flat_map(|row| row).map(|p| p.0[0] as u64).sum();
                 black_box(sum);
             });
         });
@@ -149,7 +149,7 @@ fn box_blur_3x3(c: &mut Criterion) {
                         };
                     }
                 }
-                black_box(raw_dst);
+                black_box(raw_dst.as_raw());
             });
         });
 
