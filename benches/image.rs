@@ -13,7 +13,7 @@
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use image::{ImageBuffer, Luma};
-use toodee::{TooDee, TooDeeOps};
+use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
 
 type GrayImage = ImageBuffer<Luma<u8>, Vec<u8>>;
 
