@@ -575,11 +575,11 @@ fn rgba_image_ops_benchmarks(c: &mut Criterion) {
         let tile_image = rgba_image_from_pixels(64, 47, &tile_data);
         let tile_toodee_src = rgba_toodee_from_pixels(64, 47, &tile_data);
         group.bench_function(
-            BenchmarkId::new("tile/imageops", format!("{width}x{height}")),
+            BenchmarkId::new("tile/imagebuffer_rows", format!("{width}x{height}")),
             |b| b.iter_batched(
                 || blank_rgba_image(width, height),
                 |mut dst| {
-                    imageops::tile(&mut dst, &tile_image);
+                    tile_rgba_image_copy(&tile_image, &mut dst);
                     black_box(dst);
                 },
                 BatchSize::LargeInput,
