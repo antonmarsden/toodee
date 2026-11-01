@@ -453,6 +453,54 @@ fn tile_rgba_toodee(src: &TooDee<[u8; 4]>, dst: &mut TooDee<[u8; 4]>) {
     }
 }
 
+fn expand_repeated_bytes(row: &mut [u8], tile_row: &[u8]) {
+    let initial_len = row.len().min(tile_row.len());
+    row[..initial_len].copy_from_slice(&tile_row[..initial_len]);
+
+    let mut filled = initial_len;
+    while filled < row.len() {
+        let copy_len = filled.min(row.len() - filled);
+        row.copy_within(0..copy_len, filled);
+        filled += copy_len;
+    }
+}
+
+fn expand_repeated_pixels(row: &mut [[u8; 4]], tile_row: &[[u8; 4]]) {
+    let initial_len = row.len().min(tile_row.len());
+    row[..initial_len].copy_from_slice(&tile_row[..initial_len]);
+
+    let mut filled = initial_len;
+    while filled < row.len() {
+        let copy_len = filled.min(row.len() - filled);
+        row.copy_within(0..copy_len, filled);
+        filled += copy_len;
+    }
+}
+
+fn tile_rgba_image_expand(src: &RgbaImage, dst: &mut RgbaImage) {
+    let tile_width = src.width() as usize;
+    let tile_height = src.height() as usize;
+    let dst_width = dst.width() as usize;
+    let dst_height = dst.height() as usize;
+    let src_data = src.as_raw();
+    let dst_data = dst.as_mut();
+
+    for y in 0..dst_height {
+        let src_row_start = (y % tile_height) * tile_width * 4;
+        let src_row = &src_data[src_row_start..src_row_start + tile_width * 4];
+        let dst_row_start = y * dst_width * 4;
+        let dst_row = &mut dst_data[dst_row_start..dst_row_start + dst_width * 4];
+        expand_repeated_bytes(dst_row, src_row);
+    }
+}
+
+fn tile_rgba_toodee_expand(src: &TooDee<[u8; 4]>, dst: &mut TooDee<[u8; 4]>) {
+    let tile_height = src.num_rows();
+    for (y, dst_row) in dst.rows_mut().enumerate() {
+        expand_repeated_pixels(dst_row, &src[y % tile_height]);
+    }
+}
+
 fn translate_rgba_image_with_wrap(image: &mut RgbaImage, x: usize, y: usize) {
     let width = image.width() as usize;
     let height = image.height() as usize;
@@ -494,6 +542,13 @@ fn assert_rgba_equivalent_operations() {
     tile_rgba_image_copy(&tile_image, &mut tiled_image);
     tile_rgba_toodee(&tile_toodee_src, &mut tiled_toodee);
     assert_rgba_equal("tile", &tiled_image, &tiled_toodee);
+
+    let mut expanded_image = blank_rgba_image(width, height);
+    let mut expanded_toodee = blank_rgba_toodee(width, height);
+    tile_rgba_image_expand(&tile_image, &mut expanded_image);
+    tile_rgba_toodee_expand(&tile_toodee_src, &mut expanded_toodee);
+    assert_rgba_equal("tile expand ImageBuffer", &tiled_image, &expanded_toodee);
+    assert_rgba_equal("tile expand TooDee", &expanded_image, &tiled_toodee);
 
     let shift = (width / 3, height / 4);
     let mut translated_image = image.clone();
@@ -591,6 +646,28 @@ fn rgba_image_ops_benchmarks(c: &mut Criterion) {
                 || blank_rgba_toodee(width, height),
                 |mut dst| {
                     tile_rgba_toodee(&tile_toodee_src, &mut dst);
+                    black_box(dst);
+                },
+                BatchSize::LargeInput,
+            ),
+        );
+        group.bench_function(
+            BenchmarkId::new("tile/imagebuffer_expand", format!("{width}x{height}")),
+            |b| b.iter_batched(
+                || blank_rgba_image(width, height),
+                |mut dst| {
+                    tile_rgba_image_expand(&tile_image, &mut dst);
+                    black_box(dst);
+                },
+                BatchSize::LargeInput,
+            ),
+        );
+        group.bench_function(
+            BenchmarkId::new("tile/toodee_expand", format!("{width}x{height}")),
+            |b| b.iter_batched(
+                || blank_rgba_toodee(width, height),
+                |mut dst| {
+                    tile_rgba_toodee_expand(&tile_toodee_src, &mut dst);
                     black_box(dst);
                 },
                 BatchSize::LargeInput,
