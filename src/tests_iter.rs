@@ -180,6 +180,90 @@ mod toodee_tests_iter {
     }
 
     #[test]
+    fn cells_try_fold() {
+        let toodee = TooDee::from_vec(4, 3, (0u32..12).collect());
+        let mut cells = toodee.cells();
+
+        assert_eq!(
+            cells.try_fold(0, |acc, &value| Ok::<_, u32>(acc + value)),
+            Ok(66)
+        );
+        assert_eq!(cells.next(), None);
+    }
+
+    #[test]
+    fn cells_try_fold_short_circuits_and_can_resume() {
+        let toodee = TooDee::from_vec(4, 3, (0u32..12).collect());
+        let mut cells = toodee.cells();
+
+        assert_eq!(
+            cells.try_fold(0, |acc, &value| {
+                if value == 5 { Err(value) } else { Ok(acc + value) }
+            }),
+            Err(5)
+        );
+        assert_eq!(cells.copied().collect::<Vec<_>>(), vec![6, 7, 8, 9, 10, 11]);
+    }
+
+    #[test]
+    fn cells_try_rfold() {
+        let toodee = TooDee::from_vec(4, 3, (0u32..12).collect());
+        let mut cells = toodee.cells();
+
+        assert_eq!(
+            cells.try_rfold(0, |acc, &value| Ok::<_, u32>(acc + value)),
+            Ok(66)
+        );
+        assert_eq!(cells.next_back(), None);
+    }
+
+    #[test]
+    fn cells_try_rfold_short_circuits_and_can_resume() {
+        let toodee = TooDee::from_vec(4, 3, (0u32..12).collect());
+        let mut cells = toodee.cells();
+
+        assert_eq!(
+            cells.try_rfold(0, |acc, &value| {
+                if value == 6 { Err(value) } else { Ok(acc + value) }
+            }),
+            Err(6)
+        );
+        assert_eq!(cells.copied().collect::<Vec<_>>(), vec![0, 1, 2, 3, 4, 5]);
+    }
+
+    #[test]
+    fn cells_try_fold_after_mixed_ends() {
+        let toodee = TooDee::from_vec(4, 3, (0u32..12).collect());
+        let mut cells = toodee.cells();
+
+        assert_eq!(cells.next(), Some(&0));
+        assert_eq!(cells.next_back(), Some(&11));
+        assert_eq!(
+            cells.try_fold(0, |acc, &value| {
+                if value == 5 { Err(value) } else { Ok(acc + value) }
+            }),
+            Err(5)
+        );
+        assert_eq!(cells.copied().collect::<Vec<_>>(), vec![6, 7, 8, 9, 10]);
+    }
+
+    #[test]
+    fn cells_try_rfold_after_mixed_ends() {
+        let toodee = TooDee::from_vec(4, 3, (0u32..12).collect());
+        let mut cells = toodee.cells();
+
+        assert_eq!(cells.next(), Some(&0));
+        assert_eq!(cells.next_back(), Some(&11));
+        assert_eq!(
+            cells.try_rfold(0, |acc, &value| {
+                if value == 6 { Err(value) } else { Ok(acc + value) }
+            }),
+            Err(6)
+        );
+        assert_eq!(cells.copied().collect::<Vec<_>>(), vec![1, 2, 3, 4, 5]);
+    }
+
+    #[test]
     fn into_iter() {
         let toodee = TooDee::init(10, 10, 22u32);
         let iter = toodee.into_iter();
