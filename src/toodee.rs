@@ -1015,7 +1015,7 @@ impl<T> TooDee<T> {
     /// # Examples
     ///
     /// ```
-    /// use toodee::TooDee;
+    /// use toodee::{TooDee, TooDeeOps};
     /// let mut array = TooDee::from_vec(2, 4, vec![0, 10, 1, 11, 2, 12, 3, 13]);
     /// let extracted = array.extract_if_rows(|row| row[0] % 2 == 0);
     /// assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>(), vec![0, 10, 2, 12]);
