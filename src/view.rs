@@ -98,8 +98,8 @@ impl<'a, T> TooDeeView<'a, T> {
     ///
     /// # Panics
     ///
-    /// Panics if one of the dimensions is zero but the other is non-zero. This
-    /// is to enforce the rule that empty arrays have no dimensions.
+    /// Panics if `num_cols` is zero but `num_rows` is non-zero.
+    /// A view with zero rows retains its column count.
     ///
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
@@ -114,8 +114,8 @@ impl<'a, T> TooDeeView<'a, T> {
     /// let view = TooDeeView::new(4, 3, &data);
     /// ```
     pub fn new(num_cols: usize, num_rows: usize, data: &'a [T]) -> TooDeeView<'a, T> {
-        if num_cols == 0 || num_rows == 0 {
-            assert_eq!(num_rows, num_cols);
+        if num_cols == 0 {
+            assert_eq!(num_rows, 0);
         }
         let size = num_cols.checked_mul(num_rows).unwrap();
         assert!(size <= data.len());
@@ -256,8 +256,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     ///
     /// # Panics
     ///
-    /// Panics if one of the dimensions is zero but the other is non-zero. This
-    /// is to enforce the rule that empty arrays have no dimensions.
+    /// Panics if `num_cols` is zero but `num_rows` is non-zero.
+    /// A view with zero rows retains its column count.
     ///
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
@@ -272,8 +272,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// let view_mut = TooDeeViewMut::new(4, 3, &mut data);
     /// ```
     pub fn new(num_cols: usize, num_rows: usize, data: &'a mut [T]) -> TooDeeViewMut<'a, T> {
-        if num_cols == 0 || num_rows == 0 {
-            assert_eq!(num_rows, num_cols);
+        if num_cols == 0 {
+            assert_eq!(num_rows, 0);
         }
         let size = num_cols.checked_mul(num_rows).unwrap();
         assert!(size <= data.len());
