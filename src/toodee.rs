@@ -1036,13 +1036,15 @@ impl<T> TooDee<T> {
         // The second tuple field initially stores the predicate result and is
         // later reused as scratch space by build_swap_trace().
         let mut ordering = Vec::with_capacity(original_rows);
+        let mut retained_rows = 0;
         for row in 0..original_rows {
             let start = row * num_cols;
             let extracted = filter(&mut self.data[start..start + num_cols]);
+            if !extracted {
+                retained_rows += 1;
+            }
             ordering.push((0, if extracted { 1 } else { 0 }));
         }
-
-        let retained_rows = ordering.iter().filter(|entry| entry.1 == 0).count();
 
         // Build a stable destination-to-source permutation in the first field.
         let mut next_retained = 0;
