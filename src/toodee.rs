@@ -17,6 +17,7 @@ use alloc::vec::IntoIter;
 use crate::iter::*;
 use crate::view::*;
 use crate::ops::*;
+use crate::permute::build_swap_trace;
 
 /// DrainRow type alias for future-proofing.
 pub type DrainRow<'a, T> = Drain<'a, T>;
@@ -158,43 +159,6 @@ impl<T> TooDeeOpsMut<T> for ExtractedRows<'_, T> {
     unsafe fn get_unchecked_mut(&mut self, coord: Coordinate) -> &mut T {
         self.view.get_unchecked_mut(coord)
     }
-}
-/// Builds a minimal swap trace for a permutation.
-///
-/// On entry, `ordering[i].0` is the original index that belongs at position
-/// `i`. The second field is scratch space. The returned prefix contains the
-/// swaps needed to apply the permutation.
-pub(crate) fn build_swap_trace(ordering: &mut [(usize, usize)]) -> &mut [(usize, usize)] {
-    let len = ordering.len();
-
-    // Build the inverse permutation in the second field.
-    for idx in 0..len {
-        unsafe {
-            // SAFETY: The caller supplies a permutation of 0..len.
-            let original = ordering.get_unchecked(idx).0;
-            ordering.get_unchecked_mut(original).1 = idx;
-        }
-    }
-
-    let mut swap_count = 0;
-
-    // Reuse the ordering slice to store the swap trace.
-    for i in 0..len {
-        unsafe {
-            // SAFETY: The permutation and its inverse contain only indices in 0..len.
-            let (other, inverse_i) = *ordering.get_unchecked(i);
-            if i != other {
-                *ordering.get_unchecked_mut(swap_count) = (i, other);
-                swap_count += 1;
-                if inverse_i > i {
-                    ordering.get_unchecked_mut(inverse_i).0 = other;
-                    ordering.get_unchecked_mut(other).1 = inverse_i;
-                }
-            }
-        }
-    }
-
-    &mut ordering[..swap_count]
 }
 
 /// Represents a two-dimensional array.
@@ -1139,22 +1103,12 @@ impl<T> TooDee<T> {
         let retained_rows = next_retained;
         let extracted_rows = original_rows - retained_rows;
 
-        // Apply the permutation as whole-row swaps. Each swap is between
-        // distinct, non-overlapping rows in the original allocation. With
-        // nothing extracted, the permutation is the identity.
+        // Apply the permutation as whole-row swaps. With nothing extracted,
+        // the permutation is the identity.
         if extracted_rows != 0 {
             let swap_trace = build_swap_trace(&mut ordering);
-            let data = self.data.as_mut_ptr();
             for &(first, second) in swap_trace.iter() {
-                unsafe {
-                    // SAFETY: The trace contains distinct valid row indices, and
-                    // each row occupies num_cols consecutive elements.
-                    ptr::swap_nonoverlapping(
-                        data.add(first * num_cols),
-                        data.add(second * num_cols),
-                        num_cols,
-                    );
-                }
+                self.swap_rows(first, second);
             }
         }
 

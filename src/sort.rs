@@ -5,7 +5,7 @@ use core::slice;
 use core::ptr;
 
 use crate::ops::*;
-use crate::toodee::build_swap_trace;
+use crate::permute::build_swap_trace;
 
 /// Use some unsafeness to coerce a [(usize, &T)] into a [(usize, usize)]. The `Box` is consumed,
 /// meaning that we "unborrow" the &T values.
