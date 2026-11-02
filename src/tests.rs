@@ -1213,7 +1213,7 @@ mod toodee_tests {
             let extracted = toodee.extract_if_rows(|row| row[0] % 2 == 0);
             assert_eq!(extracted.num_rows(), 2);
             assert_eq!(extracted.num_cols(), 2);
-            assert_eq!(extracted.as_slice(), &[0, 10, 2, 12]);
+            assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>(), vec![0, 10, 2, 12]);
             assert_eq!(extracted.rows().collect::<Vec<_>>(), vec![&[0, 10][..], &[2, 12][..]]);
         }
         assert_eq!(toodee.data(), &[1, 11, 3, 13]);
@@ -1233,7 +1233,7 @@ mod toodee_tests {
 
         {
             let extracted = toodee.extract_if_rows(|_| true);
-            assert_eq!(extracted.as_slice(), &[0, 1, 2, 3, 4, 5]);
+            assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>().as_slice(), &[0, 1, 2, 3, 4, 5]);
         }
         assert!(toodee.is_empty());
     }
@@ -1243,8 +1243,8 @@ mod toodee_tests {
         let mut toodee = TooDee::from_vec(2, 3, vec![0, 10, 1, 11, 2, 12]);
         {
             let mut extracted = toodee.extract_if_rows(|row| row[0] % 2 == 0);
-            extracted.row_mut(1)[1] = 99;
-            assert_eq!(extracted.as_slice(), &[0, 10, 2, 99]);
+            extracted[(1, 1)] = 99;
+            assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>(), vec![0, 10, 2, 99]);
         }
         assert_eq!(toodee.data(), &[1, 11]);
     }
