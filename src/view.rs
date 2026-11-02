@@ -288,8 +288,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
-    /// Returns the contiguous data slice covered by this view.
-    pub(crate) fn as_mut_slice(&mut self) -> &mut [T] {
+    /// Returns the backing slice held by this view.
+    pub(crate) fn backing_slice_mut(&mut self) -> &mut [T] {
         self.data
     }
 
