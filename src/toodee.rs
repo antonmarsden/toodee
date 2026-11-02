@@ -1137,24 +1137,27 @@ impl<T> TooDee<T> {
         }
         ordering[next_extracted..].reverse();
         let retained_rows = next_retained;
+        let extracted_rows = original_rows - retained_rows;
 
         // Apply the permutation as whole-row swaps. Each swap is between
-        // distinct, non-overlapping rows in the original allocation.
-        let swap_trace = build_swap_trace(&mut ordering);
-        let data = self.data.as_mut_ptr();
-        for &(first, second) in swap_trace.iter() {
-            unsafe {
-                // SAFETY: The trace contains distinct valid row indices, and
-                // each row occupies num_cols consecutive elements.
-                ptr::swap_nonoverlapping(
-                    data.add(first * num_cols),
-                    data.add(second * num_cols),
-                    num_cols,
-                );
+        // distinct, non-overlapping rows in the original allocation. With
+        // nothing extracted, the permutation is the identity.
+        if extracted_rows != 0 {
+            let swap_trace = build_swap_trace(&mut ordering);
+            let data = self.data.as_mut_ptr();
+            for &(first, second) in swap_trace.iter() {
+                unsafe {
+                    // SAFETY: The trace contains distinct valid row indices, and
+                    // each row occupies num_cols consecutive elements.
+                    ptr::swap_nonoverlapping(
+                        data.add(first * num_cols),
+                        data.add(second * num_cols),
+                        num_cols,
+                    );
+                }
             }
         }
 
-        let extracted_rows = original_rows - retained_rows;
         let extracted_start = retained_rows * num_cols;
 
         // All elements remain initialized, but the Vec must own only the
