@@ -59,8 +59,10 @@ impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
 
 impl<T> Drop for ExtractedRows<'_, T> {
     fn drop(&mut self) {
-        let data = self.view.as_mut_slice().as_mut_ptr();
-        let len = self.view.as_mut_slice().len();
+        let (data, len) = {
+            let slice = self.view.as_mut_slice();
+            (slice.as_mut_ptr(), slice.len())
+        };
 
         // End the mutable view borrow before dropping the elements it covers.
         unsafe { mem::ManuallyDrop::drop(&mut self.view); }
