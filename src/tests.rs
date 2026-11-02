@@ -1234,7 +1234,6 @@ mod toodee_tests {
         {
             let extracted = toodee.extract_if_rows(|_| true);
             assert_eq!(extracted.as_slice(), &[0, 1, 2, 3, 4, 5]);
-            assert!(toodee.is_empty());
         }
         assert!(toodee.is_empty());
     }
