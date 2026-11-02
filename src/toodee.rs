@@ -60,7 +60,7 @@ impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
 impl<T> Drop for ExtractedRows<'_, T> {
     fn drop(&mut self) {
         let (data, len) = {
-            let slice = self.view.as_mut_slice();
+            let slice = self.view.backing_slice_mut();
             (slice.as_mut_ptr(), slice.len())
         };
 
