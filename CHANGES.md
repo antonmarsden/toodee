@@ -8,6 +8,7 @@
 - `TooDee::new()` now panics if one dimension is zero but the other is non-zero, as documented and as `init()` and `from_vec()` already did ([PR #33](https://github.com/antonmarsden/toodee/pull/33)) - thanks Sai Asish Y.
 - `remove_col()` now removes the column immediately and returns its elements in a `DrainCol` backed by a new `Vec`, so forgetting the `DrainCol` leaves the `TooDee` valid ([PR #38](https://github.com/antonmarsden/toodee/pull/38)).
 - `insert_col()` and `push_col()` no longer require the iterator to implement `DoubleEndedIterator`.
+- Removed an unused generic parameter from `sort_row_ord()`, `sort_unstable_row_ord()` and `sort_col_ord()`, which previously could not be called without a turbofish.
 
 ### Version 0.6.1
 - Fixed integer overflow in `nth_back()` - thanks Ruihan Gong.
