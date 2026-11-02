@@ -98,8 +98,9 @@ impl<T> ExtractedRows<'_, T> {
     /// Panics if `row` is out of bounds.
     pub fn row_mut(&mut self, row: usize) -> &mut [T] {
         assert!(row < self.num_rows);
-        let start = row * self.num_cols;
-        &mut self.as_mut_slice()[start..start + self.num_cols]
+        let num_cols = self.num_cols;
+        let start = row * num_cols;
+        &mut self.as_mut_slice()[start..start + num_cols]
     }
 }
 
