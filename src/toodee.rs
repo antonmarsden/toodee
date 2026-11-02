@@ -708,7 +708,7 @@ impl<T> TooDee<T> {
     /// # Examples
     /// 
     /// ```
-    /// use toodee::TooDee;
+    /// use toodee::{TooDee, TooDeeOps};
     /// let v = vec![42u32; 10];
     /// let toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
     /// assert!(toodee.capacity() >= 10);
