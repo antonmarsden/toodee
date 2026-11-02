@@ -24,53 +24,139 @@ pub type DrainRow<'a, T> = Drain<'a, T>;
 /// IntoIter type alias for future-proofing.
 pub type IntoIterTooDee<T> = IntoIter<T>;
 
-/// An owning view of rows extracted from a `TooDee`.
+/// Rows extracted from a `TooDee` by `TooDee::extract_if_rows`.
 ///
-/// The extracted rows occupy the tail of the original backing allocation.
-/// Dropping this value drops those rows; forgetting it leaks them, but leaves
-/// the borrowed `TooDee` valid.
-/// Owns extracted rows while exposing the standard mutable TooDee view API.
+/// The extracted rows occupy the tail of the original backing allocation and
+/// are accessed through the `TooDeeOps` and `TooDeeOpsMut` traits. Dropping
+/// this value drops those rows; forgetting it leaks them, but leaves the
+/// borrowed `TooDee` valid.
 ///
-/// The view borrows the extracted tail, while this wrapper retains responsibility
-/// for dropping those elements when it is dropped.
+/// The underlying view cannot be replaced, since that would cause other
+/// storage to be dropped in place of the extracted rows:
+///
+/// ```compile_fail
+/// use toodee::{TooDee, TooDeeViewMut};
+/// let mut other = vec![String::new()];
+/// let mut array = TooDee::from_vec(1, 1, vec![String::new()]);
+/// let mut extracted = array.extract_if_rows(|_| true);
+/// let mut view = TooDeeViewMut::new(1, 1, &mut other);
+/// core::mem::swap(&mut *extracted, &mut view);
+/// ```
 pub struct ExtractedRows<'a, T> {
-    view: mem::ManuallyDrop<TooDeeViewMut<'a, T>>,
-}
-
-impl<T> ExtractedRows<'_, T> {
-    /// Returns whether no rows were extracted.
-    pub fn is_empty(&self) -> bool { self.view.num_rows() == 0 }
-}
-impl<'a, T> core::ops::Deref for ExtractedRows<'a, T> {
-    type Target = TooDeeViewMut<'a, T>;
-
-    fn deref(&self) -> &Self::Target { &self.view }
-}
-
-impl<'a, T> core::ops::DerefMut for ExtractedRows<'a, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.view }
+    // Never handed out by `&mut`, so it cannot be replaced with a view of
+    // other storage. `Drop` drops the elements through this view.
+    view: TooDeeViewMut<'a, T>,
+    _owns: PhantomData<T>,
 }
 
 impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&*self.view, f)
+        fmt::Debug::fmt(&self.view, f)
     }
 }
 
 impl<T> Drop for ExtractedRows<'_, T> {
     fn drop(&mut self) {
-        let (data, len) = {
-            let slice = self.view.backing_slice_mut();
-            (slice.as_mut_ptr(), slice.len())
-        };
+        // Continues dropping the remaining rows if an element's drop panics.
+        struct DropRows<'r, T>(RowsMut<'r, T>);
 
-        // End the mutable view borrow before dropping the elements it covers.
-        unsafe { mem::ManuallyDrop::drop(&mut self.view); }
-        if len != 0 {
-            // SAFETY: These initialized elements are outside the Vec length,
-            // and this wrapper is their sole owner.
-            unsafe { ptr::drop_in_place(core::slice::from_raw_parts_mut(data, len)); }
+        impl<T> Drop for DropRows<'_, T> {
+            fn drop(&mut self) {
+                for row in &mut self.0 {
+                    // SAFETY: See below.
+                    unsafe { ptr::drop_in_place(row); }
+                }
+            }
         }
+
+        let mut rows = DropRows(self.view.rows_mut());
+        for row in &mut rows.0 {
+            // SAFETY: These initialized elements are outside the Vec length,
+            // this wrapper is their sole owner, and `view` is not used again.
+            unsafe { ptr::drop_in_place(row); }
+        }
+    }
+}
+
+impl<T> Index<usize> for ExtractedRows<'_, T> {
+    type Output = [T];
+    fn index(&self, row: usize) -> &Self::Output {
+        &self.view[row]
+    }
+}
+
+impl<T> Index<Coordinate> for ExtractedRows<'_, T> {
+    type Output = T;
+    fn index(&self, coord: Coordinate) -> &Self::Output {
+        &self.view[coord]
+    }
+}
+
+impl<T> IndexMut<usize> for ExtractedRows<'_, T> {
+    fn index_mut(&mut self, row: usize) -> &mut Self::Output {
+        &mut self.view[row]
+    }
+}
+
+impl<T> IndexMut<Coordinate> for ExtractedRows<'_, T> {
+    fn index_mut(&mut self, coord: Coordinate) -> &mut Self::Output {
+        &mut self.view[coord]
+    }
+}
+
+impl<T> TooDeeOps<T> for ExtractedRows<'_, T> {
+    fn num_cols(&self) -> usize {
+        self.view.num_cols()
+    }
+
+    fn num_rows(&self) -> usize {
+        self.view.num_rows()
+    }
+
+    fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
+        self.view.view(start, end)
+    }
+
+    fn rows(&self) -> Rows<'_, T> {
+        self.view.rows()
+    }
+
+    fn col(&self, col: usize) -> Col<'_, T> {
+        self.view.col(col)
+    }
+
+    unsafe fn get_unchecked_row(&self, row: usize) -> &[T] {
+        self.view.get_unchecked_row(row)
+    }
+
+    unsafe fn get_unchecked(&self, coord: Coordinate) -> &T {
+        self.view.get_unchecked(coord)
+    }
+}
+
+impl<T> TooDeeOpsMut<T> for ExtractedRows<'_, T> {
+    fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
+        self.view.view_mut(start, end)
+    }
+
+    fn rows_mut(&mut self) -> RowsMut<'_, T> {
+        self.view.rows_mut()
+    }
+
+    fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
+        self.view.col_mut(col)
+    }
+
+    fn swap_rows(&mut self, r1: usize, r2: usize) {
+        self.view.swap_rows(r1, r2)
+    }
+
+    unsafe fn get_unchecked_row_mut(&mut self, row: usize) -> &mut [T] {
+        self.view.get_unchecked_row_mut(row)
+    }
+
+    unsafe fn get_unchecked_mut(&mut self, coord: Coordinate) -> &mut T {
+        self.view.get_unchecked_mut(coord)
     }
 }
 /// Builds a minimal swap trace for a permutation.
@@ -1087,9 +1173,11 @@ impl<T> TooDee<T> {
         let view = TooDeeViewMut::new(if extracted_rows == 0 { 0 } else { num_cols }, extracted_rows, slice);
 
         ExtractedRows {
-            view: mem::ManuallyDrop::new(view),
+            view,
+            _owns: PhantomData,
         }
     }
+
     /// Removes the specified row from the array and returns it as a `Drain`
     /// 
     /// # Panics

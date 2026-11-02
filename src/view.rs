@@ -98,7 +98,8 @@ impl<'a, T> TooDeeView<'a, T> {
     ///
     /// # Panics
     ///
-    /// Panics if either dimension is zero and the other is non-zero.
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
     ///
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
@@ -255,8 +256,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     ///
     /// # Panics
     ///
-    /// Panics if `num_cols` is zero but `num_rows` is non-zero.
-    /// A view with zero rows retains its column count.
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
     ///
     /// Panics if the slice's length is not sufficient to represent
     /// the desired array dimensions.
@@ -287,11 +288,6 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
-    /// Returns the backing slice held by this view.
-    pub(crate) fn backing_slice_mut(&mut self) -> &mut [T] {
-        self.data
-    }
-
     pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
         let stride = toodee.num_cols();
         let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, toodee, stride);

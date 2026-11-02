@@ -1258,7 +1258,7 @@ mod toodee_tests {
         assert_eq!(toodee.data(), &[1, 11]);
         assert_eq!(toodee.size(), (2, 1));
         assert_eq!(toodee.data().len(), toodee.num_rows() * toodee.num_cols());
-        toodee.push_row([20, 21].into_iter());
+        toodee.push_row([20, 21]);
         assert_eq!(toodee.data(), &[1, 11, 20, 21]);
     }
 
@@ -1305,6 +1305,35 @@ mod toodee_tests {
         assert!(result.is_err());
         assert_eq!(toodee.data(), &[0, 1, 2, 3]);
         assert_eq!(toodee.size(), (1, 4));
+    }
+
+    #[test]
+    fn extract_if_rows_element_drop_panic_drops_remaining_rows() {
+        use alloc::rc::Rc;
+        use core::cell::Cell;
+        use std::panic::{catch_unwind, AssertUnwindSafe};
+
+        struct PanicOnDrop(Rc<Cell<usize>>, bool);
+        impl Drop for PanicOnDrop {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+                if self.1 {
+                    panic!("element drop panic");
+                }
+            }
+        }
+
+        let drops = Rc::new(Cell::new(0));
+        let mut toodee = TooDee::from_vec(
+            2, 3,
+            (0..6).map(|i| PanicOnDrop(Rc::clone(&drops), i == 0)).collect(),
+        );
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            drop(toodee.extract_if_rows(|_| true));
+        }));
+        assert!(result.is_err());
+        assert_eq!(drops.get(), 6);
+        assert!(toodee.is_empty());
     }
 
 
