@@ -23,6 +23,7 @@ mod view;
 mod ops;
 mod toodee;
 mod flattenexact;
+mod permute;
 
 #[cfg(feature = "sort")] mod sort;
 #[cfg(feature = "sort")] mod tests_sort;

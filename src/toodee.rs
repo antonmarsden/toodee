@@ -17,12 +17,149 @@ use alloc::vec::IntoIter;
 use crate::iter::*;
 use crate::view::*;
 use crate::ops::*;
+use crate::permute::build_swap_trace;
 
 /// DrainRow type alias for future-proofing.
 pub type DrainRow<'a, T> = Drain<'a, T>;
 
 /// IntoIter type alias for future-proofing.
 pub type IntoIterTooDee<T> = IntoIter<T>;
+
+/// Rows extracted from a `TooDee` by `TooDee::extract_if_rows`.
+///
+/// The extracted rows occupy the tail of the original backing allocation and
+/// are accessed through the `TooDeeOps` and `TooDeeOpsMut` traits. Dropping
+/// this value drops those rows; forgetting it leaks them, but leaves the
+/// borrowed `TooDee` valid.
+///
+/// The underlying view cannot be replaced, since that would cause other
+/// storage to be dropped in place of the extracted rows:
+///
+/// ```compile_fail
+/// use toodee::{TooDee, TooDeeViewMut};
+/// let mut other = vec![String::new()];
+/// let mut array = TooDee::from_vec(1, 1, vec![String::new()]);
+/// let mut extracted = array.extract_if_rows(|_| true);
+/// let mut view = TooDeeViewMut::new(1, 1, &mut other);
+/// core::mem::swap(&mut *extracted, &mut view);
+/// ```
+pub struct ExtractedRows<'a, T> {
+    // Never handed out by `&mut`, so it cannot be replaced with a view of
+    // other storage. `Drop` drops the elements through this view.
+    view: TooDeeViewMut<'a, T>,
+    _owns: PhantomData<T>,
+}
+
+impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&self.view, f)
+    }
+}
+
+impl<T> Drop for ExtractedRows<'_, T> {
+    fn drop(&mut self) {
+        // Continues dropping the remaining rows if an element's drop panics.
+        struct DropRows<'r, T>(RowsMut<'r, T>);
+
+        impl<T> Drop for DropRows<'_, T> {
+            fn drop(&mut self) {
+                for row in &mut self.0 {
+                    // SAFETY: See below.
+                    unsafe { ptr::drop_in_place(row); }
+                }
+            }
+        }
+
+        let mut rows = DropRows(self.view.rows_mut());
+        for row in &mut rows.0 {
+            // SAFETY: These initialized elements are outside the Vec length,
+            // this wrapper is their sole owner, and `view` is not used again.
+            unsafe { ptr::drop_in_place(row); }
+        }
+    }
+}
+
+impl<T> Index<usize> for ExtractedRows<'_, T> {
+    type Output = [T];
+    fn index(&self, row: usize) -> &Self::Output {
+        &self.view[row]
+    }
+}
+
+impl<T> Index<Coordinate> for ExtractedRows<'_, T> {
+    type Output = T;
+    fn index(&self, coord: Coordinate) -> &Self::Output {
+        &self.view[coord]
+    }
+}
+
+impl<T> IndexMut<usize> for ExtractedRows<'_, T> {
+    fn index_mut(&mut self, row: usize) -> &mut Self::Output {
+        &mut self.view[row]
+    }
+}
+
+impl<T> IndexMut<Coordinate> for ExtractedRows<'_, T> {
+    fn index_mut(&mut self, coord: Coordinate) -> &mut Self::Output {
+        &mut self.view[coord]
+    }
+}
+
+impl<T> TooDeeOps<T> for ExtractedRows<'_, T> {
+    fn num_cols(&self) -> usize {
+        self.view.num_cols()
+    }
+
+    fn num_rows(&self) -> usize {
+        self.view.num_rows()
+    }
+
+    fn view(&self, start: Coordinate, end: Coordinate) -> TooDeeView<'_, T> {
+        self.view.view(start, end)
+    }
+
+    fn rows(&self) -> Rows<'_, T> {
+        self.view.rows()
+    }
+
+    fn col(&self, col: usize) -> Col<'_, T> {
+        self.view.col(col)
+    }
+
+    unsafe fn get_unchecked_row(&self, row: usize) -> &[T] {
+        self.view.get_unchecked_row(row)
+    }
+
+    unsafe fn get_unchecked(&self, coord: Coordinate) -> &T {
+        self.view.get_unchecked(coord)
+    }
+}
+
+impl<T> TooDeeOpsMut<T> for ExtractedRows<'_, T> {
+    fn view_mut(&mut self, start: Coordinate, end: Coordinate) -> TooDeeViewMut<'_, T> {
+        self.view.view_mut(start, end)
+    }
+
+    fn rows_mut(&mut self) -> RowsMut<'_, T> {
+        self.view.rows_mut()
+    }
+
+    fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
+        self.view.col_mut(col)
+    }
+
+    fn swap_rows(&mut self, r1: usize, r2: usize) {
+        self.view.swap_rows(r1, r2)
+    }
+
+    unsafe fn get_unchecked_row_mut(&mut self, row: usize) -> &mut [T] {
+        self.view.get_unchecked_row_mut(row)
+    }
+
+    unsafe fn get_unchecked_mut(&mut self, coord: Coordinate) -> &mut T {
+        self.view.get_unchecked_mut(coord)
+    }
+}
 
 /// Represents a two-dimensional array.
 /// 
@@ -159,7 +296,7 @@ impl<T> Default for TooDee<T> {
     /// # Examples
     /// 
     /// ```
-    /// use toodee::TooDee;
+    /// use toodee::{TooDee, TooDeeOps};
     /// struct Abc { }
     /// let toodee : TooDee<Abc> = TooDee::default();
     /// ```
@@ -622,7 +759,7 @@ impl<T> TooDee<T> {
     /// # Examples
     /// 
     /// ```
-    /// use toodee::TooDee;
+    /// use toodee::{TooDee, TooDeeOps};
     /// let v = vec![42u32; 10];
     /// let toodee : TooDee<u32> = TooDee::from_vec(5, 2, v);
     /// assert!(toodee.capacity() >= 10);
@@ -907,6 +1044,94 @@ impl<T> TooDee<T> {
         // create a non-empty TooDee.
         if self.num_cols > 0 {
             self.num_rows += 1;
+        }
+    }
+
+    /// Extracts rows matching `filter`, returning a view over the extracted rows.
+    ///
+    /// The rows are partitioned in place in the existing backing allocation.
+    /// Both the retained rows and extracted rows preserve their original order.
+    /// The returned value borrows the array mutably and exposes the extracted
+    /// rows until it is dropped.
+    ///
+    /// This operation uses O(rows) auxiliary storage for predicate results
+    /// and a swap trace. Applying the stable permutation takes O(rows *
+    /// columns) element movement.
+    ///
+    /// If the predicate panics, the array retains its original row order and
+    /// shape. Mutations made by the predicate before it panics are not rolled
+    /// back.
+    /// Forgetting the returned value leaves the retained array valid, but leaks
+    /// the extracted elements because their storage is outside the Vec length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps};
+    /// let mut array = TooDee::from_vec(2, 4, vec![0, 10, 1, 11, 2, 12, 3, 13]);
+    /// let extracted = array.extract_if_rows(|row| row[0] % 2 == 0);
+    /// assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>(), vec![0, 10, 2, 12]);
+    /// drop(extracted);
+    /// assert_eq!(array.data(), &[1, 11, 3, 13]);
+    /// ```
+    pub fn extract_if_rows<F>(&mut self, mut filter: F) -> ExtractedRows<'_, T>
+    where
+        F: FnMut(&mut [T]) -> bool,
+    {
+        let original_rows = self.num_rows;
+        let num_cols = self.num_cols;
+
+        // Build a stable destination-to-source permutation while evaluating
+        // the predicate. Retained rows are written from the front, extracted
+        // rows from the back; reversing the extracted range restores their
+        // original order.
+        let mut ordering = vec![(0, 0); original_rows];
+        let mut next_retained = 0;
+        let mut next_extracted = original_rows;
+        for source in 0..original_rows {
+            let start = source * num_cols;
+            let extracted = filter(&mut self.data[start..start + num_cols]);
+            if extracted {
+                next_extracted -= 1;
+                ordering[next_extracted].0 = source;
+            } else {
+                ordering[next_retained].0 = source;
+                next_retained += 1;
+            }
+        }
+        ordering[next_extracted..].reverse();
+        let retained_rows = next_retained;
+        let extracted_rows = original_rows - retained_rows;
+
+        // Apply the permutation as whole-row swaps. With nothing extracted,
+        // the permutation is the identity.
+        if extracted_rows != 0 {
+            let swap_trace = build_swap_trace(&mut ordering);
+            for &(first, second) in swap_trace.iter() {
+                self.swap_rows(first, second);
+            }
+        }
+
+        let extracted_start = retained_rows * num_cols;
+
+        // All elements remain initialized, but the Vec must own only the
+        // retained prefix. ExtractedRows takes responsibility for dropping
+        // the initialized tail.
+        unsafe {
+            self.data.set_len(extracted_start);
+        }
+        self.num_rows = retained_rows;
+        self.num_cols = if retained_rows == 0 { 0 } else { num_cols };
+
+        let data = unsafe { self.data.as_mut_ptr().add(extracted_start) };
+        let slice = unsafe {
+            core::slice::from_raw_parts_mut(data, extracted_rows * num_cols)
+        };
+        let view = TooDeeViewMut::new(if extracted_rows == 0 { 0 } else { num_cols }, extracted_rows, slice);
+
+        ExtractedRows {
+            view,
+            _owns: PhantomData,
         }
     }
 

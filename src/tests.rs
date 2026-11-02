@@ -1204,4 +1204,137 @@ mod toodee_tests {
         assert!(toodee.is_empty());
         assert!(toodee.data().is_empty());
     }
+
+    #[test]
+    fn extract_if_rows_preserves_order_and_uses_original_storage() {
+        let mut toodee = TooDee::from_vec(2, 4, vec![0, 10, 1, 11, 2, 12, 3, 13]);
+        let capacity = toodee.capacity();
+        {
+            let extracted = toodee.extract_if_rows(|row| row[0] % 2 == 0);
+            assert_eq!(extracted.num_rows(), 2);
+            assert_eq!(extracted.num_cols(), 2);
+            assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>(), vec![0, 10, 2, 12]);
+            assert_eq!(extracted.rows().collect::<Vec<_>>(), vec![&[0, 10][..], &[2, 12][..]]);
+        }
+        assert_eq!(toodee.data(), &[1, 11, 3, 13]);
+        assert_eq!(toodee.size(), (2, 2));
+        assert_eq!(toodee.capacity(), capacity);
+    }
+
+    #[test]
+    fn extract_if_rows_all_or_none() {
+        let mut toodee = TooDee::from_vec(2, 3, vec![0, 1, 2, 3, 4, 5]);
+        {
+            let extracted = toodee.extract_if_rows(|_| false);
+            assert!(extracted.is_empty());
+            assert_eq!(extracted.num_cols(), 0);
+        }
+        assert_eq!(toodee.data(), &[0, 1, 2, 3, 4, 5]);
+
+        {
+            let extracted = toodee.extract_if_rows(|_| true);
+            assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>().as_slice(), &[0, 1, 2, 3, 4, 5]);
+        }
+        assert!(toodee.is_empty());
+    }
+
+    #[test]
+    fn extract_if_rows_allows_mutating_extracted_rows() {
+        let mut toodee = TooDee::from_vec(2, 3, vec![0, 10, 1, 11, 2, 12]);
+        {
+            let mut extracted = toodee.extract_if_rows(|row| row[0] % 2 == 0);
+            extracted[(1, 1)] = 99;
+            assert_eq!(extracted.rows().flatten().copied().collect::<Vec<_>>(), vec![0, 10, 2, 99]);
+        }
+        assert_eq!(toodee.data(), &[1, 11]);
+    }
+
+    #[test]
+    fn extract_if_rows_forget_leaves_toodee_valid() {
+        let mut toodee = TooDee::from_vec(2, 3, vec![0, 10, 1, 11, 2, 12]);
+        let extracted = toodee.extract_if_rows(|row| row[0] % 2 == 0);
+        core::mem::forget(extracted);
+
+        assert_eq!(toodee.data(), &[1, 11]);
+        assert_eq!(toodee.size(), (2, 1));
+        assert_eq!(toodee.data().len(), toodee.num_rows() * toodee.num_cols());
+        toodee.push_row([20, 21]);
+        assert_eq!(toodee.data(), &[1, 11, 20, 21]);
+    }
+
+    #[test]
+    fn extract_if_rows_drops_extracted_elements_once() {
+        use alloc::rc::Rc;
+        use core::cell::Cell;
+
+        struct DropCount(Rc<Cell<usize>>);
+        impl Drop for DropCount {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+
+        let drops = Rc::new(Cell::new(0));
+        {
+            let mut toodee = TooDee::from_vec(
+                1, 4,
+                (0..4).map(|_| DropCount(Rc::clone(&drops))).collect(),
+            );
+            let extracted = toodee.extract_if_rows(|_| true);
+            assert_eq!(drops.get(), 0);
+            drop(extracted);
+            assert_eq!(drops.get(), 4);
+            assert!(toodee.is_empty());
+        }
+        assert_eq!(drops.get(), 4);
+    }
+
+    #[test]
+    fn extract_if_rows_predicate_panic_leaves_array_valid() {
+        use std::panic::{catch_unwind, AssertUnwindSafe};
+
+        let mut toodee = TooDee::from_vec(1, 4, vec![0, 1, 2, 3]);
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            let _ = toodee.extract_if_rows(|row| {
+                if row[0] == 3 {
+                    panic!("predicate panic");
+                }
+                row[0] % 2 == 0
+            });
+        }));
+        assert!(result.is_err());
+        assert_eq!(toodee.data(), &[0, 1, 2, 3]);
+        assert_eq!(toodee.size(), (1, 4));
+    }
+
+    #[test]
+    fn extract_if_rows_element_drop_panic_drops_remaining_rows() {
+        use alloc::rc::Rc;
+        use core::cell::Cell;
+        use std::panic::{catch_unwind, AssertUnwindSafe};
+
+        struct PanicOnDrop(Rc<Cell<usize>>, bool);
+        impl Drop for PanicOnDrop {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+                if self.1 {
+                    panic!("element drop panic");
+                }
+            }
+        }
+
+        let drops = Rc::new(Cell::new(0));
+        let mut toodee = TooDee::from_vec(
+            2, 3,
+            (0..6).map(|i| PanicOnDrop(Rc::clone(&drops), i == 0)).collect(),
+        );
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            drop(toodee.extract_if_rows(|_| true));
+        }));
+        assert!(result.is_err());
+        assert_eq!(drops.get(), 6);
+        assert!(toodee.is_empty());
+    }
+
+
 }
