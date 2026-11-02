@@ -203,6 +203,41 @@ mod toodee_tests {
         assert_eq!(toodee.data().iter().sum::<u32>(), 1100);
     }
     #[test]
+    fn into_vec_method_preserves_data_and_allocation() {
+        let data = vec![
+            String::from("one"),
+            String::from("two"),
+            String::from("three"),
+            String::from("four"),
+        ];
+        let ptr = data.as_ptr();
+        let capacity = data.capacity();
+
+        let toodee = TooDee::from_vec(2, 2, data);
+        let result = toodee.into_vec();
+
+        assert_eq!(
+            result,
+            vec![
+                String::from("one"),
+                String::from("two"),
+                String::from("three"),
+                String::from("four"),
+            ]
+        );
+        assert_eq!(result.as_ptr(), ptr);
+        assert_eq!(result.capacity(), capacity);
+    }
+
+    #[test]
+    fn into_vec_method_handles_empty_toodee() {
+        let toodee: TooDee<String> = TooDee::new(0, 0);
+        let result = toodee.into_vec();
+
+        assert!(result.is_empty());
+    }
+
+    #[test]
     fn from_vec() {
         let v = vec![42u32; 16];
         let toodee = TooDee::from_vec(8, 2, v);
