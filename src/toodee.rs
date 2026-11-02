@@ -1039,7 +1039,7 @@ impl<T> TooDee<T> {
         for row in 0..original_rows {
             let start = row * num_cols;
             let extracted = filter(&mut self.data[start..start + num_cols]);
-            ordering.push((0, usize::from(extracted)));
+            ordering.push((0, if extracted { 1 } else { 0 }));
         }
 
         let retained_rows = ordering.iter().filter(|entry| entry.1 == 0).count();
