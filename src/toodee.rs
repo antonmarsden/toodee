@@ -1084,7 +1084,7 @@ impl<T> TooDee<T> {
         let slice = unsafe {
             core::slice::from_raw_parts_mut(data, extracted_rows * num_cols)
         };
-        let view = TooDeeViewMut::new(num_cols, extracted_rows, slice);
+        let view = TooDeeViewMut::new(if extracted_rows == 0 { 0 } else { num_cols }, extracted_rows, slice);
 
         ExtractedRows {
             view: mem::ManuallyDrop::new(view),
@@ -1473,4 +1473,4 @@ impl<T> DoubleEndedIterator for DrainCol<'_, T> {
     }
 }
 
-impl<T> ExactSizeIterator for DrainCol<'_, T> {}
+impl<T> ExactSizeIterator for DrainCol<'_, T> {}

@@ -271,8 +271,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// let view_mut = TooDeeViewMut::new(4, 3, &mut data);
     /// ```
     pub fn new(num_cols: usize, num_rows: usize, data: &'a mut [T]) -> TooDeeViewMut<'a, T> {
-        if num_cols == 0 {
-            assert_eq!(num_rows, 0);
+        if num_cols == 0 || num_rows == 0 {
+            assert_eq!(num_rows, num_cols);
         }
         let size = num_cols.checked_mul(num_rows).unwrap();
         assert!(size <= data.len());

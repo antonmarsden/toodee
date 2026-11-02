@@ -1227,7 +1227,7 @@ mod toodee_tests {
         {
             let extracted = toodee.extract_if_rows(|_| false);
             assert!(extracted.is_empty());
-            assert_eq!(extracted.num_cols(), 2);
+            assert_eq!(extracted.num_cols(), 0);
         }
         assert_eq!(toodee.data(), &[0, 1, 2, 3, 4, 5]);
 
