@@ -1073,8 +1073,8 @@ impl<T> TooDee<T> {
     /// let mut array = TooDee::from_vec(2, 4, vec![0, 10, 1, 11, 2, 12, 3, 13]);
     /// let extracted = array.extract_if_rows(|row| row[0] % 2 == 0);
     /// assert_eq!(extracted.as_slice(), &[0, 10, 2, 12]);
-    /// assert_eq!(array.data(), &[1, 11, 3, 13]);
     /// drop(extracted);
+    /// assert_eq!(array.data(), &[1, 11, 3, 13]);
     /// ```
     pub fn extract_if_rows<F>(&mut self, mut filter: F) -> ExtractedRows<'_, T>
     where
