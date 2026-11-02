@@ -245,7 +245,7 @@ impl<T> Default for TooDee<T> {
     /// # Examples
     /// 
     /// ```
-    /// use toodee::TooDee;
+    /// use toodee::{TooDee, TooDeeOps};
     /// struct Abc { }
     /// let toodee : TooDee<Abc> = TooDee::default();
     /// ```
