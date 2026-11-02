@@ -51,53 +51,7 @@ impl<T> ExtractedRows<'_, T> {
 
     /// Returns whether no rows were extracted.
     pub fn is_empty(&self) -> bool { self.len == 0 }
-
-    /// Returns the extracted elements as a contiguous slice.
-    pub fn as_slice(&self) -> &[T] {
-        // SAFETY: `data` points to the initialized extracted tail, which
-        // remains allocated and exclusively borrowed for this object's life.
-        unsafe { core::slice::from_raw_parts(self.data, self.len) }
-    }
-
-    /// Returns the extracted elements as a mutable contiguous slice.
-    pub fn as_mut_slice(&mut self) -> &mut [T] {
-        // SAFETY: The wrapper uniquely owns access to the extracted tail.
-        unsafe { core::slice::from_raw_parts_mut(self.data, self.len) }
-    }
-
-    /// Returns an iterator over the extracted rows.
-    pub fn rows(&self) -> core::slice::ChunksExact<'_, T> {
-        self.as_slice().chunks_exact(self.num_cols.max(1))
-    }
-
-    /// Returns a mutable iterator over the extracted rows.
-    pub fn rows_mut(&mut self) -> core::slice::ChunksExactMut<'_, T> {
-        self.as_mut_slice().chunks_exact_mut(self.num_cols.max(1))
-    }
-
-    /// Returns the specified extracted row.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `row` is out of bounds.
-    pub fn row(&self, row: usize) -> &[T] {
-        assert!(row < self.num_rows());
-        let start = row * self.num_cols;
-        &self.as_slice()[start..start + self.num_cols]
-    }
-
-    /// Returns the specified extracted row mutably.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `row` is out of bounds.
-    pub fn row_mut(&mut self, row: usize) -> &mut [T] {
-        assert!(row < self.num_rows());
-        let start = row * self.num_cols;
-        &mut self.as_mut_slice()[start..start + self.num_cols]
-    }
 }
-
 impl<'a, T> core::ops::Deref for ExtractedRows<'a, T> {
     type Target = TooDeeViewMut<'a, T>;
 
