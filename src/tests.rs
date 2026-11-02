@@ -1296,7 +1296,7 @@ mod toodee_tests {
         let mut toodee = TooDee::from_vec(1, 4, vec![0, 1, 2, 3]);
         let result = catch_unwind(AssertUnwindSafe(|| {
             let _ = toodee.extract_if_rows(|row| {
-                if row[0] == 2 {
+                if row[0] == 3 {
                     panic!("predicate panic");
                 }
                 row[0] % 2 == 0
