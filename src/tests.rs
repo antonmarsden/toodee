@@ -1204,4 +1204,51 @@ mod toodee_tests {
         assert!(toodee.is_empty());
         assert!(toodee.data().is_empty());
     }
+
+    #[test]
+    fn extract_if_rows_preserves_order() {
+        let mut toodee = TooDee::from_vec(2, 4, vec![0, 10, 1, 11, 2, 12, 3, 13]);
+        let extracted: Vec<_> = toodee.extract_if_rows(|row| row[0] % 2 == 0).collect();
+        assert_eq!(extracted, vec![vec![0, 10], vec![2, 12]]);
+        assert_eq!(toodee.data(), &[1, 11, 3, 13]);
+        assert_eq!(toodee.size(), (2, 2));
+    }
+
+    #[test]
+    fn extract_if_rows_drop_early_keeps_unvisited_rows() {
+        let mut toodee = TooDee::from_vec(2, 4, vec![0, 10, 1, 11, 2, 12, 3, 13]);
+        let mut extracted = toodee.extract_if_rows(|row| row[0] % 2 == 0);
+        assert_eq!(extracted.next(), Some(vec![0, 10]));
+        drop(extracted);
+        assert_eq!(toodee.data(), &[1, 11, 2, 12, 3, 13]);
+        assert_eq!(toodee.size(), (2, 3));
+    }
+
+    #[test]
+    fn extract_if_rows_predicate_panic_keeps_current_and_unvisited_rows() {
+        use std::panic::{catch_unwind, AssertUnwindSafe};
+        let mut toodee = TooDee::from_vec(2, 3, vec![0, 10, 1, 11, 2, 12]);
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            let mut extracted = toodee.extract_if_rows(|row| {
+                if row[0] == 2 { panic!("predicate panic"); }
+                row[0] == 0
+            });
+            assert_eq!(extracted.next(), Some(vec![0, 10]));
+            let _ = extracted.next();
+        }));
+        assert!(result.is_err());
+        assert_eq!(toodee.data(), &[1, 11, 2, 12]);
+        assert_eq!(toodee.size(), (2, 2));
+    }
+
+    #[test]
+    fn extract_if_rows_can_mutate_retained_rows() {
+        let mut toodee = TooDee::from_vec(2, 3, vec![1, 10, 2, 20, 3, 30]);
+        let extracted: Vec<_> = toodee.extract_if_rows(|row| {
+            row[1] += 1;
+            row[0] == 2
+        }).collect();
+        assert_eq!(extracted, vec![vec![2, 21]]);
+        assert_eq!(toodee.data(), &[1, 11, 3, 31]);
+    }
 }
