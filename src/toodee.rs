@@ -29,44 +29,40 @@ pub type IntoIterTooDee<T> = IntoIter<T>;
 /// The extracted rows occupy the tail of the original backing allocation.
 /// Dropping this value drops those rows; forgetting it leaks them, but leaves
 /// the borrowed `TooDee` valid.
+/// Owns extracted rows while exposing the standard mutable TooDee view API.
+///
+/// The view borrows the extracted tail, while this wrapper retains responsibility
+/// for dropping those elements when it is dropped.
 pub struct ExtractedRows<'a, T> {
-    toodee: &'a mut TooDee<T>,
-    start: usize,
-    num_rows: usize,
+    view: mem::ManuallyDrop<TooDeeViewMut<'a, T>>,
+    data: *mut T,
+    len: usize,
     num_cols: usize,
 }
 
 impl<T> ExtractedRows<'_, T> {
     /// Returns the number of extracted rows.
-    pub fn num_rows(&self) -> usize { self.num_rows }
+    pub fn num_rows(&self) -> usize { self.view.num_rows() }
 
     /// Returns the number of columns in each extracted row.
+    ///
+    /// This retains the original width when no rows were extracted.
     pub fn num_cols(&self) -> usize { self.num_cols }
 
     /// Returns whether no rows were extracted.
-    pub fn is_empty(&self) -> bool { self.num_rows == 0 }
+    pub fn is_empty(&self) -> bool { self.len == 0 }
 
     /// Returns the extracted elements as a contiguous slice.
     pub fn as_slice(&self) -> &[T] {
-        let len = self.num_rows * self.num_cols;
-        // SAFETY: The extracted tail remains initialized in the TooDee's
-        // allocation until this object is dropped. Its exclusive borrow
-        // prevents the TooDee from reallocating that allocation.
-        unsafe {
-            core::slice::from_raw_parts(self.toodee.data.as_ptr().add(self.start), len)
-        }
+        // SAFETY: `data` points to the initialized extracted tail, which
+        // remains allocated and exclusively borrowed for this object's life.
+        unsafe { core::slice::from_raw_parts(self.data, self.len) }
     }
 
     /// Returns the extracted elements as a mutable contiguous slice.
     pub fn as_mut_slice(&mut self) -> &mut [T] {
-        let len = self.num_rows * self.num_cols;
-        // SAFETY: This object exclusively borrows the TooDee, and the
-        // extracted tail is disjoint from the Vec's initialized prefix.
-        unsafe {
-            core::slice::from_raw_parts_mut(
-                self.toodee.data.as_mut_ptr().add(self.start), len,
-            )
-        }
+        // SAFETY: The wrapper uniquely owns access to the extracted tail.
+        unsafe { core::slice::from_raw_parts_mut(self.data, self.len) }
     }
 
     /// Returns an iterator over the extracted rows.
@@ -76,8 +72,7 @@ impl<T> ExtractedRows<'_, T> {
 
     /// Returns a mutable iterator over the extracted rows.
     pub fn rows_mut(&mut self) -> core::slice::ChunksExactMut<'_, T> {
-        let cols = self.num_cols.max(1);
-        self.as_mut_slice().chunks_exact_mut(cols)
+        self.as_mut_slice().chunks_exact_mut(self.num_cols.max(1))
     }
 
     /// Returns the specified extracted row.
@@ -86,7 +81,7 @@ impl<T> ExtractedRows<'_, T> {
     ///
     /// Panics if `row` is out of bounds.
     pub fn row(&self, row: usize) -> &[T] {
-        assert!(row < self.num_rows);
+        assert!(row < self.num_rows());
         let start = row * self.num_cols;
         &self.as_slice()[start..start + self.num_cols]
     }
@@ -97,16 +92,25 @@ impl<T> ExtractedRows<'_, T> {
     ///
     /// Panics if `row` is out of bounds.
     pub fn row_mut(&mut self, row: usize) -> &mut [T] {
-        assert!(row < self.num_rows);
-        let num_cols = self.num_cols;
-        let start = row * num_cols;
-        &mut self.as_mut_slice()[start..start + num_cols]
+        assert!(row < self.num_rows());
+        let start = row * self.num_cols;
+        &mut self.as_mut_slice()[start..start + self.num_cols]
     }
+}
+
+impl<'a, T> core::ops::Deref for ExtractedRows<'a, T> {
+    type Target = TooDeeViewMut<'a, T>;
+
+    fn deref(&self) -> &Self::Target { &self.view }
+}
+
+impl<'a, T> core::ops::DerefMut for ExtractedRows<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.view }
 }
 
 impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_list().entries(self.rows()).finish()
+        fmt::Debug::fmt(&*self.view, f)
     }
 }
 
@@ -120,20 +124,15 @@ impl<T> AsMut<[T]> for ExtractedRows<'_, T> {
 
 impl<T> Drop for ExtractedRows<'_, T> {
     fn drop(&mut self) {
-        let len = self.num_rows * self.num_cols;
-        if len != 0 {
-            // SAFETY: This is the initialized tail of the allocation, outside
-            // the Vec's length. The object has exclusive access to it, and
-            // each extracted element is dropped exactly once here.
-            unsafe {
-                ptr::drop_in_place(core::slice::from_raw_parts_mut(
-                    self.toodee.data.as_mut_ptr().add(self.start), len,
-                ));
-            }
+        // End the mutable view borrow before dropping the elements it covers.
+        unsafe { mem::ManuallyDrop::drop(&mut self.view); }
+        if self.len != 0 {
+            // SAFETY: These initialized elements are outside the Vec length,
+            // and this wrapper is their sole owner.
+            unsafe { ptr::drop_in_place(core::slice::from_raw_parts_mut(self.data, self.len)); }
         }
     }
 }
-
 /// Stable in-place partition of rows. Returns the number of rows for which
 /// the predicate returned false. Uses O(log(rows)) stack space and no heap
 /// allocation. Recursive rotations preserve the relative order of both
@@ -1101,10 +1100,22 @@ impl<T> TooDee<T> {
         self.num_rows = retained_rows;
         self.num_cols = if retained_rows == 0 { 0 } else { num_cols };
 
+        let len = extracted_rows * num_cols;
+        let data = unsafe { self.data.as_mut_ptr().add(extracted_start) };
+        // TooDeeViewMut enforces TooDee's empty-dimension convention. Preserve
+        // the original width separately when no rows were extracted.
+        let (view_cols, view_rows) = if extracted_rows == 0 {
+            (0, 0)
+        } else {
+            (num_cols, extracted_rows)
+        };
+        let slice = unsafe { core::slice::from_raw_parts_mut(data, len) };
+        let view = TooDeeViewMut::new(view_cols, view_rows, slice);
+
         ExtractedRows {
-            toodee: self,
-            start: extracted_start,
-            num_rows: extracted_rows,
+            view: mem::ManuallyDrop::new(view),
+            data,
+            len,
             num_cols,
         }
     }
