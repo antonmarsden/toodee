@@ -160,7 +160,7 @@ fn bench_push_col(c: &mut Criterion) {
         let toodee = init_toodee();
         b.iter_batched(
             || (toodee.clone(), vec![0; SIZE]),
-            |(mut g, c) | g.push_row(c),
+            |(mut g, c) | g.push_col(c),
             criterion::BatchSize::SmallInput,
         )
     });

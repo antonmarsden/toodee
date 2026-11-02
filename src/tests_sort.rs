@@ -22,6 +22,18 @@ mod toodee_tests_sort {
     }
         
     #[test]
+    fn sort_ord_helpers() {
+        let mut toodee = TooDee::from_vec(3, 3, vec![3u32, 1, 2, 6, 4, 5, 9, 7, 8]);
+        toodee.sort_row_ord(0);
+        assert_eq!(&toodee[0], &[1, 2, 3]);
+        toodee.sort_unstable_row_ord(1);
+        assert_eq!(&toodee[1], &[4, 5, 6]);
+        toodee.sort_col_ord(0);
+        assert_eq!(toodee.col(0).copied().collect::<Vec<u32>>(), vec![1, 4, 7]);
+    }
+
+
+    #[test]
     fn sort_by_col() {
         let rng = StdRng::seed_from_u64(42);
         let samples = rng.sample_iter(Uniform::new(0,100));

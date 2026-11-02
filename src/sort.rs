@@ -27,13 +27,13 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
 
     /// Sort the entire two-dimensional array by comparing elements on a specific row, using the natural ordering.
     /// This sort is stable.
-    fn sort_row_ord<F>(&mut self, row: usize) where T : Ord {
+    fn sort_row_ord(&mut self, row: usize) where T : Ord {
         self.sort_by_row(row, T::cmp);
     }
     
     /// Sort the entire two-dimensional array by comparing elements on a specific row, using the natural ordering.
     /// This sort is unstable.
-    fn sort_unstable_row_ord<F>(&mut self, row: usize) where T : Ord {
+    fn sort_unstable_row_ord(&mut self, row: usize) where T : Ord {
         self.sort_unstable_by_row(row, T::cmp);
     }
 
@@ -123,7 +123,7 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
 
     /// Sort the entire two-dimensional array by comparing elements on a specific column using the natural ordering.
     /// This sort is stable.
-    fn sort_col_ord<F>(&mut self, col: usize) where T : Ord {
+    fn sort_col_ord(&mut self, col: usize) where T : Ord {
         self.sort_by_col(col, T::cmp);
     }
     
