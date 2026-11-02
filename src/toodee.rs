@@ -755,6 +755,21 @@ impl<T> TooDee<T> {
         &self.data
     }
 
+    /// Consumes the array and returns its underlying vector.
+    ///
+    /// The dimensions are discarded. This does not copy or reallocate the data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::TooDee;
+    /// let toodee = TooDee::from_vec(2, 2, vec![1, 2, 3, 4]);
+    /// assert_eq!(toodee.into_vec(), vec![1, 2, 3, 4]);
+    /// ```
+    pub fn into_vec(self) -> Vec<T> {
+        self.data
+    }
+
     /// Returns a mutable reference to the raw array data
     /// 
     /// # Examples
