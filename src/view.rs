@@ -288,6 +288,11 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
+    /// Returns the contiguous data slice covered by this view.
+    pub(crate) fn as_mut_slice(&mut self) -> &mut [T] {
+        self.data
+    }
+
     pub(super) fn from_toodee(start: Coordinate, end: Coordinate, toodee: &'a mut TooDee<T>) -> TooDeeViewMut<'a, T> {
         let stride = toodee.num_cols();
         let (num_cols, num_rows, data_range) = calculate_view_dimensions(start, end, toodee, stride);
