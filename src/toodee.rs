@@ -1448,50 +1448,4 @@ impl<T> DoubleEndedIterator for DrainCol<'_, T> {
     }
 }
 
-impl<T> ExactSizeIterator for DrainCol<'_, T> {}impl<T> ExtractedRows<'_, T> {
-    /// Returns the number of extracted rows.
-    pub fn num_rows(&self) -> usize { self.view.num_rows() }
-
-    /// Returns the number of columns in each extracted row.
-    ///
-    /// This retains the original width when no rows were extracted.
-    pub fn num_cols(&self) -> usize { self.num_cols }
-
-    /// Returns whether no rows were extracted.
-    pub fn is_empty(&self) -> bool { self.len == 0 }
-}
-impl<'a, T> core::ops::Deref for ExtractedRows<'a, T> {
-    type Target = TooDeeViewMut<'a, T>;
-
-    fn deref(&self) -> &Self::Target { &self.view }
-}
-
-impl<'a, T> core::ops::DerefMut for ExtractedRows<'a, T> {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.view }
-}
-
-impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&*self.view, f)
-    }
-}
-
-impl<T> AsRef<[T]> for ExtractedRows<'_, T> {
-    fn as_ref(&self) -> &[T] { self.as_slice() }
-}
-
-impl<T> AsMut<[T]> for ExtractedRows<'_, T> {
-    fn as_mut(&mut self) -> &mut [T] { self.as_mut_slice() }
-}
-
-impl<T> Drop for ExtractedRows<'_, T> {
-    fn drop(&mut self) {
-        // End the mutable view borrow before dropping the elements it covers.
-        unsafe { mem::ManuallyDrop::drop(&mut self.view); }
-        if self.len != 0 {
-            // SAFETY: These initialized elements are outside the Vec length,
-            // and this wrapper is their sole owner.
-            unsafe { ptr::drop_in_place(core::slice::from_raw_parts_mut(self.data, self.len)); }
-        }
-    }
-}
+impl<T> ExactSizeIterator for DrainCol<'_, T> {}
