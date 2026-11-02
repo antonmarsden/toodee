@@ -1495,7 +1495,3 @@ impl<T> Drop for ExtractedRows<'_, T> {
         }
     }
 }
-/// Stable in-place partition of rows. Returns the number of rows for which
-/// the predicate returned false. Uses O(log(rows)) stack space and no heap
-/// allocation. Recursive rotations preserve the relative order of both
-/// partitions.
