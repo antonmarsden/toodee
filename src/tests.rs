@@ -1303,11 +1303,8 @@ mod toodee_tests {
             });
         }));
         assert!(result.is_err());
-        assert_eq!(toodee.data().len(), 4);
+        assert_eq!(toodee.data(), &[0, 1, 2, 3]);
         assert_eq!(toodee.size(), (1, 4));
-        let mut values = toodee.data().to_vec();
-        values.sort_unstable();
-        assert_eq!(values, vec![0, 1, 2, 3]);
     }
 
 
