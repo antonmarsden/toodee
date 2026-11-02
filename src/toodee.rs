@@ -1031,36 +1031,26 @@ impl<T> TooDee<T> {
         let original_rows = self.num_rows;
         let num_cols = self.num_cols;
 
-        // Record predicate results before rearranging anything. If the
-        // predicate panics, the original row order and Vec length are intact.
-        // The second tuple field initially stores the predicate result and is
-        // later reused as scratch space by build_swap_trace().
-        let mut ordering = Vec::with_capacity(original_rows);
-        let mut retained_rows = 0;
-        for row in 0..original_rows {
-            let start = row * num_cols;
-            let extracted = filter(&mut self.data[start..start + num_cols]);
-            if !extracted {
-                retained_rows += 1;
-            }
-            ordering.push((0, if extracted { 1 } else { 0 }));
-        }
-
-        // Build a stable destination-to-source permutation in the first field.
+        // Build a stable destination-to-source permutation while evaluating
+        // the predicate. Retained rows are written from the front, extracted
+        // rows from the back; reversing the extracted range restores their
+        // original order.
+        let mut ordering = vec![(0, 0); original_rows];
         let mut next_retained = 0;
-        let mut next_extracted = retained_rows;
+        let mut next_extracted = original_rows;
         for source in 0..original_rows {
-            let destination = if ordering[source].1 == 0 {
-                let destination = next_retained;
-                next_retained += 1;
-                destination
+            let start = source * num_cols;
+            let extracted = filter(&mut self.data[start..start + num_cols]);
+            if extracted {
+                next_extracted -= 1;
+                ordering[next_extracted].0 = source;
             } else {
-                let destination = next_extracted;
-                next_extracted += 1;
-                destination
-            };
-            ordering[destination].0 = source;
+                ordering[next_retained].0 = source;
+                next_retained += 1;
+            }
         }
+        ordering[next_extracted..].reverse();
+        let retained_rows = next_retained;
 
         // Apply the permutation as whole-row swaps. Each swap is between
         // distinct, non-overlapping rows in the original allocation.
