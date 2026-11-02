@@ -68,14 +68,6 @@ impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
     }
 }
 
-impl<T> AsRef<[T]> for ExtractedRows<'_, T> {
-    fn as_ref(&self) -> &[T] { self.as_slice() }
-}
-
-impl<T> AsMut<[T]> for ExtractedRows<'_, T> {
-    fn as_mut(&mut self) -> &mut [T] { self.as_mut_slice() }
-}
-
 impl<T> Drop for ExtractedRows<'_, T> {
     fn drop(&mut self) {
         // End the mutable view borrow before dropping the elements it covers.
