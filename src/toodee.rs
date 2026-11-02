@@ -24,6 +24,128 @@ pub type DrainRow<'a, T> = Drain<'a, T>;
 /// IntoIter type alias for future-proofing.
 pub type IntoIterTooDee<T> = IntoIter<T>;
 
+/// A lazy iterator that extracts rows from a TooDee.
+///
+/// Matching rows are moved into owned Vec<T> values. Remaining rows are
+/// compacted when the iterator is dropped.
+pub struct ExtractIfRows<'a, T, F> {
+    toodee: &'a mut TooDee<T>,
+    filter: F,
+    read: usize,
+    write: usize,
+    original_rows: usize,
+    num_cols: usize,
+}
+
+impl<T, F> fmt::Debug for ExtractIfRows<'_, T, F> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExtractIfRows")
+            .field("read", &self.read)
+            .field("write", &self.write)
+            .field("original_rows", &self.original_rows)
+            .field("num_cols", &self.num_cols)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<T, F> Iterator for ExtractIfRows<'_, T, F>
+where
+    F: FnMut(&mut [T]) -> bool,
+{
+    type Item = Vec<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.read < self.original_rows {
+            let row = self.read;
+            let start = row * self.num_cols;
+            let data = self.toodee.data.as_mut_ptr();
+
+            // SAFETY: The iterator exclusively borrows TooDee. Rows from
+            // read onwards remain initialized in the original allocation.
+            let should_extract = unsafe {
+                let row_slice = core::slice::from_raw_parts_mut(data.add(start), self.num_cols);
+                (self.filter)(row_slice)
+            };
+
+            if should_extract {
+                // Allocate before moving anything, so allocation failure
+                // leaves the current row available to the drop cleanup.
+                let mut extracted = Vec::with_capacity(self.num_cols);
+                // SAFETY: extracted has capacity for the row. We move each
+                // element, then set its length after all writes complete.
+                unsafe {
+                    let dst = extracted.as_mut_ptr();
+                    let src = data.add(start);
+                    for col in 0..self.num_cols {
+                        dst.add(col).write(src.add(col).read());
+                    }
+                    extracted.set_len(self.num_cols);
+                }
+                self.read += 1;
+                return Some(extracted);
+            }
+
+            // Retain this row, moving it down only if an earlier row was removed.
+            if self.write != self.read {
+                // SAFETY: write < read, so the source and destination rows
+                // are disjoint and within the original allocation.
+                unsafe {
+                    ptr::copy_nonoverlapping(
+                        data.add(start),
+                        data.add(self.write * self.num_cols),
+                        self.num_cols,
+                    );
+                }
+            }
+
+            self.read += 1;
+            self.write += 1;
+            // The Vec owns only the initialized retained prefix. The iterator
+            // is responsible for moving the initialized tail back on drop.
+            unsafe {
+                self.toodee.data.set_len(self.write * self.num_cols);
+            }
+            self.toodee.num_rows = self.write;
+            self.toodee.num_cols = self.num_cols;
+        }
+        None
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.original_rows - self.read))
+    }
+}
+
+impl<T, F> Drop for ExtractIfRows<'_, T, F> {
+    fn drop(&mut self) {
+        let remaining_rows = self.original_rows - self.read;
+        let final_rows = self.write + remaining_rows;
+
+        // SAFETY: [0, write) contains retained rows, [read, original_rows)
+        // contains unprocessed rows, and the gap contains moved-out values.
+        // ptr::copy handles overlap while closing the gap.
+        unsafe {
+            if remaining_rows != 0 && self.write != self.read {
+                let data = self.toodee.data.as_mut_ptr();
+                ptr::copy(
+                    data.add(self.read * self.num_cols),
+                    data.add(self.write * self.num_cols),
+                    remaining_rows * self.num_cols,
+                );
+            }
+            self.toodee.data.set_len(final_rows * self.num_cols);
+        }
+
+        self.toodee.num_rows = final_rows;
+        self.toodee.num_cols = if final_rows == 0 { 0 } else { self.num_cols };
+    }
+}
+
+impl<T, F> core::iter::FusedIterator for ExtractIfRows<'_, T, F>
+where
+    F: FnMut(&mut [T]) -> bool,
+{
+}
 /// Represents a two-dimensional array.
 /// 
 /// Empty arrays will always have dimensions of zero.
@@ -910,6 +1032,47 @@ impl<T> TooDee<T> {
         }
     }
 
+    /// Creates an iterator that removes rows matching the predicate.
+    ///
+    /// The predicate is called on each row in order and may mutate it.
+    /// Matching rows are yielded as owned Vec<T> values; their elements are
+    /// moved, not cloned. Each extracted row requires an allocation.
+    ///
+    /// Remaining rows are compacted in one pass when the iterator is dropped.
+    /// Dropping the iterator early retains all unvisited rows. If the
+    /// predicate panics, the current and unvisited rows are retained, and
+    /// previously yielded rows remain extracted.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::TooDee;
+    /// let mut array = TooDee::from_vec(2, 3, vec![1, 10, 2, 20, 3, 30]);
+    /// let extracted: Vec<_> = array.extract_if_rows(|row| row[0] % 2 == 0).collect();
+    /// assert_eq!(extracted, vec![vec![2, 20]]);
+    /// assert_eq!(array.data(), &[1, 10, 3, 30]);
+    /// ```
+    pub fn extract_if_rows<F>(&mut self, filter: F) -> ExtractIfRows<'_, T, F>
+    where
+        F: FnMut(&mut [T]) -> bool,
+    {
+        let original_rows = self.num_rows;
+        let num_cols = self.num_cols;
+        // The iterator temporarily owns the initialized tail.
+        unsafe {
+            self.data.set_len(0);
+        }
+        self.num_rows = 0;
+        self.num_cols = 0;
+        ExtractIfRows {
+            toodee: self,
+            filter,
+            read: 0,
+            write: 0,
+            original_rows,
+            num_cols,
+        }
+    }
     /// Removes the specified row from the array and returns it as a `Drain`
     /// 
     /// # Panics
