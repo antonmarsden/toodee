@@ -35,22 +35,11 @@ pub type IntoIterTooDee<T> = IntoIter<T>;
 /// for dropping those elements when it is dropped.
 pub struct ExtractedRows<'a, T> {
     view: mem::ManuallyDrop<TooDeeViewMut<'a, T>>,
-    data: *mut T,
-    len: usize,
-    num_cols: usize,
 }
 
 impl<T> ExtractedRows<'_, T> {
-    /// Returns the number of extracted rows.
-    pub fn num_rows(&self) -> usize { self.view.num_rows() }
-
-    /// Returns the number of columns in each extracted row.
-    ///
-    /// This retains the original width when no rows were extracted.
-    pub fn num_cols(&self) -> usize { self.num_cols }
-
     /// Returns whether no rows were extracted.
-    pub fn is_empty(&self) -> bool { self.len == 0 }
+    pub fn is_empty(&self) -> bool { self.view.num_rows() == 0 }
 }
 impl<'a, T> core::ops::Deref for ExtractedRows<'a, T> {
     type Target = TooDeeViewMut<'a, T>;
@@ -70,12 +59,15 @@ impl<T: fmt::Debug> fmt::Debug for ExtractedRows<'_, T> {
 
 impl<T> Drop for ExtractedRows<'_, T> {
     fn drop(&mut self) {
+        let data = self.view.as_mut_slice().as_mut_ptr();
+        let len = self.view.as_mut_slice().len();
+
         // End the mutable view borrow before dropping the elements it covers.
         unsafe { mem::ManuallyDrop::drop(&mut self.view); }
-        if self.len != 0 {
+        if len != 0 {
             // SAFETY: These initialized elements are outside the Vec length,
             // and this wrapper is their sole owner.
-            unsafe { ptr::drop_in_place(core::slice::from_raw_parts_mut(self.data, self.len)); }
+            unsafe { ptr::drop_in_place(core::slice::from_raw_parts_mut(data, len)); }
         }
     }
 }
@@ -1046,23 +1038,14 @@ impl<T> TooDee<T> {
         self.num_rows = retained_rows;
         self.num_cols = if retained_rows == 0 { 0 } else { num_cols };
 
-        let len = extracted_rows * num_cols;
         let data = unsafe { self.data.as_mut_ptr().add(extracted_start) };
-        // TooDeeViewMut enforces TooDee's empty-dimension convention. Preserve
-        // the original width separately when no rows were extracted.
-        let (view_cols, view_rows) = if extracted_rows == 0 {
-            (0, 0)
-        } else {
-            (num_cols, extracted_rows)
+        let slice = unsafe {
+            core::slice::from_raw_parts_mut(data, extracted_rows * num_cols)
         };
-        let slice = unsafe { core::slice::from_raw_parts_mut(data, len) };
-        let view = TooDeeViewMut::new(view_cols, view_rows, slice);
+        let view = TooDeeViewMut::new(num_cols, extracted_rows, slice);
 
         ExtractedRows {
             view: mem::ManuallyDrop::new(view),
-            data,
-            len,
-            num_cols,
         }
     }
     /// Removes the specified row from the array and returns it as a `Drain`
