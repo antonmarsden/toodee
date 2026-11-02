@@ -73,35 +73,42 @@ impl<T> Drop for ExtractedRows<'_, T> {
         }
     }
 }
-/// Stable in-place partition of rows. Returns the number of rows for which
-/// the predicate returned false. Uses O(log(rows)) stack space and no heap
-/// allocation. Recursive rotations preserve the relative order of both
-/// partitions.
-fn partition_rows<T, F>(data: &mut [T], num_cols: usize, filter: &mut F) -> usize
-where
-    F: FnMut(&mut [T]) -> bool,
-{
-    let num_rows = data.len() / num_cols;
-    if num_rows == 0 {
-        return 0;
-    }
-    if num_rows == 1 {
-        return if filter(data) { 0 } else { 1 };
-    }
+/// Builds a minimal swap trace for a permutation.
+///
+/// On entry, `ordering[i].0` is the original index that belongs at position
+/// `i`. The second field is scratch space. The returned prefix contains the
+/// swaps needed to apply the permutation.
+pub(crate) fn build_swap_trace(ordering: &mut [(usize, usize)]) -> &mut [(usize, usize)] {
+    let len = ordering.len();
 
-    let mid = num_rows / 2;
-    let (left, right) = data.split_at_mut(mid * num_cols);
-    let left_retained = partition_rows(left, num_cols, filter);
-    let right_retained = partition_rows(right, num_cols, filter);
-    let left_extracted = mid - left_retained;
-
-    if left_extracted != 0 && right_retained != 0 {
-        let rotate_start = left_retained * num_cols;
-        let rotate_end = (mid + right_retained) * num_cols;
-        data[rotate_start..rotate_end].rotate_left(left_extracted * num_cols);
+    // Build the inverse permutation in the second field.
+    for idx in 0..len {
+        unsafe {
+            // SAFETY: The caller supplies a permutation of 0..len.
+            let original = ordering.get_unchecked(idx).0;
+            ordering.get_unchecked_mut(original).1 = idx;
+        }
     }
 
-    left_retained + right_retained
+    let mut swap_count = 0;
+
+    // Reuse the ordering slice to store the swap trace.
+    for i in 0..len {
+        unsafe {
+            // SAFETY: The permutation and its inverse contain only indices in 0..len.
+            let (other, inverse_i) = *ordering.get_unchecked(i);
+            if i != other {
+                *ordering.get_unchecked_mut(swap_count) = (i, other);
+                swap_count += 1;
+                if inverse_i > i {
+                    ordering.get_unchecked_mut(inverse_i).0 = other;
+                    ordering.get_unchecked_mut(other).1 = inverse_i;
+                }
+            }
+        }
+    }
+
+    &mut ordering[..swap_count]
 }
 
 /// Represents a two-dimensional array.
@@ -997,12 +1004,13 @@ impl<T> TooDee<T> {
     /// The returned value borrows the array mutably and exposes the extracted
     /// rows until it is dropped.
     ///
-    /// This operation uses no heap allocation. Its stable in-place partition
-    /// takes O(rows * columns * log(rows)) element movement and O(log(rows))
-    /// stack space.
+    /// This operation uses O(rows) auxiliary storage for predicate results
+    /// and a swap trace. Applying the stable permutation takes O(rows *
+    /// columns) element movement.
     ///
-    /// If the predicate panics, the array remains valid and retains all rows,
-    /// although rows in completed partitions may have been rearranged.
+    /// If the predicate panics, the array retains its original row order and
+    /// shape. Mutations made by the predicate before it panics are not rolled
+    /// back.
     /// Forgetting the returned value leaves the retained array valid, but leaks
     /// the extracted elements because their storage is outside the Vec length.
     ///
@@ -1022,12 +1030,52 @@ impl<T> TooDee<T> {
     {
         let original_rows = self.num_rows;
         let num_cols = self.num_cols;
-        let retained_rows = if original_rows == 0 {
-            0
-        } else {
-            debug_assert_ne!(num_cols, 0);
-            partition_rows(&mut self.data, num_cols, &mut filter)
-        };
+
+        // Record predicate results before rearranging anything. If the
+        // predicate panics, the original row order and Vec length are intact.
+        // The second tuple field initially stores the predicate result and is
+        // later reused as scratch space by build_swap_trace().
+        let mut ordering = Vec::with_capacity(original_rows);
+        for row in 0..original_rows {
+            let start = row * num_cols;
+            let extracted = filter(&mut self.data[start..start + num_cols]);
+            ordering.push((0, usize::from(extracted)));
+        }
+
+        let retained_rows = ordering.iter().filter(|entry| entry.1 == 0).count();
+
+        // Build a stable destination-to-source permutation in the first field.
+        let mut next_retained = 0;
+        let mut next_extracted = retained_rows;
+        for source in 0..original_rows {
+            let destination = if ordering[source].1 == 0 {
+                let destination = next_retained;
+                next_retained += 1;
+                destination
+            } else {
+                let destination = next_extracted;
+                next_extracted += 1;
+                destination
+            };
+            ordering[destination].0 = source;
+        }
+
+        // Apply the permutation as whole-row swaps. Each swap is between
+        // distinct, non-overlapping rows in the original allocation.
+        let swap_trace = build_swap_trace(&mut ordering);
+        let data = self.data.as_mut_ptr();
+        for &(first, second) in swap_trace.iter() {
+            unsafe {
+                // SAFETY: The trace contains distinct valid row indices, and
+                // each row occupies num_cols consecutive elements.
+                ptr::swap_nonoverlapping(
+                    data.add(first * num_cols),
+                    data.add(second * num_cols),
+                    num_cols,
+                );
+            }
+        }
+
         let extracted_rows = original_rows - retained_rows;
         let extracted_start = retained_rows * num_cols;
 
