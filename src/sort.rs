@@ -176,7 +176,7 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         B: Ord,
         F: FnMut(&T) -> B,
     {
-        self.sort_by_row(col, |a, b| f(a).cmp(&f(b)));
+        self.sort_by_col(col, |a, b| f(a).cmp(&f(b)));
     }
 
     /// Sort the entire two-dimensional array by comparing elements on a specific column using a key
@@ -187,7 +187,7 @@ pub trait SortOps<T> : TooDeeOpsMut<T> {
         B: Ord,
         F: FnMut(&T) -> B,
     {
-        self.sort_unstable_by_row(col, |a, b| f(a).cmp(&f(b)));
+        self.sort_unstable_by_col(col, |a, b| f(a).cmp(&f(b)));
     }
 }
 
