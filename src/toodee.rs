@@ -1471,6 +1471,32 @@ impl<T> From<TooDeeViewMut<'_, T>> for TooDee<T> where T : Clone {
     }
 }
 
+/// Create a `TooDee` from a 2D array. Each inner array becomes a row, so
+/// `[[T; COLS]; ROWS]` produces a `TooDee` with `COLS` columns and `ROWS` rows.
+///
+/// If either dimension is zero, the result is an empty (0x0) `TooDee`.
+///
+/// # Examples
+///
+/// ```
+/// use toodee::{TooDee,TooDeeOps};
+/// let toodee = TooDee::from([
+///     [1, 2, 3],
+///     [4, 5, 6],
+/// ]);
+/// assert_eq!(toodee.size(), (3, 2));
+/// assert_eq!(toodee[1], [4, 5, 6]);
+/// assert_eq!(toodee[(2, 0)], 3);
+/// ```
+impl<T, const COLS: usize, const ROWS: usize> From<[[T; COLS]; ROWS]> for TooDee<T> {
+    fn from(array: [[T; COLS]; ROWS]) -> Self {
+        if COLS == 0 || ROWS == 0 {
+            return TooDee::default();
+        }
+        TooDee::from_vec(COLS, ROWS, Vec::from(array).into_flattened())
+    }
+}
+
 /// An iterator over the elements removed from a column.
 ///
 /// The column is removed from the `TooDee` before this iterator is returned.
