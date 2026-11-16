@@ -381,7 +381,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// ```
     /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, RowsMut};
     /// fn left_rows(toodee: &mut TooDee<u32>) -> RowsMut<'_, u32> {
-    ///     toodee.view_mut((0, 0), (5, 5)).into_rows_mut()
+    ///     toodee.view_mut((0, 0), (5, 5)).into_rows()
     /// }
     /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
     /// for r in left_rows(&mut toodee) {
@@ -389,7 +389,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// }
     /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 42*25);
     /// ```
-    pub fn into_rows_mut(self) -> RowsMut<'a, T> {
+    pub fn into_rows(self) -> RowsMut<'a, T> {
         RowsMut {
             v: self.data,
             cols: self.num_cols,
@@ -411,7 +411,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// ```
     /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, ColMut};
     /// fn second_col(toodee: &mut TooDee<u32>) -> ColMut<'_, u32> {
-    ///     toodee.view_mut((0, 0), (5, 5)).into_col_mut(1)
+    ///     toodee.view_mut((0, 0), (5, 5)).into_col(1)
     /// }
     /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
     /// for c in second_col(&mut toodee) {
@@ -419,7 +419,7 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// }
     /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 42*5);
     /// ```
-    pub fn into_col_mut(self, col: usize) -> ColMut<'a, T> {
+    pub fn into_col(self, col: usize) -> ColMut<'a, T> {
         let (data_range, skip) = self.get_col_params(col);
         unsafe {
             ColMut {
@@ -430,13 +430,14 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Consumes the view, returning a mutable iterator that traverses all cells within the area.
+    /// Equivalent to `view.into_iter()`.
     ///
     /// # Examples
     ///
     /// ```
     /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, CellsMut};
     /// fn left_cells(toodee: &mut TooDee<u32>) -> CellsMut<'_, u32> {
-    ///     toodee.view_mut((0, 0), (5, 5)).into_cells_mut()
+    ///     toodee.view_mut((0, 0), (5, 5)).into_cells()
     /// }
     /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
     /// for c in left_cells(&mut toodee) {
@@ -444,8 +445,8 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     /// }
     /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 25);
     /// ```
-    pub fn into_cells_mut(self) -> CellsMut<'a, T> {
-        FlattenExact::new(self.into_rows_mut())
+    pub fn into_cells(self) -> CellsMut<'a, T> {
+        FlattenExact::new(self.into_rows())
     }
 }
 
@@ -678,6 +679,29 @@ impl<'a, T> From<TooDeeViewMut<'a, T>> for TooDeeView<'a, T> {
 impl<'a, T> IntoIterator for TooDeeView<'a, T> {
     type Item = &'a T;
     type IntoIter = Cells<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_cells()
+    }
+}
+
+/// Consumes the view, yielding mutable references to its cells, like `IntoIterator` for `&mut [T]`.
+///
+/// Note: before 0.7.0, `view_mut.into_iter()` resolved to `(&view_mut).into_iter()` and yielded
+/// `&T` without consuming the view. Use `view_mut.cells()` for that behaviour.
+///
+/// # Examples
+///
+/// ```
+/// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
+/// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+/// for c in toodee.view_mut((0, 0), (5, 5)) {
+///     *c = 0;
+/// }
+/// assert_eq!(toodee.cells().sum::<u32>(), 42*25);
+/// ```
+impl<'a, T> IntoIterator for TooDeeViewMut<'a, T> {
+    type Item = &'a mut T;
+    type IntoIter = CellsMut<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
         self.into_cells()
     }
