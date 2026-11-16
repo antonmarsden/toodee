@@ -4,7 +4,12 @@
 
 ### Unreleased
 
+- **Breaking:** `TooDeeViewMut` now implements `IntoIterator` by value, yielding `&mut T` and consuming the view, like `IntoIterator` for `&mut [T]`. This also makes `for c in view_mut` work. Previously, `view_mut.into_iter()` resolved to `(&view_mut).into_iter()`, yielding `&T` and leaving the view usable, so code that relied on that (e.g. `view_mut.into_iter().copied()`) no longer compiles. Use `view_mut.cells()` instead.
 - Added `From<[[T; COLS]; ROWS]>` for `TooDee`, so a `TooDee` can be built directly from a 2D array ([PR #36](https://github.com/antonmarsden/toodee/pull/36)) - thanks Jeremy Gordon ([@migmoog](https://github.com/migmoog)).
+- Added consuming iterator methods to views: `TooDeeView::into_rows()`, `into_col()` and `into_cells()`, and `TooDeeViewMut::into_rows()`, `into_col()` and `into_cells()`. The returned iterators borrow the underlying data rather than the view, so they can be returned from functions. `TooDeeView` also implements `IntoIterator` by value, yielding `&T`. Based on a proposal by [@cedtwo](https://github.com/cedtwo) in [PR #27](https://github.com/antonmarsden/toodee/pull/27).
+- `TooDeeView` is now `Copy` and `Clone` for any `T`, not only when `T: Copy`.
+- Added `TooDeeViewMut::reborrow()`, which returns a shorter-lived mutable view of the same area (like `&mut *slice`), and `TooDeeViewMut::as_view()`, which returns a read-only view of it. `TooDeeViewMut` can't be `Clone`, so use `reborrow()` to pass a mutable view by value, or to call a consuming method, and keep using it afterwards.
+- Relaxed the lifetimes of `IntoIterator` for `&TooDeeView`, `&TooDeeViewMut` and `&mut TooDeeViewMut`, so the reference no longer needs to live as long as the borrowed data. `IntoIterator` for `&TooDeeView<'a, T>` now yields `&'a T`, so the items can outlive the borrow of the view.
 
 ### Version 0.6.3
 
