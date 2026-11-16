@@ -2,6 +2,10 @@
 
 ## Changes
 
+### Unreleased
+
+- Added `From<[[T; COLS]; ROWS]>` for `TooDee`, so a `TooDee` can be built directly from a 2D array ([PR #36](https://github.com/antonmarsden/toodee/pull/36)) - thanks Jeremy Gordon ([@migmoog](https://github.com/migmoog)).
+
 ### Version 0.6.3
 
 - Fixed *_col_key sort, thanks Rohan-GRH.

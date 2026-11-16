@@ -1349,8 +1349,45 @@ mod toodee_tests {
 
         for y in 0..3 {
             for x in 0..3 {
-                assert_eq!(toodee[(x, y)], x as u32 + (y as u32  * 3) + 1);
+                assert_eq!(toodee[(x, y)], x as u32 + (y as u32 * 3) + 1);
             }
         }
+    }
+
+    #[test]
+    fn from_2d_array_non_square() {
+        let toodee = TooDee::from([
+            [1u32, 2, 3],
+            [4, 5, 6],
+        ]);
+        assert_eq!(toodee.num_cols(), 3);
+        assert_eq!(toodee.num_rows(), 2);
+        assert_eq!(toodee.data(), &[1, 2, 3, 4, 5, 6]);
+        assert_eq!(toodee[(2, 1)], 6);
+    }
+
+    #[test]
+    fn from_2d_array_empty() {
+        let no_cols = TooDee::from([[0u32; 0]; 3]);
+        assert_eq!(no_cols.size(), (0, 0));
+        assert!(no_cols.is_empty());
+
+        let no_rows = TooDee::from([[0u32; 3]; 0]);
+        assert_eq!(no_rows.size(), (0, 0));
+        assert!(no_rows.is_empty());
+    }
+
+    #[test]
+    fn from_2d_array_drops_elements_once() {
+        use alloc::rc::Rc;
+
+        let marker = Rc::new(());
+        let toodee = TooDee::from([
+            [marker.clone(), marker.clone()],
+            [marker.clone(), marker.clone()],
+        ]);
+        assert_eq!(Rc::strong_count(&marker), 5);
+        drop(toodee);
+        assert_eq!(Rc::strong_count(&marker), 1);
     }
 }
