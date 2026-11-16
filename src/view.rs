@@ -448,6 +448,27 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     pub fn into_cells(self) -> CellsMut<'a, T> {
         FlattenExact::new(self.into_rows())
     }
+
+    /// Returns a read-only view of the same area, borrowing this view.
+    fn as_view(&self) -> TooDeeView<'_, T> {
+        TooDeeView {
+            data: self.data,
+            num_cols: self.num_cols,
+            num_rows: self.num_rows,
+            stride: self.stride,
+        }
+    }
+
+    /// Returns a mutable view of the same area with a shorter lifetime, borrowing this view,
+    /// like `&mut *slice` for `&mut [T]`.
+    fn reborrow(&mut self) -> TooDeeViewMut<'_, T> {
+        TooDeeViewMut {
+            data: &mut *self.data,
+            num_cols: self.num_cols,
+            num_rows: self.num_rows,
+            stride: self.stride,
+        }
+    }
 }
 
 
@@ -473,21 +494,11 @@ impl<'a, T> TooDeeOps<T> for TooDeeViewMut<'a, T> {
     }
 
     fn rows(&self) -> Rows<'_, T> {
-        Rows {
-            v: self.data,
-            cols: self.num_cols,
-            skip_cols: self.stride - self.num_cols,
-        }
+        self.as_view().into_rows()
     }
 
     fn col(&self, col: usize) -> Col<'_, T> {
-        let (data_range, skip) = self.get_col_params(col);
-        unsafe {
-            Col {
-                v: self.data.get_unchecked(data_range),
-                skip,
-            }
-        }
+        self.as_view().into_col(col)
     }
 
     /// # Examples
@@ -535,21 +546,11 @@ impl<'a, T> TooDeeOpsMut<T> for TooDeeViewMut<'a, T> {
     }
 
     fn rows_mut(&mut self) -> RowsMut<'_, T> {
-        RowsMut {
-            v: self.data,
-            cols: self.num_cols,
-            skip_cols: self.stride - self.num_cols,
-        }
+        self.reborrow().into_rows()
     }
 
     fn col_mut(&mut self, col: usize) -> ColMut<'_, T> {
-        let (data_range, skip) = self.get_col_params(col);
-        unsafe {
-            ColMut {
-                v: self.data.get_unchecked_mut(data_range),
-                skip,
-            }
-        }
+        self.reborrow().into_col(col)
     }
 
     /// Swap/exchange the data between two rows.
@@ -707,11 +708,14 @@ impl<'a, T> IntoIterator for TooDeeViewMut<'a, T> {
     }
 }
 
-impl<'a, 'b, T> IntoIterator for &'b TooDeeView<'a, T> {
-    type Item = &'b T;
-    type IntoIter = Cells<'b, T>;
+/// Yields references with the view's data lifetime `'a`, not the borrow's lifetime `'b`.
+/// A `TooDeeView` is `Copy` and only shares its data, so borrowing it need not shorten
+/// the lifetime of the items.
+impl<'a, T> IntoIterator for &TooDeeView<'a, T> {
+    type Item = &'a T;
+    type IntoIter = Cells<'a, T>;
     fn into_iter(self) -> Self::IntoIter {
-        self.cells()
+        (*self).into_cells()
     }
 }
 

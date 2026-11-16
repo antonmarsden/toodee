@@ -144,6 +144,94 @@ mod toodee_tests_view {
     }
 
     #[test]
+    #[should_panic]
+    fn view_mut_into_col_out_of_bounds() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let _ = toodee.view_mut((2, 2), (5, 4)).into_col(3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn empty_view_into_col_panics() {
+        let toodee = TooDee::init(4, 4, 1u32);
+        let _ = toodee.view((1, 1), (1, 1)).into_col(0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn empty_view_mut_into_col_panics() {
+        let mut toodee = TooDee::init(4, 4, 1u32);
+        let _ = toodee.view_mut((1, 1), (1, 1)).into_col(0);
+    }
+
+    #[test]
+    fn view_into_methods_through_shared_ref() {
+        let toodee = TooDee::init(4, 4, 1u32);
+        let view = toodee.view((0, 0), (2, 2));
+        let r = &view;
+        assert_eq!(r.into_cells().count(), 4);
+        assert_eq!(r.into_col(1).count(), 2);
+        assert_eq!(r.into_rows().count(), 2);
+    }
+
+    #[test]
+    fn view_ref_into_iter_yields_data_lifetime() {
+        fn cells(toodee: &TooDee<u32>) -> impl Iterator<Item = &u32> {
+            let view = toodee.view((2, 2), (4, 4));
+            (&view).into_iter()
+        }
+        let toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        assert_eq!(cells(&toodee).copied().sum::<u32>(), 22+23+32+33);
+    }
+
+    #[test]
+    fn view_mut_into_col_double_ended() {
+        let mut toodee = TooDee::from_vec(4, 4, (0u32..16).collect());
+        let mut col = toodee.view_mut((1, 1), (3, 4)).into_col(1);
+        assert_eq!(col.len(), 3);
+        assert_eq!(*col.next_back().unwrap(), 14);
+        assert_eq!(*col.nth(1).unwrap(), 10);
+        assert!(col.next().is_none());
+        assert!(col.next_back().is_none());
+    }
+
+    #[test]
+    fn view_mut_into_rows_double_ended() {
+        let mut toodee = TooDee::from_vec(4, 4, (0u32..16).collect());
+        let mut rows = toodee.view_mut((1, 1), (3, 4)).into_rows();
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows.next_back().unwrap(), &[13, 14]);
+        assert_eq!(rows.next().unwrap(), &[5, 6]);
+        assert_eq!(rows.next().unwrap(), &[9, 10]);
+        assert!(rows.next().is_none());
+    }
+
+    #[test]
+    fn view_mut_ops_match_into_methods() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let mut view = toodee.view_mut((2, 2), (5, 4));
+        let rows: Vec<Vec<u32>> = view.rows().map(|r| r.to_vec()).collect();
+        let col: Vec<u32> = view.col(1).copied().collect();
+        assert_eq!(rows, vec![vec![22, 23, 24], vec![32, 33, 34]]);
+        assert_eq!(col, vec![23, 33]);
+        for r in view.rows_mut() {
+            r[0] += 100;
+        }
+        view.col_mut(2).for_each(|c| *c += 200);
+        assert_eq!(view.into_rows().map(|r| r.to_vec()).collect::<Vec<_>>(), vec![vec![122, 23, 224], vec![132, 33, 234]]);
+    }
+
+    #[test]
+    fn zero_sized_type_into_methods() {
+        let mut toodee = TooDee::init(5, 3, ());
+        assert_eq!(toodee.view((1, 1), (4, 3)).into_cells().count(), 6);
+        assert_eq!(toodee.view((1, 1), (4, 3)).into_col(2).count(), 2);
+        assert_eq!(toodee.view_mut((1, 1), (4, 3)).into_rows().count(), 2);
+        assert_eq!(toodee.view_mut((1, 0), (4, 3)).into_col(2).count(), 3);
+        assert_eq!(toodee.view_mut((1, 0), (4, 3)).into_cells().count(), 9);
+    }
+
+    #[test]
     fn view_mut_into_rows_col_cells() {
         let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
         for r in toodee.view_mut((2, 2), (5, 4)).into_rows() {
