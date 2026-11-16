@@ -1,6 +1,6 @@
 [package]
 name = "toodee"
-version = "0.6.3"
+version = "0.7.0"
 authors = ["Anton Marsden <anton.marsden@gmail.com>"]
 edition = "2021"
 description = "A lightweight 2D wrapper around a Vec."

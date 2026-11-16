@@ -2,7 +2,7 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.7.0
 
 - **Breaking:** `TooDeeViewMut` now implements `IntoIterator` by value, yielding `&mut T` and consuming the view, like `IntoIterator` for `&mut [T]`. This also makes `for c in view_mut` work. Previously, `view_mut.into_iter()` resolved to `(&view_mut).into_iter()`, yielding `&T` and leaving the view usable, so code that relied on that (e.g. `view_mut.into_iter().copied()`) no longer compiles. Use `view_mut.cells()` instead.
 - Added `From<[[T; COLS]; ROWS]>` for `TooDee`, so a `TooDee` can be built directly from a 2D array ([PR #36](https://github.com/antonmarsden/toodee/pull/36)) - thanks Jeremy Gordon ([@migmoog](https://github.com/migmoog)).
