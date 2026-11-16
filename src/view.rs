@@ -450,7 +450,25 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Returns a read-only view of the same area, borrowing this view.
-    fn as_view(&self) -> TooDeeView<'_, T> {
+    ///
+    /// Equivalent to `self.view((0, 0), self.size())`, without recomputing the dimensions.
+    /// To convert permanently, consuming this view, use `TooDeeView::from()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, TooDeeView};
+    /// fn total(view: TooDeeView<'_, u32>) -> u32 {
+    ///     view.into_cells().sum()
+    /// }
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 1u32);
+    /// let mut view = toodee.view_mut((0, 0), (5, 5));
+    /// assert_eq!(total(view.as_view()), 25);
+    /// view[0][0] = 10; // `view` is still usable
+    /// assert_eq!(total(view.as_view()), 34);
+    /// ```
+    #[must_use]
+    pub fn as_view(&self) -> TooDeeView<'_, T> {
         TooDeeView {
             data: self.data,
             num_cols: self.num_cols,
@@ -460,8 +478,45 @@ impl<'a, T> TooDeeViewMut<'a, T> {
     }
 
     /// Returns a mutable view of the same area with a shorter lifetime, borrowing this view,
-    /// like `&mut *slice` for `&mut [T]`.
-    fn reborrow(&mut self) -> TooDeeViewMut<'_, T> {
+    /// like `&mut *slice` does for `&mut [T]`.
+    ///
+    /// `TooDeeViewMut` can't be `Clone` or `Copy`, because two mutable views of the same cells
+    /// would alias. Reborrowing is the alternative: use it to pass the view by value, or to call a
+    /// consuming method such as [`into_rows()`](Self::into_rows), and then use the original view
+    /// again once the reborrow has ended.
+    ///
+    /// Equivalent to `self.view_mut((0, 0), self.size())`, without recomputing the dimensions.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, TooDeeViewMut};
+    /// fn clear(view: TooDeeViewMut<'_, u32>) {
+    ///     view.into_iter().for_each(|c| *c = 0);
+    /// }
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 1u32);
+    /// let mut view = toodee.view_mut((0, 0), (5, 5));
+    /// clear(view.reborrow());
+    /// for r in view.reborrow().into_rows() {
+    ///     r[0] = 7;
+    /// }
+    /// view[0][1] = 9; // `view` is still usable
+    /// assert_eq!(toodee.cells().sum::<u32>(), 25 + 7*5 + 9);
+    /// ```
+    ///
+    /// Only one reborrow can be alive at a time, so the views can never alias:
+    ///
+    /// ```compile_fail,E0499
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 1u32);
+    /// let mut view = toodee.view_mut((0, 0), (5, 5));
+    /// let mut a = view.reborrow();
+    /// let mut b = view.reborrow();
+    /// a[0][0] = 1;
+    /// b[0][0] = 2;
+    /// ```
+    #[must_use]
+    pub fn reborrow(&mut self) -> TooDeeViewMut<'_, T> {
         TooDeeViewMut {
             data: &mut *self.data,
             num_cols: self.num_cols,

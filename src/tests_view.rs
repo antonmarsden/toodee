@@ -222,6 +222,48 @@ mod toodee_tests_view {
     }
 
     #[test]
+    fn view_mut_reborrow() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let mut view = toodee.view_mut((2, 2), (5, 4));
+        {
+            let mut r = view.reborrow();
+            assert_eq!(r.size(), (3, 2));
+            r[(1, 1)] = 1000;
+            let mut rr = r.reborrow();
+            rr.col_mut(0).for_each(|c| *c = 0);
+        }
+        view.reborrow().into_rows().for_each(|r| r[2] += 1);
+        for c in view.reborrow() {
+            *c += 1;
+        }
+        assert_eq!(view.into_rows().map(|r| r.to_vec()).collect::<Vec<_>>(), vec![vec![1, 24, 26], vec![1, 1001, 36]]);
+        assert_eq!(toodee[(3, 3)], 1001);
+    }
+
+    #[test]
+    fn view_mut_as_view() {
+        let mut toodee = TooDee::from_vec(10, 10, (0u32..100).collect());
+        let mut view = toodee.view_mut((2, 2), (5, 4));
+        let shared = view.as_view();
+        let copy = shared;
+        assert_eq!(shared.size(), (3, 2));
+        assert!(shared.into_cells().eq([22, 23, 24, 32, 33, 34].iter()));
+        assert_eq!(copy.into_col(2).copied().collect::<Vec<_>>(), vec![24, 34]);
+        view[(0, 0)] = 0;
+        assert_eq!(view.as_view().into_cells().copied().collect::<Vec<_>>(), vec![0, 23, 24, 32, 33, 34]);
+    }
+
+    #[test]
+    fn empty_view_mut_reborrow_and_as_view() {
+        let mut toodee = TooDee::init(4, 4, 1u32);
+        let mut view = toodee.view_mut((1, 1), (1, 3));
+        assert!(view.reborrow().is_empty());
+        assert_eq!(view.reborrow().into_cells().next(), None);
+        assert!(view.as_view().is_empty());
+        assert_eq!(view.as_view().into_rows().next(), None);
+    }
+
+    #[test]
     fn zero_sized_type_into_methods() {
         let mut toodee = TooDee::init(5, 3, ());
         assert_eq!(toodee.view((1, 1), (4, 3)).into_cells().count(), 6);
