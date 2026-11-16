@@ -42,10 +42,12 @@ harness = false
 [[bench]]
 name = "translate"
 harness = false
+required-features = ["translate"]
 
 [[bench]]
 name = "sort"
 harness = false
+required-features = ["sort"]
 
 [[bench]]
 name = "vs"

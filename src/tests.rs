@@ -455,6 +455,7 @@ mod toodee_tests {
     }
 
     #[test]
+    #[cfg(feature = "copy")]
     fn copy_from_view() {
         let mut toodee = TooDee::init(10, 10, 0u32);
         let tile = TooDee::init(3, 3, 1u32);
