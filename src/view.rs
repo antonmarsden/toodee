@@ -7,6 +7,7 @@ use core::mem;
 use crate::toodee::*;
 use crate::ops::*;
 use crate::iter::*;
+use crate::flattenexact::FlattenExact;
 
 /// Checks the proposed view dimensions, and returns the correct cols, rows and slice data range
 /// for view construction.
@@ -85,12 +86,22 @@ impl<T> TooDeeViewCommon<T> for TooDeeViewMut<'_, T> {
 
 
 /// Provides a read-only view (or subset) of a `TooDee` array.
-#[derive(Copy, Clone, Hash, Eq, PartialEq)]
+#[derive(Hash, Eq, PartialEq)]
 pub struct TooDeeView<'a, T> {
     data: &'a [T],
     num_cols: usize,
     num_rows: usize,
     stride: usize,
+}
+
+// Implemented manually (rather than derived) so that views are `Copy` regardless of `T`,
+// like `&[T]`.
+impl<T> Copy for TooDeeView<'_, T> {}
+
+impl<T> Clone for TooDeeView<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl<'a, T> TooDeeView<'a, T> {
@@ -140,6 +151,75 @@ impl<'a, T> TooDeeView<'a, T> {
             }
         }
     }
+
+    /// Consumes the view, returning an iterator of slices, where each slice represents an entire row.
+    ///
+    /// Unlike [`TooDeeOps::rows()`], the returned iterator borrows the underlying data for `'a`
+    /// rather than borrowing the view, so it can outlive the view.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, Rows};
+    /// fn top_rows(toodee: &TooDee<u32>) -> Rows<'_, u32> {
+    ///     toodee.view((0, 0), (10, 2)).into_rows()
+    /// }
+    /// let toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// assert_eq!(top_rows(&toodee).map(|r| r.iter().sum::<u32>()).sum::<u32>(), 42*20);
+    /// ```
+    pub fn into_rows(self) -> Rows<'a, T> {
+        Rows {
+            v: self.data,
+            cols: self.num_cols,
+            skip_cols: self.stride - self.num_cols,
+        }
+    }
+
+    /// Consumes the view, returning an iterator over a single column.
+    ///
+    /// Unlike [`TooDeeOps::col()`], the returned iterator borrows the underlying data for `'a`
+    /// rather than borrowing the view, so it can outlive the view.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `col` is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, Col};
+    /// fn second_col(toodee: &TooDee<u32>) -> Col<'_, u32> {
+    ///     toodee.view((0, 0), (10, 2)).into_col(1)
+    /// }
+    /// let toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// assert_eq!(second_col(&toodee).sum::<u32>(), 42*2);
+    /// ```
+    pub fn into_col(self, col: usize) -> Col<'a, T> {
+        let (data_range, skip) = self.get_col_params(col);
+        unsafe {
+            Col {
+                v: self.data.get_unchecked(data_range),
+                skip,
+            }
+        }
+    }
+
+    /// Consumes the view, returning an iterator that traverses all cells within the area.
+    /// Equivalent to `view.into_iter()`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, Cells};
+    /// fn top_cells(toodee: &TooDee<u32>) -> Cells<'_, u32> {
+    ///     toodee.view((0, 0), (10, 2)).into_cells()
+    /// }
+    /// let toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// assert_eq!(top_cells(&toodee).sum::<u32>(), 42*20);
+    /// ```
+    pub fn into_cells(self) -> Cells<'a, T> {
+        FlattenExact::new(self.into_rows())
+    }
 }
 
 impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
@@ -167,21 +247,11 @@ impl<'a, T> TooDeeOps<T> for TooDeeView<'a, T>
     }
 
     fn rows(&self) -> Rows<'_, T> {
-        Rows {
-            v: self.data,
-            cols: self.num_cols,
-            skip_cols: self.stride - self.num_cols,
-        }
+        (*self).into_rows()
     }
 
     fn col(&self, col: usize) -> Col<'_, T> {
-        let (data_range, skip) = self.get_col_params(col);
-        unsafe {
-            Col {
-                v: self.data.get_unchecked(data_range),
-                skip,
-            }
-        }
+        (*self).into_col(col)
     }
 
     /// # Examples
@@ -299,6 +369,83 @@ impl<'a, T> TooDeeViewMut<'a, T> {
                 stride,
             }
         }
+    }
+
+    /// Consumes the view, returning a mutable iterator of slices, where each slice represents an entire row.
+    ///
+    /// Unlike [`TooDeeOpsMut::rows_mut()`], the returned iterator borrows the underlying data for `'a`
+    /// rather than borrowing the view, so it can outlive the view.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, RowsMut};
+    /// fn left_rows(toodee: &mut TooDee<u32>) -> RowsMut<'_, u32> {
+    ///     toodee.view_mut((0, 0), (5, 5)).into_rows_mut()
+    /// }
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// for r in left_rows(&mut toodee) {
+    ///     r.iter_mut().for_each(|c| *c = 0);
+    /// }
+    /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 42*25);
+    /// ```
+    pub fn into_rows_mut(self) -> RowsMut<'a, T> {
+        RowsMut {
+            v: self.data,
+            cols: self.num_cols,
+            skip_cols: self.stride - self.num_cols,
+        }
+    }
+
+    /// Consumes the view, returning a mutable iterator over a single column.
+    ///
+    /// Unlike [`TooDeeOpsMut::col_mut()`], the returned iterator borrows the underlying data for `'a`
+    /// rather than borrowing the view, so it can outlive the view.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `col` is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, ColMut};
+    /// fn second_col(toodee: &mut TooDee<u32>) -> ColMut<'_, u32> {
+    ///     toodee.view_mut((0, 0), (5, 5)).into_col_mut(1)
+    /// }
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// for c in second_col(&mut toodee) {
+    ///     *c = 0;
+    /// }
+    /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 42*5);
+    /// ```
+    pub fn into_col_mut(self, col: usize) -> ColMut<'a, T> {
+        let (data_range, skip) = self.get_col_params(col);
+        unsafe {
+            ColMut {
+                v: self.data.get_unchecked_mut(data_range),
+                skip,
+            }
+        }
+    }
+
+    /// Consumes the view, returning a mutable iterator that traverses all cells within the area.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut, CellsMut};
+    /// fn left_cells(toodee: &mut TooDee<u32>) -> CellsMut<'_, u32> {
+    ///     toodee.view_mut((0, 0), (5, 5)).into_cells_mut()
+    /// }
+    /// let mut toodee : TooDee<u32> = TooDee::init(10, 5, 42u32);
+    /// for c in left_cells(&mut toodee) {
+    ///     *c -= 1;
+    /// }
+    /// assert_eq!(toodee.cells().sum::<u32>(), 42*50 - 25);
+    /// ```
+    pub fn into_cells_mut(self) -> CellsMut<'a, T> {
+        FlattenExact::new(self.into_rows_mut())
     }
 }
 
@@ -528,25 +675,33 @@ impl<'a, T> From<TooDeeViewMut<'a, T>> for TooDeeView<'a, T> {
     }
 }
 
-impl<'a, T> IntoIterator for &'a TooDeeView<'a, T> {
+impl<'a, T> IntoIterator for TooDeeView<'a, T> {
     type Item = &'a T;
     type IntoIter = Cells<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_cells()
+    }
+}
+
+impl<'a, 'b, T> IntoIterator for &'b TooDeeView<'a, T> {
+    type Item = &'b T;
+    type IntoIter = Cells<'b, T>;
     fn into_iter(self) -> Self::IntoIter {
         self.cells()
     }
 }
 
-impl<'a, T> IntoIterator for &'a TooDeeViewMut<'a, T> {
-    type Item = &'a T;
-    type IntoIter = Cells<'a, T>;
+impl<'a, 'b, T> IntoIterator for &'b TooDeeViewMut<'a, T> {
+    type Item = &'b T;
+    type IntoIter = Cells<'b, T>;
     fn into_iter(self) -> Self::IntoIter {
         self.cells()
     }
 }
 
-impl<'a, T> IntoIterator for &'a mut TooDeeViewMut<'a, T> {
-    type Item = &'a mut T;
-    type IntoIter = CellsMut<'a, T>;
+impl<'a, 'b, T> IntoIterator for &'b mut TooDeeViewMut<'a, T> {
+    type Item = &'b mut T;
+    type IntoIter = CellsMut<'b, T>;
     fn into_iter(self) -> Self::IntoIter {
         self.cells_mut()
     }

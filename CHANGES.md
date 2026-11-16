@@ -5,6 +5,9 @@
 ### Unreleased
 
 - Added `From<[[T; COLS]; ROWS]>` for `TooDee`, so a `TooDee` can be built directly from a 2D array ([PR #36](https://github.com/antonmarsden/toodee/pull/36)) - thanks Jeremy Gordon ([@migmoog](https://github.com/migmoog)).
+- Added consuming iterator methods to views: `TooDeeView::into_rows()`, `into_col()` and `into_cells()`, and `TooDeeViewMut::into_rows_mut()`, `into_col_mut()` and `into_cells_mut()`. The returned iterators borrow the underlying data rather than the view, so they can be returned from functions. `TooDeeView` also implements `IntoIterator` by value. Based on a proposal by [@cedtwo](https://github.com/cedtwo) in [PR #27](https://github.com/antonmarsden/toodee/pull/27).
+- `TooDeeView` is now `Copy` and `Clone` for any `T`, not only when `T: Copy`.
+- Relaxed the lifetimes of `IntoIterator` for `&TooDeeView`, `&TooDeeViewMut` and `&mut TooDeeViewMut`, so the reference no longer needs to live as long as the borrowed data.
 
 ### Version 0.6.3
 
