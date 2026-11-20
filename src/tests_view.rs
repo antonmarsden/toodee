@@ -419,4 +419,127 @@ mod toodee_tests_view {
         assert_eq!(nested.num_cols(), 0);
         assert_eq!(nested.num_rows(), 0);
     }
+
+    fn hash_of<H: core::hash::Hash + ?Sized>(v: &H) -> u64 {
+        use core::hash::{BuildHasher, Hasher};
+        // A simple deterministic FNV-1a hasher, to avoid depending on std.
+        struct Fnv(u64);
+        impl Hasher for Fnv {
+            fn finish(&self) -> u64 { self.0 }
+            fn write(&mut self, bytes: &[u8]) {
+                for b in bytes {
+                    self.0 ^= *b as u64;
+                    self.0 = self.0.wrapping_mul(0x100000001b3);
+                }
+            }
+        }
+        struct BuildFnv;
+        impl BuildHasher for BuildFnv {
+            type Hasher = Fnv;
+            fn build_hasher(&self) -> Fnv { Fnv(0xcbf29ce484222325) }
+        }
+        BuildFnv.hash_one(v)
+    }
+
+    /// Two 4x3 grids with the same 2x2 block at the top-left and different
+    /// content elsewhere (issue #61).
+    fn grids_with_same_block() -> (TooDee<u8>, TooDee<u8>) {
+        let mut a = TooDee::init(4, 3, 0u8);
+        let mut b = TooDee::init(4, 3, 9u8);
+        for (c, r) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+            a[(c, r)] = 1;
+            b[(c, r)] = 1;
+        }
+        (a, b)
+    }
+
+    #[test]
+    fn view_eq_ignores_cells_between_rows() {
+        let (a, b) = grids_with_same_block();
+        let va = a.view((0, 0), (2, 2));
+        let vb = b.view((0, 0), (2, 2));
+        assert_eq!(va, vb);
+        assert_eq!(hash_of(&va), hash_of(&vb));
+    }
+
+    #[test]
+    fn view_eq_ignores_stride() {
+        let (a, _) = grids_with_same_block();
+        let c = TooDee::init(2, 2, 1u8);
+        let va = a.view((0, 0), (2, 2));
+        let vc = c.view((0, 0), (2, 2));
+        assert_eq!(va, vc);
+        assert_eq!(hash_of(&va), hash_of(&vc));
+    }
+
+    #[test]
+    fn view_mut_eq_ignores_cells_between_rows_and_stride() {
+        let (mut a, mut b) = grids_with_same_block();
+        let mut c = TooDee::init(2, 2, 1u8);
+        let va = a.view_mut((0, 0), (2, 2));
+        let vb = b.view_mut((0, 0), (2, 2));
+        let vc = c.view_mut((0, 0), (2, 2));
+        assert_eq!(hash_of(&va), hash_of(&vb));
+        assert_eq!(hash_of(&va), hash_of(&vc));
+        assert!(va == vb);
+        assert!(va == vc);
+    }
+
+    #[test]
+    fn view_ne_when_cells_or_dimensions_differ() {
+        let (mut a, b) = grids_with_same_block();
+        // Same cells, different shape: 1x4 vs 2x2 (and 4x1).
+        let flat = TooDee::init(4, 1, 1u8);
+        let tall = TooDee::init(1, 4, 1u8);
+        assert_ne!(a.view((0, 0), (2, 2)), flat.view((0, 0), (4, 1)));
+        assert_ne!(flat.view((0, 0), (4, 1)), tall.view((0, 0), (1, 4)));
+        // Different visible cell.
+        a[(1, 1)] = 2;
+        assert_ne!(a.view((0, 0), (2, 2)), b.view((0, 0), (2, 2)));
+        // Overlapping but different windows.
+        assert_ne!(b.view((0, 0), (2, 2)), b.view((1, 0), (3, 2)));
+    }
+
+    #[test]
+    fn empty_views_are_equal() {
+        let (a, b) = grids_with_same_block();
+        let empty: TooDee<u8> = TooDee::default();
+        assert_eq!(a.view((1, 1), (1, 1)), b.view((3, 2), (3, 2)));
+        assert_eq!(a.view((1, 1), (1, 1)), empty.view((0, 0), (0, 0)));
+        assert_eq!(hash_of(&a.view((1, 1), (1, 1))), hash_of(&empty));
+    }
+
+    #[test]
+    fn cross_type_eq_and_hash() {
+        let (mut a, _) = grids_with_same_block();
+        let mut c = TooDee::init(2, 2, 1u8);
+        let c_copy = c.clone();
+
+        // TooDee vs views
+        assert!(c == a.view((0, 0), (2, 2)));
+        assert!(a.view((0, 0), (2, 2)) == c);
+        assert!(c_copy == a.view_mut((0, 0), (2, 2)));
+        assert!(a.view_mut((0, 0), (2, 2)) == c_copy);
+        assert!(c_copy != a.view((0, 0), (3, 2)));
+
+        // View vs mutable view
+        let v = c_copy.view((0, 0), (2, 2));
+        let vm = a.view_mut((0, 0), (2, 2));
+        assert!(v == vm);
+        assert!(vm == v);
+
+        // A TooDee hashes the same as a view with the same dimensions and cells.
+        assert_eq!(hash_of(&c_copy), hash_of(&v));
+        assert_eq!(hash_of(&c_copy), hash_of(&c.view_mut((0, 0), (2, 2))));
+        assert_eq!(hash_of(&c_copy), hash_of(&a.view((0, 0), (2, 2))));
+    }
+
+    #[test]
+    fn eq_across_element_types() {
+        // `T: PartialEq<U>` is enough; the element types needn't match.
+        let words = TooDee::init(2, 2, "x");
+        let strings: TooDee<alloc::string::String> = TooDee::init(2, 2, "x".into());
+        assert!(strings.view((0, 0), (2, 2)) == words.view((0, 0), (2, 2)));
+        assert!(strings == words.view((0, 0), (2, 2)));
+    }
 }
