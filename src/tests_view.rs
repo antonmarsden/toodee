@@ -542,4 +542,136 @@ mod toodee_tests_view {
         assert!(strings.view((0, 0), (2, 2)) == words.view((0, 0), (2, 2)));
         assert!(strings == words.view((0, 0), (2, 2)));
     }
+
+    #[test]
+    fn stride_of_views() {
+        let v = vec![0u32; 12];
+        assert_eq!(TooDeeView::new(4, 3, &v).stride(), 4);
+        let mut toodee = TooDee::from_vec(4, 3, v);
+        assert_eq!(toodee.view((1, 0), (3, 2)).stride(), 4);
+        assert_eq!(toodee.view_mut((1, 0), (3, 2)).stride(), 4);
+        // Nested views keep the parent's stride.
+        assert_eq!(toodee.view((1, 0), (3, 2)).view((0, 0), (1, 1)).stride(), 4);
+    }
+
+    #[test]
+    fn new_strided_view() {
+        // 3x3 grid, rows padded to 5 elements, with excess data at the end.
+        let v: Vec<u32> = (0..20).collect();
+        let view = TooDeeView::new_strided(3, 3, 5, &v);
+        assert_eq!(view.size(), (3, 3));
+        assert_eq!(view.stride(), 5);
+        assert_eq!(view[(0, 0)], 0);
+        assert_eq!(view[(2, 2)], 12);
+        assert_eq!(view.rows().collect::<Vec<_>>(), [&[0, 1, 2][..], &[5, 6, 7], &[10, 11, 12]]);
+        assert_eq!(view.col(1).copied().collect::<Vec<_>>(), [1, 6, 11]);
+        assert_eq!(view.cells().copied().collect::<Vec<_>>(), [0, 1, 2, 5, 6, 7, 10, 11, 12]);
+        assert_eq!(view.into_cells().rev().copied().collect::<Vec<_>>(), [12, 11, 10, 7, 6, 5, 2, 1, 0]);
+
+        let sub = view.view((1, 1), (3, 3));
+        assert_eq!(sub.stride(), 5);
+        assert_eq!(sub.cells().copied().collect::<Vec<_>>(), [6, 7, 11, 12]);
+    }
+
+    #[test]
+    fn new_strided_eq_and_hash_match_dense() {
+        // Padding values differ from anything visible, and must be ignored.
+        let strided = [0u32, 1, 2, 99, 99, 3, 4, 5, 99, 99, 6, 7, 8];
+        let dense: Vec<u32> = (0..9).collect();
+        let sv = TooDeeView::new_strided(3, 3, 5, &strided);
+        let dv = TooDeeView::new(3, 3, &dense);
+        assert_eq!(sv, dv);
+        assert_eq!(hash_of(&sv), hash_of(&dv));
+        assert_eq!(sv, TooDee::from_vec(3, 3, dense.clone()));
+
+        let mut strided_mut = strided;
+        let svm = TooDeeViewMut::new_strided(3, 3, 5, &mut strided_mut);
+        assert_eq!(svm, dv);
+        assert_eq!(hash_of(&svm), hash_of(&dv));
+
+        // Different padding, same visible cells.
+        let other = [0u32, 1, 2, 7, 7, 3, 4, 5, 7, 7, 6, 7, 8];
+        assert_eq!(sv, TooDeeView::new_strided(3, 3, 5, &other));
+
+        // A differing visible cell breaks equality.
+        let different = [0u32, 1, 2, 99, 99, 3, 4, 5, 99, 99, 6, 7, 9];
+        assert_ne!(sv, TooDeeView::new_strided(3, 3, 5, &different));
+    }
+
+    #[test]
+    fn new_strided_view_minimal_slice() {
+        // The final row need not be padded.
+        let v = [1u32, 2, 0, 0, 3, 4];
+        let view = TooDeeView::new_strided(2, 2, 4, &v);
+        assert_eq!(view.cells().copied().collect::<Vec<_>>(), [1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn new_strided_stride_equal_to_cols() {
+        let v: Vec<u32> = (0..6).collect();
+        let view = TooDeeView::new_strided(3, 2, 3, &v);
+        assert_eq!(view.stride(), 3);
+        assert_eq!(view, TooDeeView::new(3, 2, &v));
+    }
+
+    #[test]
+    fn new_strided_view_mut_leaves_padding() {
+        let mut v = vec![0u32; 12];
+        let mut view = TooDeeViewMut::new_strided(3, 3, 4, &mut v);
+        assert_eq!(view.stride(), 4);
+        view.fill(7);
+        view[(1, 1)] = 9;
+        for r in view.rows_mut() {
+            r[0] += 1;
+        }
+        view.swap_rows(0, 2);
+        let mut sub = view.view_mut((2, 0), (3, 3));
+        sub.fill(5);
+        assert_eq!(v, [8, 7, 5, 0, 8, 9, 5, 0, 8, 7, 5, 0]);
+    }
+
+    #[test]
+    fn new_strided_empty() {
+        let v: [u32; 0] = [];
+        let view = TooDeeView::new_strided(0, 0, 0, &v);
+        assert_eq!(view.size(), (0, 0));
+        assert_eq!(view.cells().count(), 0);
+        let view = TooDeeView::new_strided(0, 0, 4, &v);
+        assert_eq!(view.size(), (0, 0));
+    }
+
+    #[test]
+    #[should_panic(expected = "stride must be at least num_cols")]
+    fn new_strided_stride_too_small() {
+        let v = [0u32; 12];
+        TooDeeView::new_strided(4, 2, 3, &v);
+    }
+
+    #[test]
+    #[should_panic(expected = "slice is too short")]
+    fn new_strided_slice_too_short() {
+        let v = [0u32; 6];
+        TooDeeView::new_strided(3, 2, 4, &v);
+    }
+
+    #[test]
+    #[should_panic(expected = "slice is too short")]
+    fn new_strided_mut_slice_too_short() {
+        let mut v = [0u32; 6];
+        TooDeeViewMut::new_strided(3, 2, 4, &mut v);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_strided_overflow() {
+        let v = [0u32; 1];
+        TooDeeView::new_strided(1, usize::MAX, usize::MAX, &v);
+    }
+
+    #[test]
+    #[should_panic]
+    fn new_strided_zero_cols_nonzero_rows() {
+        let v = [0u32; 4];
+        TooDeeView::new_strided(0, 2, 2, &v);
+    }
 }

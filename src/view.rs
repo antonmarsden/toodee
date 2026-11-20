@@ -31,6 +31,22 @@ fn calculate_view_dimensions<T>(start: Coordinate, end: Coordinate, toodee: &imp
     (num_cols, num_rows, data_start..data_start + data_len)
 }
 
+/// Checks the arguments of a strided view constructor, and returns the length of the
+/// slice that backs the view.
+fn calculate_strided_len(num_cols: usize, num_rows: usize, stride: usize, data_len: usize) -> usize {
+    if num_cols == 0 || num_rows == 0 {
+        assert_eq!(num_rows, num_cols);
+    }
+    assert!(stride >= num_cols, "stride must be at least num_cols");
+    let len = if num_rows == 0 {
+        0
+    } else {
+        (num_rows - 1).checked_mul(stride).and_then(|n| n.checked_add(num_cols)).unwrap()
+    };
+    assert!(len <= data_len, "slice is too short for the requested dimensions and stride");
+    len
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,6 +156,64 @@ impl<'a, T> TooDeeView<'a, T> {
             num_rows,
             stride: num_cols,
         }
+    }
+
+    /// Create a new `TooDeeView` over a slice whose rows are `stride` elements apart,
+    /// e.g., an image buffer with padding at the end of each row.
+    ///
+    /// Row `r` starts at `data[r * stride]`. The cells between the end of one row and
+    /// the start of the next are not part of the view. The slice only needs to extend
+    /// to the end of the last row, i.e., `(num_rows - 1) * stride + num_cols` elements;
+    /// any excess is ignored.
+    ///
+    /// # Panics
+    ///
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
+    ///
+    /// Panics if `stride < num_cols`.
+    ///
+    /// Panics if the slice's length is not sufficient to represent
+    /// the desired array dimensions, or if the required length overflows.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDeeOps, TooDeeView};
+    /// // 3 columns, 2 rows, each row padded to 4 elements (the last row may be short).
+    /// let data = [1, 2, 3, 0, 4, 5, 6];
+    /// let view = TooDeeView::new_strided(3, 2, 4, &data);
+    /// assert_eq!(view.stride(), 4);
+    /// assert_eq!(view[1], [4, 5, 6]);
+    /// assert_eq!(view.cells().copied().collect::<Vec<_>>(), [1, 2, 3, 4, 5, 6]);
+    /// ```
+    pub fn new_strided(num_cols: usize, num_rows: usize, stride: usize, data: &'a [T]) -> TooDeeView<'a, T> {
+        let len = calculate_strided_len(num_cols, num_rows, stride, data.len());
+        TooDeeView {
+            data: &data[..len],
+            num_cols,
+            num_rows,
+            stride,
+        }
+    }
+
+    /// Returns the distance, in elements, between the starts of consecutive rows in
+    /// the underlying slice. This is at least [`num_cols()`](TooDeeOps::num_cols), and
+    /// is larger when the view is a subset of a wider array, or was created with
+    /// [`new_strided()`](Self::new_strided).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps};
+    /// let toodee = TooDee::init(10, 5, 0u32);
+    /// let view = toodee.view((2, 1), (5, 4));
+    /// assert_eq!(view.num_cols(), 3);
+    /// assert_eq!(view.stride(), 10);
+    /// ```
+    #[inline]
+    pub fn stride(&self) -> usize {
+        self.stride
     }
 
     /// Used internally by `TooDee` to create a `TooDeeView`.
@@ -361,6 +435,63 @@ impl<'a, T> TooDeeViewMut<'a, T> {
                 stride: num_cols,
             }
         }
+    }
+
+    /// Create a new `TooDeeViewMut` over a mutable slice whose rows are `stride` elements
+    /// apart, e.g., an image buffer with padding at the end of each row.
+    ///
+    /// Row `r` starts at `data[r * stride]`. The cells between the end of one row and
+    /// the start of the next are not part of the view, and are never modified through it.
+    /// The slice only needs to extend to the end of the last row, i.e.,
+    /// `(num_rows - 1) * stride + num_cols` elements; any excess is ignored.
+    ///
+    /// # Panics
+    ///
+    /// Panics if one of the dimensions is zero but the other is non-zero. This
+    /// is to enforce the rule that empty arrays have no dimensions.
+    ///
+    /// Panics if `stride < num_cols`.
+    ///
+    /// Panics if the slice's length is not sufficient to represent
+    /// the desired array dimensions, or if the required length overflows.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDeeOpsMut, TooDeeViewMut};
+    /// // 3 columns, 2 rows, each row padded to 4 elements.
+    /// let mut data = [1, 2, 3, 0, 4, 5, 6, 0];
+    /// let mut view = TooDeeViewMut::new_strided(3, 2, 4, &mut data);
+    /// view.fill(9);
+    /// assert_eq!(data, [9, 9, 9, 0, 9, 9, 9, 0]);
+    /// ```
+    pub fn new_strided(num_cols: usize, num_rows: usize, stride: usize, data: &'a mut [T]) -> TooDeeViewMut<'a, T> {
+        let len = calculate_strided_len(num_cols, num_rows, stride, data.len());
+        TooDeeViewMut {
+            data: &mut data[..len],
+            num_cols,
+            num_rows,
+            stride,
+        }
+    }
+
+    /// Returns the distance, in elements, between the starts of consecutive rows in
+    /// the underlying slice. This is at least [`num_cols()`](TooDeeOps::num_cols), and
+    /// is larger when the view is a subset of a wider array, or was created with
+    /// [`new_strided()`](Self::new_strided).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use toodee::{TooDee, TooDeeOps, TooDeeOpsMut};
+    /// let mut toodee = TooDee::init(10, 5, 0u32);
+    /// let view = toodee.view_mut((2, 1), (5, 4));
+    /// assert_eq!(view.num_cols(), 3);
+    /// assert_eq!(view.stride(), 10);
+    /// ```
+    #[inline]
+    pub fn stride(&self) -> usize {
+        self.stride
     }
 
     /// Used internally by `TooDee` to create a `TooDeeViewMut`.
