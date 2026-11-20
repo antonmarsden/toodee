@@ -2,7 +2,7 @@
 
 ## Changes
 
-### Unreleased
+### Version 0.8.0
 
 - Fixed `PartialEq`, `Eq` and `Hash` for `TooDeeView` and `TooDeeViewMut`, which compared the backing slice and stride, so views with identical visible cells could compare unequal if the cells between their rows differed or their parent arrays had different widths ([#61](https://github.com/antonmarsden/toodee/issues/61)). Views now compare and hash only their dimensions and the cells they expose.
 - Added cross-type equality between `TooDee`, `TooDeeView` and `TooDeeViewMut` (e.g. `grid == other.view(...)`), with the same semantics. Element types only need `T: PartialEq<U>`.
