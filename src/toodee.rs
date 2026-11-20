@@ -5,6 +5,7 @@ use core::iter::IntoIterator;
 use core::ptr;
 use core::marker::PhantomData;
 use core::mem;
+use core::hash::{Hash, Hasher};
 
 extern crate alloc;
 
@@ -164,7 +165,7 @@ impl<T> TooDeeOpsMut<T> for ExtractedRows<'_, T> {
 /// Represents a two-dimensional array.
 /// 
 /// Empty arrays will always have dimensions of zero.
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct TooDee<T> {
     data: Vec<T>,
@@ -1545,3 +1546,12 @@ impl<T> DoubleEndedIterator for DrainCol<'_, T> {
 }
 
 impl<T> ExactSizeIterator for DrainCol<'_, T> {}
+
+// Implemented manually so that a `TooDee` hashes identically to a view of it
+// (or any view) with the same dimensions and cells, consistent with the
+// cross-type `PartialEq` impls.
+impl<T: Hash> Hash for TooDee<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        cells_hash(self, state);
+    }
+}

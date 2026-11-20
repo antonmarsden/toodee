@@ -2,6 +2,12 @@
 
 ## Changes
 
+### Unreleased
+
+- Fixed `PartialEq`, `Eq` and `Hash` for `TooDeeView` and `TooDeeViewMut`, which compared the backing slice and stride, so views with identical visible cells could compare unequal if the cells between their rows differed or their parent arrays had different widths ([#61](https://github.com/antonmarsden/toodee/issues/61)). Views now compare and hash only their dimensions and the cells they expose.
+- Added cross-type equality between `TooDee`, `TooDeeView` and `TooDeeViewMut` (e.g. `grid == other.view(...)`), with the same semantics. Element types only need `T: PartialEq<U>`.
+- `TooDee`'s `Hash` now agrees with that of any view with the same dimensions and cells, so its hash values differ from earlier versions.
+
 ### Version 0.7.0
 
 - **Breaking:** `TooDeeViewMut` now implements `IntoIterator` by value, yielding `&mut T` and consuming the view, like `IntoIterator` for `&mut [T]`. This also makes `for c in view_mut` work. Previously, `view_mut.into_iter()` resolved to `(&view_mut).into_iter()`, yielding `&T` and leaving the view usable, so code that relied on that (e.g. `view_mut.into_iter().copied()`) no longer compiles. Use `view_mut.cells()` instead.

@@ -3,6 +3,7 @@ use core::fmt::{Formatter, Debug};
 use core::ops::{Index, IndexMut, Range};
 use core::ptr;
 use core::mem;
+use core::hash::{Hash, Hasher};
 
 use crate::toodee::*;
 use crate::ops::*;
@@ -86,7 +87,10 @@ impl<T> TooDeeViewCommon<T> for TooDeeViewMut<'_, T> {
 
 
 /// Provides a read-only view (or subset) of a `TooDee` array.
-#[derive(Hash, Eq, PartialEq)]
+///
+/// Equality and hashing consider only the view's dimensions and the cells it
+/// exposes, so views of different parent arrays compare equal when their visible
+/// cells match.
 pub struct TooDeeView<'a, T> {
     data: &'a [T],
     num_cols: usize,
@@ -312,7 +316,9 @@ impl<'a, T> Index<Coordinate> for TooDeeView<'a, T> {
 
 
 /// Provides a mutable view (or subset), of a `TooDee` array.
-#[derive(Hash, Eq, PartialEq)]
+///
+/// Equality and hashing consider only the view's dimensions and the cells it
+/// exposes (see [`TooDeeView`]).
 pub struct TooDeeViewMut<'a, T> {
     data: &'a mut [T],
     num_cols: usize,
@@ -799,5 +805,73 @@ impl<T> Debug for TooDeeView<'_, T> where T: Debug {
 impl<T> Debug for TooDeeViewMut<'_, T> where T: Debug {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.rows()).finish()
+    }
+}
+
+/// Compares two arrays/views by their dimensions and visible cells only.
+#[inline]
+pub(crate) fn cells_eq<T, U, A, B>(a: &A, b: &B) -> bool
+where
+    T: PartialEq<U>,
+    A: TooDeeOps<T> + ?Sized,
+    B: TooDeeOps<U> + ?Sized,
+{
+    a.num_cols() == b.num_cols()
+        && a.num_rows() == b.num_rows()
+        && a.rows().zip(b.rows()).all(|(x, y)| x == y)
+}
+
+/// Hashes an array/view by its dimensions and visible cells only, so that a
+/// `TooDee` and any view with the same dimensions and cells hash identically.
+#[inline]
+pub(crate) fn cells_hash<T, A, H>(a: &A, state: &mut H)
+where
+    T: Hash,
+    A: TooDeeOps<T> + ?Sized,
+    H: Hasher,
+{
+    a.num_cols().hash(state);
+    a.num_rows().hash(state);
+    for row in a.rows() {
+        row.hash(state);
+    }
+}
+
+macro_rules! impl_cells_eq {
+    ($(($lhs:ty, $rhs:ty)),* $(,)?) => {
+        $(
+            impl<T, U> PartialEq<$rhs> for $lhs where T: PartialEq<U> {
+                #[inline]
+                fn eq(&self, other: &$rhs) -> bool {
+                    cells_eq(self, other)
+                }
+            }
+        )*
+    };
+}
+
+impl_cells_eq!(
+    (TooDeeView<'_, T>, TooDeeView<'_, U>),
+    (TooDeeView<'_, T>, TooDeeViewMut<'_, U>),
+    (TooDeeViewMut<'_, T>, TooDeeView<'_, U>),
+    (TooDeeViewMut<'_, T>, TooDeeViewMut<'_, U>),
+    (TooDee<T>, TooDeeView<'_, U>),
+    (TooDee<T>, TooDeeViewMut<'_, U>),
+    (TooDeeView<'_, T>, TooDee<U>),
+    (TooDeeViewMut<'_, T>, TooDee<U>),
+);
+
+impl<T: Eq> Eq for TooDeeView<'_, T> {}
+impl<T: Eq> Eq for TooDeeViewMut<'_, T> {}
+
+impl<T: Hash> Hash for TooDeeView<'_, T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        cells_hash(self, state);
+    }
+}
+
+impl<T: Hash> Hash for TooDeeViewMut<'_, T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        cells_hash(self, state);
     }
 }
